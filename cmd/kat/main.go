@@ -10,6 +10,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/version"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,8 +21,6 @@ func main() {
 	}
 }
 
-const version = "dev"
-
 var (
 	// Global verbose mode
 	verbose bool
@@ -30,7 +29,7 @@ var (
 var kat = &cli.App{
 	Usage:       "Database Migration Tool",
 	Description: "Database Migration Tool based on Sourcegraph's internal tooling.",
-	Version:     version,
+	Version:     version.Version(),
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
