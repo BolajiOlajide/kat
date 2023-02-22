@@ -1,11 +1,15 @@
 package migration
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"regexp"
+
+	"github.com/cockroachdb/errors"
 )
+
+var migrationFileNameRegex = regexp.MustCompile(`^\d+_[^_]+$`)
 
 func getMigrationsPath() (string, error) {
 	wd, err := os.Getwd()

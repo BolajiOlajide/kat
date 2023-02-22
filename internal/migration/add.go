@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // Add creates a new directory with stub migration files in the given schema and returns the
@@ -23,7 +24,7 @@ func Add(name string) error {
 	)
 	migrationName := fmt.Sprintf("%d_%s", timestamp, sanitizedName)
 
-	m := Migration{
+	m := types.Migration{
 		Up:        filepath.Join(migrationsBaseDir, fmt.Sprintf("%s/up.sql", migrationName)),
 		Down:      filepath.Join(migrationsBaseDir, fmt.Sprintf("%s/down.sql", migrationName)),
 		Metadata:  filepath.Join(migrationsBaseDir, fmt.Sprintf("%s/metadata.yaml", migrationName)),

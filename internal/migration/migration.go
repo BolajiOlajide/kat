@@ -5,20 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
-// Migration represents a migration definition.
-type Migration struct {
-	Up        string
-	Down      string
-	Metadata  string
-	Timestamp int64
-}
-
-func saveMigration(m Migration, name string) (err error) {
+func saveMigration(m types.Migration, name string) (err error) {
 	defer func() {
 		if err != nil {
-			// undo any changes to the fs on error
+			// undo any changes to the fs on error. we don't care about the errors here.
 			_ = os.Remove(m.Up)
 			_ = os.Remove(m.Down)
 			_ = os.Remove(m.Metadata)

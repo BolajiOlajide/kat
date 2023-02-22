@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/BolajiOlajide/kat/internal/migration"
+	"github.com/cockroachdb/errors"
+
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/version"
 	"github.com/urfave/cli/v2"
@@ -24,11 +24,14 @@ func main() {
 var (
 	// Global verbose mode
 	verbose bool
+
+	// database connection string
+	database string
 )
 
 var kat = &cli.App{
-	Usage:       "Database Migration Tool",
-	Description: "Database Migration Tool based on Sourcegraph's internal tooling.",
+	Usage:       "Database migration tool",
+	Description: "Database migration tool based on Sourcegraph's internal tooling.",
 	Version:     version.Version(),
 	Compiled:    time.Now(),
 	Flags: []cli.Flag{
@@ -40,9 +43,35 @@ var kat = &cli.App{
 			Value:       false,
 			Destination: &verbose,
 		},
+		&cli.StringFlag{
+			Name:        "database",
+			Usage:       "database connection string",
+			Aliases:     []string{"d"},
+			EnvVars:     []string{"KAT_DATABASE_URL"},
+			Destination: &database,
+		},
 	},
 	Commands: []*cli.Command{
-		addCommand,
+		{
+			Name:        "add",
+			ArgsUsage:   "<name>",
+			Usage:       "Add a new migration file",
+			Description: "Creates a new migration file in the migrations directory",
+			Action:      add,
+		},
+		{
+			Name:        "up",
+			Usage:       "Apply all migrations",
+			Description: "Apply migrations",
+			Action:      up,
+		},
+	},
+
+	Before: func(ctx *cli.Context) error {
+		if verbose {
+			fmt.Fprintln(os.Stderr, "Verbose mode enabled")
+		}
+		return nil
 	},
 
 	UseShortOptionHandling: true,
@@ -71,25 +100,4 @@ var kat = &cli.App{
 		}
 		os.Exit(1)
 	},
-}
-
-var (
-	addCommand = &cli.Command{
-		Name:        "add",
-		ArgsUsage:   "<name>",
-		Usage:       "Add a new migration file",
-		Description: "Creates a new migration file in the migrations directory",
-		Action:      addMigration,
-	}
-)
-
-func addMigration(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		return cli.Exit("no migration name specified", 1)
-	}
-	if len(args) != 1 {
-		return cli.Exit("too many arguments", 1)
-	}
-	return migration.Add(args[0])
 }
