@@ -1,4 +1,4 @@
-package config
+package conf
 
 import (
 	"fmt"
@@ -21,8 +21,8 @@ func (c Config) ConnString() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", c.host, c.port, c.user, c.password, c.name, c.sslmode)
 }
 
-// ParsePgConnString parses a PostgreSQL connection string and returns a Config struct.
-func ParsePgConnString(connStr string) (Config, error) {
+// Init parses a PostgreSQL connection string and returns a Config struct.
+func Init(connStr string) (Config, error) {
 	u, err := url.Parse(connStr)
 	if err != nil {
 		return Config{}, err
@@ -46,7 +46,7 @@ func ParsePgConnString(connStr string) (Config, error) {
 
 func isSchemeValid(scheme string) bool {
 	switch scheme {
-	case "postgres", "postgresql", "postgresql+unix", "postgresql+ssl":
+	case "postgres", "postgresql", "postgresql+ssl":
 		return true
 	default:
 		return false

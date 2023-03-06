@@ -26,7 +26,7 @@ var (
 	verbose bool
 
 	// database connection string
-	database string
+	databaseURL string
 )
 
 var kat = &cli.App{
@@ -43,13 +43,6 @@ var kat = &cli.App{
 			Value:       false,
 			Destination: &verbose,
 		},
-		&cli.StringFlag{
-			Name:        "database",
-			Usage:       "database connection string",
-			Aliases:     []string{"d"},
-			EnvVars:     []string{"KAT_DATABASE_URL"},
-			Destination: &database,
-		},
 	},
 	Commands: []*cli.Command{
 		{
@@ -64,14 +57,17 @@ var kat = &cli.App{
 			Usage:       "Apply all migrations",
 			Description: "Apply migrations",
 			Action:      up,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "url",
+					Usage:       "database url",
+					Aliases:     []string{"u"},
+					EnvVars:     []string{"KAT_DATABASE_URL"},
+					Destination: &databaseURL,
+					Required:    true,
+				},
+			},
 		},
-	},
-
-	Before: func(ctx *cli.Context) error {
-		if verbose {
-			fmt.Fprintln(os.Stderr, "Verbose mode enabled")
-		}
-		return nil
 	},
 
 	UseShortOptionHandling: true,

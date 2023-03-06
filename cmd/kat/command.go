@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/urfave/cli/v2"
 
+	"github.com/BolajiOlajide/kat/internal/conf"
 	"github.com/BolajiOlajide/kat/internal/migration"
 )
 
@@ -18,5 +19,10 @@ func add(ctx *cli.Context) error {
 }
 
 func up(ctx *cli.Context) error {
-	return migration.Up(ctx)
+	databaseURL := ctx.String("url")
+	config, err := conf.Init(databaseURL)
+	if err != nil {
+		return err
+	}
+	return migration.Up(ctx, config)
 }

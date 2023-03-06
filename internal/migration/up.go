@@ -9,6 +9,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/BolajiOlajide/kat/internal/conf"
+	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
@@ -16,7 +19,8 @@ import (
 )
 
 // Up is the command that runs the up migration operation.
-func Up(ctx *cli.Context) error {
+func Up(c *cli.Context, config conf.Config) error {
+	ctx := c.Context
 	path, err := getMigrationsPath()
 	if err != nil {
 		return err
@@ -27,10 +31,23 @@ func Up(ctx *cli.Context) error {
 		return err
 	}
 
-	_, err = computeDefinitions(fs)
+	definitions, err := computeDefinitions(fs)
 	if err != nil {
 		return err
 	}
+
+	dbConn := config.ConnString()
+	db, err := database.NewDBWithPing(dbConn)
+	if err != nil {
+		return err
+	}
+
+	r := runner.NewRunner(db)
+	err = r.Run(ctx, runner.Options{
+		Operation:   types.MigrationOperationTypeUpgrade,
+		Definitions: definitions,
+	})
+
 	return nil
 }
 

@@ -5,6 +5,8 @@ go 1.20
 require (
 	github.com/cockroachdb/errors v1.9.1
 	github.com/keegancsmith/sqlf v1.1.1
+	github.com/lib/pq v1.10.7
+	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.24.4
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -17,8 +19,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.7 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
