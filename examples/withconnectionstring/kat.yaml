@@ -1,0 +1,5 @@
+migration:
+  - tablename: migrations
+
+database:
+  - url: postgres://bolaji:andela@localhost/kat?sslmode=true
