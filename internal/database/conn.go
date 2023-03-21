@@ -8,7 +8,7 @@ import (
 )
 
 // NewDB returns a new instance of the database
-func NewDB(conn string) (Database, error) {
+func NewDB(conn string) (DB, error) {
 	dbconn, err := sql.Open("postgres", conn)
 	if err != nil {
 		return nil, err

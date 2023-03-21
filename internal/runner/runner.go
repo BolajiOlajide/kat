@@ -2,7 +2,8 @@ package runner
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/BolajiOlajide/kat/internal/database"
 )
 
 // Runner is the interface that every runner must implement.
@@ -11,13 +12,13 @@ type Runner interface {
 }
 
 type runner struct {
-	db *sql.DB
+	db database.DB
 }
 
 var _ Runner = (*runner)(nil)
 
 // NewRunner returns a new instance of the runner.
-func NewRunner(db *sql.DB) Runner {
+func NewRunner(db database.DB) Runner {
 	return &runner{db: db}
 }
 

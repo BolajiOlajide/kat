@@ -8,7 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-type Database interface {
+type DB interface {
 	Exec(ctx context.Context, query sqlf.Query) error
 	QueryRow(ctx context.Context, query sqlf.Query) *sql.Row
 	Query(ctx context.Context, query sqlf.Query) (*sql.Rows, error)
