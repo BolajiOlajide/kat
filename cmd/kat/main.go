@@ -27,6 +27,8 @@ var (
 
 	// database connection string
 	databaseURL string
+
+	configPath string
 )
 
 var kat = &cli.App{
@@ -43,6 +45,20 @@ var kat = &cli.App{
 			Value:       false,
 			Destination: &verbose,
 		},
+		&cli.PathFlag{
+			Name:        "config",
+			Usage:       "path to kat's configuration file",
+			Aliases:     []string{"c"},
+			EnvVars:     []string{"KAT_CONFIG_PATH"},
+			Destination: &configPath,
+			Action: func(ctx *cli.Context, p cli.Path) error {
+				if _, err := os.Stat(p); os.IsNotExist(err) {
+					return errors.New("config file doesn't exist")
+				}
+
+				return nil
+			},
+		},
 	},
 	Commands: []*cli.Command{
 		{
@@ -51,6 +67,15 @@ var kat = &cli.App{
 			Usage:       "Initializes kat",
 			Description: "Creates a new configuration file for Kat and a migration directory.",
 			Action:      initialize,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "tableName",
+					Usage:   "",
+					Aliases: []string{"tn"},
+					EnvVars: []string{"KAT_MIGRATION_TABLE_NAME"},
+					// Ca
+				},
+			},
 		},
 		{
 			Name:        "add",

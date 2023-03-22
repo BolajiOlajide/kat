@@ -8,7 +8,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var KAT_CONFIGURATION_FILE_NAME = "kat.conf.yaml"

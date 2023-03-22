@@ -10,7 +10,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
