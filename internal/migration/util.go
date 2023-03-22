@@ -21,12 +21,7 @@ func getMigrationsPath() (string, error) {
 }
 
 func getMigrationsFS(path string) (fs.FS, error) {
-	path, err := getMigrationsPath()
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return nil, errors.New("Directory 'migrations' does not exist")
 	}

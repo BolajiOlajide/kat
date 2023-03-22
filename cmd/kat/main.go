@@ -46,6 +46,13 @@ var kat = &cli.App{
 	},
 	Commands: []*cli.Command{
 		{
+			Name:        "init",
+			ArgsUsage:   "<directory>",
+			Usage:       "Initializes kat",
+			Description: "Creates a new configuration file for Kat and a migration directory.",
+			Action:      initialize,
+		},
+		{
 			Name:        "add",
 			ArgsUsage:   "<name>",
 			Usage:       "Add a new migration file",
@@ -66,6 +73,7 @@ var kat = &cli.App{
 					Destination: &databaseURL,
 					Required:    true,
 				},
+				// &cli.StringFlag{}
 			},
 		},
 	},
@@ -86,7 +94,7 @@ var kat = &cli.App{
 
 		errMsg := err.Error()
 		if errMsg != "" {
-			f := fmt.Sprintf("%s%s%s\n", output.StyleFailure, errMsg, output.StyleReset)
+			f := fmt.Sprintf("%s%s%s", output.StyleFailure, errMsg, output.StyleReset)
 			fmt.Fprintln(os.Stderr, f)
 		}
 

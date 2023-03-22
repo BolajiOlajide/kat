@@ -3,7 +3,6 @@ package migration
 import (
 	"github.com/cockroachdb/errors"
 
-	"github.com/BolajiOlajide/kat/internal/conf"
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -11,7 +10,7 @@ import (
 )
 
 // Up is the command that runs the up migration operation.
-func Up(c *cli.Context, config conf.Config) error {
+func Up(c *cli.Context, config types.Config) error {
 	ctx := c.Context
 	path, err := getMigrationsPath()
 	if err != nil {
@@ -28,7 +27,11 @@ func Up(c *cli.Context, config conf.Config) error {
 		return err
 	}
 
-	dbConn := config.ConnString()
+	dbConn, err := config.Database.ConnString()
+	if err != nil {
+		return err
+	}
+
 	db, err := database.NewDB(dbConn)
 	if err != nil {
 		return err
