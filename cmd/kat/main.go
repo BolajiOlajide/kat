@@ -51,7 +51,13 @@ var kat = &cli.App{
 			Aliases:     []string{"c"},
 			EnvVars:     []string{"KAT_CONFIG_PATH"},
 			Destination: &configPath,
-			Action: func(ctx *cli.Context, p cli.Path) error {
+			Action: func(c *cli.Context, p cli.Path) error {
+				cmd := c.Command
+				fmt.Println(cmd.Name)
+				if p == "" {
+					return nil
+				}
+
 				if _, err := os.Stat(p); os.IsNotExist(err) {
 					return errors.New("config file doesn't exist")
 				}
@@ -64,7 +70,7 @@ var kat = &cli.App{
 		{
 			Name:        "init",
 			ArgsUsage:   "<directory>",
-			Usage:       "Initializes kat",
+			Usage:       "Initializes kat by creating a configuration file",
 			Description: "Creates a new configuration file for Kat and a migration directory.",
 			Action:      initialize,
 			Flags: []cli.Flag{

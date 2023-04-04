@@ -18,9 +18,7 @@ var defaultConfig = types.Config{
 		TableName: "migrations",
 		Directory: "migrations",
 	},
-	Database: types.DatabaseInfo{
-		URL: "postgres://user:password@host:port/database",
-	},
+	Database: types.DatabaseInfo{},
 }
 
 // Init initliazes a project for use with kat.

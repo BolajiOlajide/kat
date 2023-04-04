@@ -26,7 +26,7 @@ type DatabaseInfo struct {
 	SSLMode  string `yaml:"sslmode"`
 	Host     string `yaml:"host"`
 
-	URL string `yaml:"url"`
+	URL string `yaml:"url,omitempty"`
 }
 
 func (d *DatabaseInfo) ConnString() (string, error) {
