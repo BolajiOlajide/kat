@@ -13,6 +13,7 @@ import (
 // Add creates a new directory with stub migration files in the given schema and returns the
 // names of the newly created files. If there was an error, the filesystem is rolled-back.
 func Add(name string) error {
+	return nil
 	migrationsBaseDir, err := getMigrationsPath()
 	if err != nil {
 		return err

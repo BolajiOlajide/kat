@@ -19,12 +19,12 @@ type MigrationInfo struct {
 }
 
 type DatabaseInfo struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Name     string `yaml:"name"`
-	Port     string `yaml:"port"`
-	SSLMode  string `yaml:"sslmode"`
-	Host     string `yaml:"host"`
+	User     string `yaml:"user,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	Name     string `yaml:"name,omitempty"`
+	Port     string `yaml:"port,omitempty"`
+	SSLMode  string `yaml:"sslmode,omitempty"`
+	Host     string `yaml:"host,omitempty"`
 
 	URL string `yaml:"url,omitempty"`
 }

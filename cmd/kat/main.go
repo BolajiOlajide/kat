@@ -36,34 +36,21 @@ var kat = &cli.App{
 	Description: "Database migration tool based on Sourcegraph's internal tooling.",
 	Version:     version.Version(),
 	Compiled:    time.Now(),
+	Before: func(c *cli.Context) error {
+		command := c.Args().First()
+		if command != "init" {
+			return checkConfigPath(c)
+		}
+		return nil
+	},
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "verbose",
-			Usage:       "toggle verbose mode",
+			Usage:       "toggle verbose mode (default: false)",
 			Aliases:     []string{"v"},
 			EnvVars:     []string{"KAT_VERBOSE"},
 			Value:       false,
 			Destination: &verbose,
-		},
-		&cli.PathFlag{
-			Name:        "config",
-			Usage:       "path to kat's configuration file",
-			Aliases:     []string{"c"},
-			EnvVars:     []string{"KAT_CONFIG_PATH"},
-			Destination: &configPath,
-			Action: func(c *cli.Context, p cli.Path) error {
-				cmd := c.Command
-				fmt.Println(cmd.Name)
-				if p == "" {
-					return nil
-				}
-
-				if _, err := os.Stat(p); os.IsNotExist(err) {
-					return errors.New("config file doesn't exist")
-				}
-
-				return nil
-			},
 		},
 	},
 	Commands: []*cli.Command{
@@ -76,19 +63,47 @@ var kat = &cli.App{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "tableName",
-					Usage:   "",
-					Aliases: []string{"tn"},
+					Usage:   "the name of the database table for tracking migrations",
+					Aliases: []string{"t"},
 					EnvVars: []string{"KAT_MIGRATION_TABLE_NAME"},
-					// Ca
+					Value:   "migrations",
+				},
+				&cli.StringFlag{
+					Name:    "databaseURL",
+					Usage:   "the URL of the database to run the migrations against (default: '')",
+					Aliases: []string{"u"},
+					EnvVars: []string{"KAT_MIGRATION_DATABASE_URL"},
+				},
+				&cli.StringFlag{
+					Name:    "directory",
+					Usage:   "the name of the directory where migrations will be stored",
+					Aliases: []string{"d"},
+					EnvVars: []string{"KAT_MIGRATION_DIRECTORY"},
+					Value:   "migrations",
 				},
 			},
 		},
 		{
+			Name:        "version",
+			Usage:       "returns the current version of kat",
+			Description: "This command returns the version of kat",
+			Action:      getVersion,
+		},
+		{
 			Name:        "add",
 			ArgsUsage:   "<name>",
-			Usage:       "Add a new migration file",
+			Usage:       "Adds a new migration",
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
+			Flags: []cli.Flag{
+				&cli.PathFlag{
+					Name:    "config",
+					Usage:   "the configuration file for kat",
+					Aliases: []string{"c"},
+					EnvVars: []string{"KAT_CONFIG_FILE"},
+					Value:   "kat.config.yaml",
+				},
+			},
 		},
 		{
 			Name:        "up",
@@ -104,7 +119,6 @@ var kat = &cli.App{
 					Destination: &databaseURL,
 					Required:    true,
 				},
-				// &cli.StringFlag{}
 			},
 		},
 	},
@@ -113,14 +127,14 @@ var kat = &cli.App{
 
 	HideVersion:     true,
 	HideHelpCommand: true,
-	ExitErrHandler: func(cmd *cli.Context, err error) {
+	ExitErrHandler: func(c *cli.Context, err error) {
 		if err == nil {
 			return
 		}
 
 		// Show help text only
 		if errors.Is(err, flag.ErrHelp) {
-			cli.ShowSubcommandHelpAndExit(cmd, 1)
+			cli.ShowSubcommandHelpAndExit(c, 1)
 		}
 
 		errMsg := err.Error()
