@@ -44,11 +44,11 @@ func checkConfigPath(c *cli.Context) error {
 		}
 	}
 
-	var config types.Config
-	err = yaml.Unmarshal(f, config)
+	var config *types.Config
+	err = yaml.Unmarshal(f, &config)
 	if err != nil {
 		return err
 	}
-	fmt.Println(config, "<====")
+
 	return nil
 }

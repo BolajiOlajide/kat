@@ -5,14 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/utils"
 	"github.com/BolajiOlajide/kat/internal/version"
 )
 
@@ -32,9 +30,6 @@ var (
 
 	// the path to Kat configuration
 	configPath string
-
-	// commands that do not need the kat config check
-	commandsWithoutConfig = []string{"init"}
 )
 
 var kat = &cli.App{
@@ -42,13 +37,6 @@ var kat = &cli.App{
 	Description: "Database migration tool based on Sourcegraph's internal tooling.",
 	Version:     version.Version(),
 	Compiled:    time.Now(),
-	Before: func(c *cli.Context) error {
-		// Check if the command is a help command
-		if c.Bool("help") || strings.Contains(c.Command.FullName(), "help") || utils.SliceIncludes(commandsWithoutConfig, c.Args().First()) {
-			return nil
-		}
-		return checkConfigPath(c)
-	},
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "verbose",
@@ -101,6 +89,7 @@ var kat = &cli.App{
 			Usage:       "Adds a new migration",
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
+			Before:      checkConfigPath,
 			Flags: []cli.Flag{
 				&cli.PathFlag{
 					Name:    "config",
@@ -116,6 +105,7 @@ var kat = &cli.App{
 			Usage:       "Apply all migrations",
 			Description: "Apply migrations",
 			Action:      up,
+			Before:      checkConfigPath,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:        "url",
@@ -128,11 +118,9 @@ var kat = &cli.App{
 			},
 		},
 	},
-
 	UseShortOptionHandling: true,
-
-	HideVersion:     true,
-	HideHelpCommand: true,
+	HideVersion:            true,
+	HideHelpCommand:        true,
 	ExitErrHandler: func(c *cli.Context, err error) {
 		if err == nil {
 			return
