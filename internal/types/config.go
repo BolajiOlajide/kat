@@ -18,6 +18,16 @@ type MigrationInfo struct {
 	Directory string `yaml:"directory"`
 }
 
+func (c *Config) SetDefault() {
+	if c.Migration.Directory == "" {
+		c.Migration.Directory = "migrations"
+	}
+
+	if c.Migration.TableName == "" {
+		c.Migration.TableName = "migrations"
+	}
+}
+
 type DatabaseInfo struct {
 	User     string `yaml:"user,omitempty"`
 	Password string `yaml:"password,omitempty"`
@@ -30,7 +40,7 @@ type DatabaseInfo struct {
 }
 
 func (d *DatabaseInfo) ConnString() (string, error) {
-	if err := d.Validate(); err != nil {
+	if err := d.validate(); err != nil {
 		return "", errors.Wrap(err, "validating database info")
 	}
 
@@ -41,7 +51,7 @@ func (d *DatabaseInfo) ConnString() (string, error) {
 	return d.URL, nil
 }
 
-func (d *DatabaseInfo) Validate() error {
+func (d *DatabaseInfo) validate() error {
 	if err := d.validateSSLMode(); err != nil {
 		return err
 	}

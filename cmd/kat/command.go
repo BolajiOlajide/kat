@@ -8,7 +8,6 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/BolajiOlajide/kat/internal/version"
 )
 
@@ -20,7 +19,7 @@ func add(c *cli.Context) error {
 	if len(args) != 1 {
 		return cli.Exit("too many arguments", 1)
 	}
-	return migration.Add(args[0])
+	return migration.Add(c, args[0])
 }
 
 func up(c *cli.Context) error {
@@ -29,7 +28,7 @@ func up(c *cli.Context) error {
 	// if err != nil {
 	// 	return err
 	// }
-	return migration.Up(c, types.Config{})
+	return migration.Up(c)
 }
 
 func initialize(c *cli.Context) error {

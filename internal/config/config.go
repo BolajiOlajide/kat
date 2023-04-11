@@ -53,13 +53,14 @@ func ParseConfig(c *cli.Context) error {
 		}
 	}
 
-	var config types.Config
-	err = yaml.Unmarshal(f, &config)
+	var cfg = &types.Config{}
+	err = yaml.Unmarshal(f, cfg)
 	if err != nil {
 		return errors.Wrap(err, "reading config")
 	}
 
-	newContext := context.WithValue(c.Context, constants.KatConfigKey, config)
+	cfg.SetDefault()
+	newContext := context.WithValue(c.Context, constants.KatConfigKey, *cfg)
 	c.Context = newContext
 	return nil
 }

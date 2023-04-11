@@ -1,7 +1,9 @@
 package constants
 
-var KatConfigurationFileName = "kat.conf.yaml"
+type contextKey int
+
+const KatConfigurationFileName string = "kat.conf.yaml"
 
 const (
-	KatConfigKey int = iota
+	KatConfigKey contextKey = iota
 )
