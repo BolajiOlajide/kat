@@ -6,21 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
-
-	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // Add creates a new directory with stub migration files in the given schema and returns the
 // names of the newly created files. If there was an error, the filesystem is rolled-back.
-func Add(c *cli.Context, name string) error {
-	cfg, err := config.GetKatConfigFromCtx(c)
-	if err != nil {
-		return err
-	}
-
+func Add(name string, cfg types.Config) error {
 	timestamp := time.Now().UTC().Unix()
 	sanitizedName := nonAlphaNumericOrUnderscore.ReplaceAllString(
 		strings.ReplaceAll(strings.ToLower(name), " ", "_"), "",
@@ -34,7 +26,7 @@ func Add(c *cli.Context, name string) error {
 		Timestamp: timestamp,
 	}
 
-	err = saveMigration(m, name)
+	err := saveMigration(m, name)
 	if err != nil {
 		return err
 	}

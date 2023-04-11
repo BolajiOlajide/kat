@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/version"
@@ -19,7 +20,12 @@ func add(c *cli.Context) error {
 	if len(args) != 1 {
 		return cli.Exit("too many arguments", 1)
 	}
-	return migration.Add(c, args[0])
+
+	cfg, err := config.GetKatConfigFromCtx(c)
+	if err != nil {
+		return err
+	}
+	return migration.Add(args[0], cfg)
 }
 
 func up(c *cli.Context) error {
