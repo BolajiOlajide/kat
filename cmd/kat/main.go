@@ -5,13 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/utils"
 	"github.com/BolajiOlajide/kat/internal/version"
-	"github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -28,7 +30,11 @@ var (
 	// database connection string
 	databaseURL string
 
+	// the path to Kat configuration
 	configPath string
+
+	// commands that do not need the kat config check
+	commandsWithoutConfig = []string{"init"}
 )
 
 var kat = &cli.App{
@@ -37,11 +43,11 @@ var kat = &cli.App{
 	Version:     version.Version(),
 	Compiled:    time.Now(),
 	Before: func(c *cli.Context) error {
-		command := c.Args().First()
-		if command != "init" {
-			return checkConfigPath(c)
+		// Check if the command is a help command
+		if c.Bool("help") || strings.Contains(c.Command.FullName(), "help") || utils.SliceIncludes(commandsWithoutConfig, c.Args().First()) {
+			return nil
 		}
-		return nil
+		return checkConfigPath(c)
 	},
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
