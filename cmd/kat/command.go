@@ -29,12 +29,11 @@ func add(c *cli.Context) error {
 }
 
 func up(c *cli.Context) error {
-	// databaseURL := c.String("url")
-	// config, err := conf.Init(databaseURL)
-	// if err != nil {
-	// 	return err
-	// }
-	return migration.Up(c)
+	cfg, err := config.GetKatConfigFromCtx(c)
+	if err != nil {
+		return err
+	}
+	return migration.Up(c, cfg)
 }
 
 func initialize(c *cli.Context) error {

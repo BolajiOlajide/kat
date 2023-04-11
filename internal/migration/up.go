@@ -2,44 +2,44 @@ package migration
 
 import (
 	"github.com/urfave/cli/v2"
+
+	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/runner"
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // Up is the command that runs the up migration operation.
-func Up(c *cli.Context) error {
-	// ctx := c.Context
-	// path, err := getMigrationsPath()
-	// if err != nil {
-	// 	return err
-	// }
+func Up(c *cli.Context, cfg types.Config) error {
+	ctx := c.Context
 
-	// fs, err := getMigrationsFS(path)
-	// if err != nil {
-	// 	return err
-	// }
+	fs, err := getMigrationsFS(cfg.Migration.Directory)
+	if err != nil {
+		return err
+	}
 
-	// definitions, err := computeDefinitions(fs)
-	// if err != nil {
-	// 	return err
-	// }
+	definitions, err := computeDefinitions(fs)
+	if err != nil {
+		return err
+	}
 
-	// dbConn, err := types.Database.ConnString()
-	// if err != nil {
-	// 	return err
-	// }
+	dbConn, err := cfg.Database.ConnString()
+	if err != nil {
+		return err
+	}
 
-	// db, err := database.NewDB(dbConn)
-	// if err != nil {
-	// 	return err
-	// }
+	db, err := database.NewDB(dbConn)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
-	// r := runner.NewRunner(db)
-	// err = r.Run(ctx, runner.Options{
-	// 	Operation:   types.MigrationOperationTypeUpgrade,
-	// 	Definitions: definitions,
-	// })
-	// if err != nil {
-	// 	return errors.Wrap(err, "running up migration command")
-	// }
+	r, err := runner.NewRunner(ctx, db)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return r.Run(ctx, runner.Options{
+		Operation:   types.UpMigrationOperation,
+		Definitions: definitions,
+	})
 }

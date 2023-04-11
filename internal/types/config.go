@@ -3,9 +3,7 @@ package types
 import (
 	"fmt"
 	"net/url"
-	"strconv"
-
-	"github.com/cockroachdb/errors"
+	"strings"
 )
 
 type Config struct {
@@ -26,6 +24,12 @@ func (c *Config) SetDefault() {
 	if c.Migration.TableName == "" {
 		c.Migration.TableName = "migrations"
 	}
+
+	// We assume when the URL isn't provided, the user has specified database credentials manually
+	// so we set SSL mode to `disable` if the user doesn't have it defined.
+	if c.Database.URL == "" && c.Database.SSLMode == "" {
+		c.Database.SSLMode = "disable"
+	}
 }
 
 type DatabaseInfo struct {
@@ -40,43 +44,14 @@ type DatabaseInfo struct {
 }
 
 func (d *DatabaseInfo) ConnString() (string, error) {
-	if err := d.validate(); err != nil {
-		return "", errors.Wrap(err, "validating database info")
-	}
-
 	if d.URL != "" {
-		return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", d.Host, d.Port, d.User, d.Password, d.Name, d.SSLMode), nil
+		err := d.ParseURL()
+		if err != nil {
+			return "", err
+		}
 	}
 
-	return d.URL, nil
-}
-
-func (d *DatabaseInfo) validate() error {
-	if err := d.validateSSLMode(); err != nil {
-		return err
-	}
-
-	if err := d.validatePort(); err != nil {
-		return err
-	}
-
-	if d.Host == "" {
-		return errors.New("database host is required")
-	}
-
-	if d.User == "" {
-		return errors.New("database user is required")
-	}
-
-	if d.Name == "" {
-		return errors.New("database name is required")
-	}
-
-	if d.Password == "" {
-		return errors.New("database password is required")
-	}
-
-	return nil
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", d.Host, d.Port, d.User, d.Password, d.Name, d.SSLMode), nil
 }
 
 func (d *DatabaseInfo) ParseURL() error {
@@ -91,8 +66,13 @@ func (d *DatabaseInfo) ParseURL() error {
 		return err
 	}
 
-	d.Port = parsedURL.Port()
-	d.Host = parsedURL.Host
+	port := parsedURL.Port()
+	if port == "" {
+		port = "5432" // default postgres port
+	}
+	d.Port = port
+
+	d.Host = parsedURL.Hostname()
 
 	if parsedURL.User != nil {
 		d.User = parsedURL.User.Username()
@@ -105,36 +85,15 @@ func (d *DatabaseInfo) ParseURL() error {
 	}
 	d.SSLMode = sslmode
 
+	d.Name = strings.ReplaceAll(parsedURL.Path, "/", "")
 	return nil
-}
-
-func (d *DatabaseInfo) validatePort() error {
-	port, err := strconv.Atoi(d.Port)
-	if err != nil {
-		return err
-	}
-
-	if port < 0 || port > 65535 {
-		return errors.New("port number is invalid")
-	}
-
-	return nil
-}
-
-func (d *DatabaseInfo) validateSSLMode() error {
-	switch d.SSLMode {
-	case "", "disable", "require", "verify-ca", "verify-full":
-		return nil
-	default:
-		return errors.New("invalid ssl mode")
-	}
 }
 
 func validateScheme(scheme string) error {
 	switch scheme {
 	case "postgresql+ssl", "postgresql", "postgres":
-		return fmt.Errorf("invalid scheme: %s", scheme)
-	default:
 		return nil
+	default:
+		return fmt.Errorf("invalid scheme: %s", scheme)
 	}
 }

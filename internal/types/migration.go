@@ -18,9 +18,9 @@ type MigrationMetadata struct {
 type MigrationOperationType int
 
 const (
-	// MigrationOperationTypeUpgrade represents an upgrade operation.
-	MigrationOperationTypeUpgrade MigrationOperationType = iota
+	// UpMigrationOperation represents an upgrade operation.
+	UpMigrationOperation MigrationOperationType = iota
 
-	// MigrationOperationTypeDowngrade represents a downgrade operation.
-	MigrationOperationTypeDowngrade
+	// DownMigrationOperation represents a downgrade operation.
+	DownMigrationOperation
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/config"
+	"github.com/BolajiOlajide/kat/internal/constants"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/version"
 )
@@ -22,16 +23,15 @@ func main() {
 	}
 }
 
-var (
-	// Global verbose mode
-	verbose bool
+var verbose bool
 
-	// database connection string
-	databaseURL string
-
-	// the path to Kat configuration
-	configPath string
-)
+var configFlag = &cli.PathFlag{
+	Name:    "config",
+	Usage:   "the configuration file for kat",
+	Aliases: []string{"c"},
+	EnvVars: []string{"KAT_CONFIG_FILE"},
+	Value:   constants.KatConfigurationFileName,
+}
 
 var kat = &cli.App{
 	Usage:       "Database migration tool",
@@ -91,15 +91,7 @@ var kat = &cli.App{
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
 			Before:      config.ParseConfig,
-			Flags: []cli.Flag{
-				&cli.PathFlag{
-					Name:    "config",
-					Usage:   "the configuration file for kat",
-					Aliases: []string{"c"},
-					EnvVars: []string{"KAT_CONFIG_FILE"},
-					Value:   "kat.conf.yaml",
-				},
-			},
+			Flags:       []cli.Flag{configFlag},
 		},
 		{
 			Name:        "up",
@@ -107,15 +99,7 @@ var kat = &cli.App{
 			Description: "Apply migrations",
 			Action:      up,
 			Before:      config.ParseConfig,
-			Flags: []cli.Flag{
-				&cli.PathFlag{
-					Name:    "config",
-					Usage:   "the configuration file for kat",
-					Aliases: []string{"c"},
-					EnvVars: []string{"KAT_CONFIG_FILE"},
-					Value:   "kat.config.yaml",
-				},
-			},
+			Flags:       []cli.Flag{configFlag},
 		},
 	},
 	UseShortOptionHandling: true,

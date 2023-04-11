@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -39,7 +38,6 @@ func ParseConfig(c *cli.Context) error {
 		configPath = filepath.Join(wd, configPath)
 	}
 
-	fmt.Println(configPath, "configuration path")
 	f, err = os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {

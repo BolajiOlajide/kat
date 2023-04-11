@@ -3,59 +3,36 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
+
+	// Import the postgres driver
 
 	"github.com/keegancsmith/sqlf"
+	_ "github.com/lib/pq"
 )
 
-type DB interface {
-	Exec(ctx context.Context, query sqlf.Query) error
-	QueryRow(ctx context.Context, query sqlf.Query) *sql.Row
-	Query(ctx context.Context, query sqlf.Query) (*sql.Rows, error)
-	Ping(ctx context.Context) error
-	Transact(context.Context, func(*sql.Tx) error) error
+type DB struct {
+	db *sql.DB
 }
 
-type db struct {
-	*sql.DB
+func (d *DB) Close() error {
+	return d.db.Close()
 }
 
-func (db *db) Exec(ctx context.Context, query sqlf.Query) error {
-	_, err := db.ExecContext(ctx, query.Query(&sqlf.PostgresBindVar), query.Args()...)
+func (d *DB) Ping(ctx context.Context) error {
+	return d.db.PingContext(ctx)
+}
+
+func (d *DB) Exec(ctx context.Context, query *sqlf.Query, args ...any) error {
+	_, err := d.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), args)
+	return err
+}
+
+// NewDB returns a new instance of the database
+func NewDB(url string) (*DB, error) {
+	db, err := sql.Open("postgres", url)
 	if err != nil {
-		return fmt.Errorf("exec query %q failed: %w", query, err)
-	}
-	return nil
-}
-
-func (db *db) QueryRow(ctx context.Context, query sqlf.Query) *sql.Row {
-	return db.QueryRowContext(ctx, query.Query(&sqlf.PostgresBindVar), query.Args()...)
-}
-
-func (db *db) Query(ctx context.Context, query sqlf.Query) (*sql.Rows, error) {
-	return db.QueryContext(ctx, query.Query(&sqlf.PostgresBindVar), query.Args()...)
-}
-
-func (db *db) Transact(ctx context.Context, f func(*sql.Tx) error) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin transaction failed: %w", err)
+		return nil, err
 	}
 
-	if err := f(tx); err != nil {
-		if txErr := tx.Rollback(); txErr != nil {
-			return fmt.Errorf("transaction rollback failed: %v (original error: %v)", txErr, err)
-		}
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("transaction commit failed: %w", err)
-	}
-
-	return nil
-}
-
-func (db *db) Ping(ctx context.Context) error {
-	return db.PingContext(ctx)
+	return &DB{db: db}, nil
 }
