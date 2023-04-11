@@ -6,7 +6,7 @@ require (
 	github.com/cockroachdb/errors v1.9.1
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/lib/pq v1.10.7
-	github.com/urfave/cli/v2 v2.25.0
+	github.com/urfave/cli/v2 v2.25.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
