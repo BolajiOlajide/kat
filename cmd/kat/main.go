@@ -97,7 +97,7 @@ var kat = &cli.App{
 					Usage:   "the configuration file for kat",
 					Aliases: []string{"c"},
 					EnvVars: []string{"KAT_CONFIG_FILE"},
-					Value:   "kat.config.yaml",
+					Value:   "kat.conf.yaml",
 				},
 			},
 		},

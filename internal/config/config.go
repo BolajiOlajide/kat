@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
@@ -29,34 +30,28 @@ func ParseConfig(c *cli.Context) error {
 		err error
 	)
 
-	path := c.String("config")
-	if path != "" {
-		f, err = os.ReadFile(path)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return errConfigNotFound
-			}
-			return err
-		}
-	} else {
+	configPath := c.String("config")
+	if !filepath.IsAbs(configPath) {
 		wd, err := os.Getwd()
 		if err != nil {
 			return errors.Wrap(err, "getting working directory")
 		}
-		configFilePath := fmt.Sprintf("%s/%s", wd, constants.KatConfigurationFileName)
-		f, err = os.ReadFile(configFilePath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return errConfigNotFound
-			}
-			return err
+		configPath = filepath.Join(wd, configPath)
+	}
+
+	fmt.Println(configPath, "configuration path")
+	f, err = os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errConfigNotFound
 		}
+		return err
 	}
 
 	var cfg = &types.Config{}
 	err = yaml.Unmarshal(f, cfg)
 	if err != nil {
-		return errors.Wrap(err, "reading config")
+		return errors.Wrap(err, "marshalling config")
 	}
 
 	cfg.SetDefault()
