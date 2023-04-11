@@ -1,10 +1,11 @@
 migration:
   - tablename: migrations
+  - directory: migrations
 
 database:
   - user: bolaji
   - password: andela
   - name: kat
   - port: 5432
-  - sslmode: disable 
+  - sslmode: disable
   - host: localhost
