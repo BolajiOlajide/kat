@@ -23,7 +23,7 @@ func (d *DB) Ping(ctx context.Context) error {
 }
 
 func (d *DB) Exec(ctx context.Context, query *sqlf.Query, args ...any) error {
-	_, err := d.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), args)
+	_, err := d.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), args...)
 	return err
 }
 
