@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 
+	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/version"
 )
@@ -89,7 +90,7 @@ var kat = &cli.App{
 			Usage:       "Adds a new migration",
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
-			Before:      checkConfigPath,
+			Before:      config.ParseConfig,
 			Flags: []cli.Flag{
 				&cli.PathFlag{
 					Name:    "config",
@@ -105,15 +106,14 @@ var kat = &cli.App{
 			Usage:       "Apply all migrations",
 			Description: "Apply migrations",
 			Action:      up,
-			Before:      checkConfigPath,
+			Before:      config.ParseConfig,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:        "url",
-					Usage:       "database url",
-					Aliases:     []string{"u"},
-					EnvVars:     []string{"KAT_DATABASE_URL"},
-					Destination: &databaseURL,
-					Required:    true,
+				&cli.PathFlag{
+					Name:    "config",
+					Usage:   "the configuration file for kat",
+					Aliases: []string{"c"},
+					EnvVars: []string{"KAT_CONFIG_FILE"},
+					Value:   "kat.config.yaml",
 				},
 			},
 		},

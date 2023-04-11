@@ -1,6 +1,7 @@
-package main
+package config
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -14,7 +15,15 @@ import (
 
 var errConfigNotFound = errors.Newf("config file not provided. Provide one via the `-c` flag or have the %s in the current working directory.", constants.KatConfigurationFileName)
 
-func checkConfigPath(c *cli.Context) error {
+func GetKatConfigFromCtx(c *cli.Context) (types.Config, error) {
+	cfg, ok := c.Context.Value(constants.KatConfigKey).(types.Config)
+	if !ok {
+		return types.Config{}, errors.New("invalid configuration")
+	}
+	return cfg, nil
+}
+
+func ParseConfig(c *cli.Context) error {
 	var (
 		f   []byte
 		err error
@@ -44,11 +53,13 @@ func checkConfigPath(c *cli.Context) error {
 		}
 	}
 
-	var config *types.Config
+	var config types.Config
 	err = yaml.Unmarshal(f, &config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading config")
 	}
 
+	newContext := context.WithValue(c.Context, constants.KatConfigKey, config)
+	c.Context = newContext
 	return nil
 }
