@@ -32,6 +32,15 @@ func NewRunner(ctx context.Context, db *database.DB) (Runner, error) {
 }
 
 func (r *runner) Run(ctx context.Context, options Options) error {
+	// create migration log table if it doesn't exist
+	migrationQuery := sqlf.Sprintf(migrationLogsStmt, options.MigrationInfo.TableName)
+	fmt.Println(migrationQuery.Query(sqlf.PostgresBindVar), len(migrationQuery.Args()), migrationQuery.Args())
+	err := r.db.Exec(ctx, migrationQuery)
+	if err != nil {
+		return errors.Wrap(err, "initializing migration table")
+	}
+
+	return nil
 	for _, definition := range options.Definitions {
 		fmt.Printf("%s%s%s ", output.StyleInfo, definition.Name, output.StyleReset)
 
@@ -45,7 +54,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			migrationKind = "down"
 		}
 
-		err := r.db.Exec(ctx, q, q.Args()...)
+		err := r.db.Exec(ctx, q)
 		if err != nil {
 			return errors.Wrapf(err, "executing %s query", migrationKind)
 		}
@@ -56,3 +65,12 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	return nil
 }
+
+const migrationLogsStmt = `CREATE TABLE IF NOT EXISTS %s (
+	id SERIAL PRIMARY KEY,
+	name TEXT NOT NULL,
+	timestamp INTEGER NOT NULL,
+	error TEXT,
+	success BOOLEAN NOT NULL,
+	started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+)`

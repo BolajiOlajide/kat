@@ -39,7 +39,8 @@ func Up(c *cli.Context, cfg types.Config) error {
 	}
 
 	return r.Run(ctx, runner.Options{
-		Operation:   types.UpMigrationOperation,
-		Definitions: definitions,
+		Operation:     types.UpMigrationOperation,
+		Definitions:   definitions,
+		MigrationInfo: cfg.Migration,
 	})
 }

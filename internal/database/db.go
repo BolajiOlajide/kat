@@ -11,7 +11,8 @@ import (
 )
 
 type DB struct {
-	db *sql.DB
+	db      *sql.DB
+	bindVar sqlf.BindVar
 }
 
 func (d *DB) Close() error {
@@ -22,9 +23,17 @@ func (d *DB) Ping(ctx context.Context) error {
 	return d.db.PingContext(ctx)
 }
 
-func (d *DB) Exec(ctx context.Context, query *sqlf.Query, args ...any) error {
-	_, err := d.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), args...)
+func (d *DB) Exec(ctx context.Context, query *sqlf.Query) error {
+	_, err := d.db.ExecContext(ctx, query.Query(d.bindVar), query.Args()...)
 	return err
+}
+
+func (d *DB) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
+	return d.db.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
+}
+
+func (d *DB) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
+	return d.db.QueryContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
 
 // NewDB returns a new instance of the database
@@ -34,5 +43,5 @@ func NewDB(url string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{db: db}, nil
+	return &DB{db: db, bindVar: sqlf.PostgresBindVar}, nil
 }
