@@ -1,0 +1,13 @@
+on: [push, pull_request]
+name: CI
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: go
+      uses: actions/setup-go@v4
+      with:
+		go-version-file: 'go.mod'
+    - name: test
+      run: go test ./...
