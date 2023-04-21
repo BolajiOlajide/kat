@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	// Import the postgres driver
 
@@ -24,6 +25,7 @@ func (d *DB) Ping(ctx context.Context) error {
 }
 
 func (d *DB) Exec(ctx context.Context, query *sqlf.Query) error {
+	fmt.Println("args", query.Args())
 	_, err := d.db.ExecContext(ctx, query.Query(d.bindVar), query.Args()...)
 	return err
 }

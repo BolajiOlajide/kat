@@ -8,6 +8,6 @@ jobs:
     - name: go
       uses: actions/setup-go@v4
       with:
-		go-version-file: 'go.mod'
+        go-version-file: 'go.mod'
     - name: test
       run: go test ./...
