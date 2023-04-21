@@ -6,8 +6,8 @@ import (
 
 	// Import the postgres driver
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
-	_ "github.com/lib/pq"
 )
 
 type DB struct {
@@ -38,7 +38,7 @@ func (d *DB) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 
 // NewDB returns a new instance of the database
 func NewDB(url string) (*DB, error) {
-	db, err := sql.Open("postgres", url)
+	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
