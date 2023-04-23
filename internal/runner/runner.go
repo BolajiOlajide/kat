@@ -16,13 +16,13 @@ type Runner interface {
 }
 
 type runner struct {
-	db *database.DB
+	db database.DB
 }
 
 var _ Runner = (*runner)(nil)
 
 // NewRunner returns a new instance of the runner.
-func NewRunner(ctx context.Context, db *database.DB) (Runner, error) {
+func NewRunner(ctx context.Context, db database.DB) (Runner, error) {
 	if err := db.Ping(ctx); err != nil {
 		return nil, err
 	}
@@ -31,9 +31,10 @@ func NewRunner(ctx context.Context, db *database.DB) (Runner, error) {
 
 func (r *runner) Run(ctx context.Context, options Options) error {
 	// create migration log table if it doesn't exist
-	migrationQuery := sqlf.Sprintf(createMigrationTableStmt, options.MigrationInfo.TableName)
-	fmt.Println(options.MigrationInfo.TableName, migrationQuery.Query(sqlf.PostgresBindVar), len(migrationQuery.Args()), migrationQuery.Args())
+	migrationQuery := sqlf.Sprintf(createMigrationTableStmt, options.MigrationInfo.TableName, options.MigrationInfo.TableName)
+	fmt.Println(migrationQuery.Query(sqlf.PostgresBindVar), len(migrationQuery.Args()), migrationQuery.Args())
 	err := r.db.Exec(ctx, migrationQuery)
+	// err := r.db.Exec(ctx, migrationQuery)
 	if err != nil {
 		return errors.Wrap(err, "initializing migration table")
 	}
@@ -62,12 +63,3 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	return nil
 }
-
-const createMigrationTableStmt = `CREATE TABLE IF NOT EXISTS %s (
-	id SERIAL PRIMARY KEY,
-	name TEXT NOT NULL,
-	timestamp INTEGER NOT NULL,
-	error TEXT,
-	success BOOLEAN NOT NULL,
-	started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-)`
