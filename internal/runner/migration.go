@@ -9,6 +9,6 @@ const createMigrationTableStmt = `CREATE TABLE IF NOT EXISTS %s (
 	started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 )
 
-CREATE INDEX idx_migration_logs_timestamp_name ON %s (timestamp, name)`
+CREATE INDEX IF NOT EXISTS idx_migration_logs_timestamp_name ON %s (timestamp, name)`
 
 const dropMigrationTableStmt = `DROP TABLE IF EXISTS %s`
