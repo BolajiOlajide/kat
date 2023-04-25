@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/database"
@@ -27,7 +28,7 @@ func Up(c *cli.Context, cfg types.Config) error {
 		return err
 	}
 
-	db, err := database.NewDB(dbConn)
+	db, err := database.NewDB(dbConn, sqlf.PostgresBindVar)
 	if err != nil {
 		return err
 	}

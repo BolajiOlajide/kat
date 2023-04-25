@@ -5,18 +5,15 @@ import (
 	"database/sql"
 
 	// Import the postgres driver
-
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
 )
 
+var _ DB = &database{}
+
 type database struct {
 	db      *sql.DB
 	bindVar sqlf.BindVar
-}
-
-func (d *database) Close() error {
-	return d.db.Close()
 }
 
 func (d *database) Ping(ctx context.Context) error {
@@ -36,12 +33,16 @@ func (d *database) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, err
 	return d.db.QueryContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
 
+func (d *database) Close() error {
+	return d.db.Close()
+}
+
 // NewDB returns a new instance of the database
-func NewDB(url string) (DB, error) {
+func NewDB(url string, bindvar sqlf.BindVar) (DB, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
 
-	return &database{db: db, bindVar: sqlf.PostgresBindVar}, nil
+	return &database{db: db, bindVar: bindvar}, nil
 }
