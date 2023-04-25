@@ -43,7 +43,7 @@ func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
 	}
 
 	// We sort the definitions by their ID so that they are executed in the correct order.
-	sort.Slice(definitions, func(i, j int) bool { return definitions[i].ID < definitions[j].ID })
+	sort.Slice(definitions, func(i, j int) bool { return definitions[i].Timestamp < definitions[j].Timestamp })
 	return definitions, nil
 }
 
@@ -73,7 +73,7 @@ func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
 func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.Definition, error) {
 	var payload struct {
 		Name      string `yaml:"name"`
-		Timestamp int    `yaml:"timestamp"`
+		Timestamp int64  `yaml:"timestamp"`
 	}
 	if err := yaml.Unmarshal(metadata, &payload); err != nil {
 		return types.Definition{}, err
@@ -84,7 +84,7 @@ func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.
 	definition.UpQuery = upQuery
 	definition.DownQuery = downQuery
 	definition.Name = payload.Name
-	definition.ID = payload.Timestamp
+	definition.Timestamp = payload.Timestamp
 
 	return definition, nil
 }

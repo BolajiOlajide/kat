@@ -37,6 +37,26 @@ func (d *database) Close() error {
 	return d.db.Close()
 }
 
+func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
+	tx, err := d.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	return f(&databaseTx{tx: tx, bindVar: d.bindVar})
+}
+
 // NewDB returns a new instance of the database
 func NewDB(url string, bindvar sqlf.BindVar) (DB, error) {
 	db, err := sql.Open("pgx", url)

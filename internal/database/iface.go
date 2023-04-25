@@ -13,4 +13,17 @@ type DB interface {
 	Exec(context.Context, *sqlf.Query) error
 	QueryRow(context.Context, *sqlf.Query) *sql.Row
 	Query(context.Context, *sqlf.Query) (*sql.Rows, error)
+
+	WithTransact(ctx context.Context, f func(Tx) error) error
+}
+
+type Scanner interface {
+	Scan(dest ...any) error
+}
+
+type Tx interface {
+	DB
+
+	Commit() error
+	Rollback() error
 }
