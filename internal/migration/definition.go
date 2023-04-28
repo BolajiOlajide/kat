@@ -5,12 +5,10 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"sort"
 
 	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"gopkg.in/yaml.v3"
 )
 
 func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
@@ -27,8 +25,9 @@ func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
 		return nil, err
 	}
 
-	definitions := make([]types.Definition, 0, len(migrations))
-	for _, file := range migrations {
+	definitions := make([]types.Definition, len(migrations))
+	for index, file := range migrations {
+		fmt.Println(file.Name(), "<===")
 		if !file.IsDir() {
 			// if this is not a directory, skip it
 			continue
@@ -39,18 +38,15 @@ func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
 			return nil, errors.Wrap(err, "malformed migration definition")
 		}
 
-		definitions = append(definitions, definition)
+		definitions[index] = definition
 	}
 
-	// We sort the definitions by their ID so that they are executed in the correct order.
-	sort.Slice(definitions, func(i, j int) bool { return definitions[i].Timestamp < definitions[j].Timestamp })
 	return definitions, nil
 }
 
 func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
 	upFilename := fmt.Sprintf("%s/up.sql", filename)
 	downFilename := fmt.Sprintf("%s/down.sql", filename)
-	metadataFilename := fmt.Sprintf("%s/metadata.yaml", filename)
 
 	upQuery, err := readQueryFromFile(fs, upFilename)
 	if err != nil {
@@ -62,29 +58,15 @@ func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
 		return types.Definition{}, err
 	}
 
-	metadata, err := readFile(fs, metadataFilename)
-	if err != nil {
-		return types.Definition{}, err
-	}
-
-	return populateDefinition(upQuery, downQuery, metadata)
+	return populateDefinition(upQuery, downQuery, filename)
 }
 
-func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.Definition, error) {
-	var payload struct {
-		Name      string `yaml:"name"`
-		Timestamp int64  `yaml:"timestamp"`
+func populateDefinition(upQuery, downQuery *sqlf.Query, name string) (types.Definition, error) {
+	var definition = types.Definition{
+		UpQuery:   upQuery,
+		DownQuery: downQuery,
+		Name:      name,
 	}
-	if err := yaml.Unmarshal(metadata, &payload); err != nil {
-		return types.Definition{}, err
-	}
-
-	var definition types.Definition
-
-	definition.UpQuery = upQuery
-	definition.DownQuery = downQuery
-	definition.Name = payload.Name
-	definition.Timestamp = payload.Timestamp
 
 	return definition, nil
 }

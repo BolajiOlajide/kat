@@ -56,11 +56,12 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	var noOfMigrations int
 	for _, definition := range options.Definitions {
+		fmt.Println("executing", definition.Name)
 		err := r.db.WithTransact(ctx, func(tx database.Tx) (err error) {
 			query := sqlf.Sprintf(
 				selectLogQuery,
 				sqlf.Join(mcols, ", "),
-				sqlf.Sprintf("name = %s", definition.Timestamp, definition.Name),
+				sqlf.Sprintf("name = %s", definition.Name),
 			)
 			log, err := scanMigrationLog(tx.QueryRow(ctx, query))
 			if err != nil && err != sql.ErrNoRows {
@@ -96,7 +97,6 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				sqlf.Join(
 					[]*sqlf.Query{
 						sqlf.Sprintf(definition.Name),
-						sqlf.Sprintf("%s", definition.Timestamp),
 						sqlf.Sprintf(time.Now().String()),
 					},
 					", ",
@@ -129,8 +129,7 @@ func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {
 	if err := sc.Scan(
 		&mlog.ID,
 		&mlog.Name,
-		&mlog.Timestamp,
-		&mlog.CreatedAt,
+		&mlog.MigrationTime,
 	); err != nil {
 		return nil, err
 	}

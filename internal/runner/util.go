@@ -11,14 +11,12 @@ import (
 var migrationLogColumns = []string{
 	"id",
 	"name",
-	"timestamp",
-	"created_at",
+	"migration_time",
 }
 
 var migrationLogInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
-	sqlf.Sprintf("timestamp"),
-	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("migration_time"),
 }
 
 func computeMigrationLogColumns(tableName string) []*sqlf.Query {

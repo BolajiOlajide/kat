@@ -6,7 +6,6 @@ import "github.com/keegancsmith/sqlf"
 // It contains what gets executed by the migration operation.
 type Definition struct {
 	Name          string
-	Timestamp     int64
 	UpQuery       *sqlf.Query
 	DownQuery     *sqlf.Query
 	IndexMetadata *IndexMetadata
