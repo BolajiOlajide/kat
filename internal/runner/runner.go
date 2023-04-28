@@ -60,7 +60,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			query := sqlf.Sprintf(
 				selectLogQuery,
 				sqlf.Join(mcols, ", "),
-				sqlf.Sprintf("timestamp = %s AND name = %s", definition.Timestamp, definition.Name),
+				sqlf.Sprintf("name = %s", definition.Timestamp, definition.Name),
 			)
 			log, err := scanMigrationLog(tx.QueryRow(ctx, query))
 			if err != nil && err != sql.ErrNoRows {
