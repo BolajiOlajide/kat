@@ -4,7 +4,6 @@ package types
 type Migration struct {
 	Up        string
 	Down      string
-	Metadata  string
 	Timestamp int64
 }
 
