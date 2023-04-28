@@ -8,7 +8,6 @@ import "text/template"
 var createMigrationTableTmpl = template.Must(template.New("createMigrationsLogSQL").Parse(`CREATE TABLE IF NOT EXISTS {{ .TableName }} (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    timestamp BIGINT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
