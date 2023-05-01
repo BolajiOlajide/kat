@@ -14,17 +14,7 @@ func queryFromString(query string) *sqlf.Query {
 	return sqlf.Sprintf(strings.ReplaceAll(canonicalizeQuery(query), "%", "%%"))
 }
 
-// CanonicalizeQuery removes old cruft from historic definitions to make them conform to
-// the new standards. This includes YAML metadata frontmatter as well as explicit tranaction
-// blocks around golang-migrate-era migration definitions.
 func canonicalizeQuery(query string) string {
-	// Strip out embedded yaml frontmatter (existed temporarily)
-	parts := strings.SplitN(query, "-- +++\n", 3)
-	if len(parts) == 3 {
-		query = parts[2]
-	}
-
-	// Strip outermost transactions
 	return strings.TrimSpace(
 		strings.TrimSuffix(
 			strings.TrimPrefix(

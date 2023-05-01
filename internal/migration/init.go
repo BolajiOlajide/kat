@@ -12,14 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var defaultConfig = types.Config{
-	Migration: types.MigrationInfo{
-		TableName: "migrations",
-		Directory: "migrations",
-	},
-	Database: types.DatabaseInfo{},
-}
-
 // Init initliazes a project for use with kat.
 func Init(c *cli.Context) (err error) {
 	defer func() {
