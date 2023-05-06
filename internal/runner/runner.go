@@ -56,7 +56,6 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	var noOfMigrations int
 	for _, definition := range options.Definitions {
-		fmt.Println("executing", definition.Name)
 		err := r.db.WithTransact(ctx, func(tx database.Tx) (err error) {
 			query := sqlf.Sprintf(
 				selectLogQuery,
@@ -91,22 +90,20 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				return errors.Wrapf(err, "executing %s query", migrationKind)
 			}
 
+			t := time.Now()
+			migrationTime := t.Format("2006-01-02 15:04:05.999-07")
 			insertQuery := sqlf.Sprintf(
 				insertLogQuery,
 				sqlf.Join(migrationLogInsertColumns, ", "),
 				sqlf.Join(
 					[]*sqlf.Query{
-						sqlf.Sprintf(definition.Name),
-						sqlf.Sprintf(time.Now().String()),
+						sqlf.Sprintf("%s", definition.Name),
+						sqlf.Sprintf("%s", migrationTime),
 					},
 					", ",
 				),
 			)
-			fmt.Println(insertQuery.Query(sqlf.PostgresBindVar), "<===", insertQuery.Args())
-			err = tx.Exec(
-				ctx,
-				insertQuery,
-			)
+			err = tx.Exec(ctx, insertQuery)
 			if err != nil {
 				return errors.Wrap(err, "inserting log entry")
 			}
@@ -116,7 +113,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			return nil
 		})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "executing %s", definition.Name)
 		}
 	}
 
