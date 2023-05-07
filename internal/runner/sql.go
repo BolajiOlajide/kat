@@ -13,7 +13,7 @@ var createMigrationTableTmpl = template.Must(template.New("createMigrationsLogSQ
 
 var dropMigrationTableStmt = template.Must(template.New("dropMigrationsLogSQL").Parse(`DROP TABLE IF EXISTS {{ .TableName }}`))
 
-var selectMigrationTmpl = template.Must(template.New("selectMigrationLogTemplate").Parse(`SELECT %s FROM {{ .TableName }} WHERE %s`))
+var selectMigrationsTmpl = template.Must(template.New("selectMigrationLogTemplate").Parse(`SELECT %s FROM {{ .TableName }}`))
 
 var insertMigrationTmpl = template.Must(
 	template.

@@ -54,21 +54,30 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		return errors.Wrap(err, "compute insert log query")
 	}
 
+	query := sqlf.Sprintf(
+		selectLogQuery,
+		sqlf.Join(mcols, ", "),
+	)
+	rows, err := r.db.Query(ctx, query)
+	if err != nil && err != sql.ErrNoRows {
+		return errors.Wrap(err, "scanning log")
+	}
+	defer rows.Close()
+
+	var logsMap = map[string]*types.MigrationLog{}
+	for rows.Next() {
+		log, err := scanMigrationLog(rows)
+		if err != nil {
+			return err
+		}
+		logsMap[log.Name] = log
+	}
+
 	var noOfMigrations int
 	for _, definition := range options.Definitions {
 		err := r.db.WithTransact(ctx, func(tx database.Tx) (err error) {
-			query := sqlf.Sprintf(
-				selectLogQuery,
-				sqlf.Join(mcols, ", "),
-				sqlf.Sprintf("name = %s", definition.Name),
-			)
-			log, err := scanMigrationLog(tx.QueryRow(ctx, query))
-			if err != nil && err != sql.ErrNoRows {
-				return errors.Wrap(err, "scanning log")
-			}
-
 			// this means this migration has already been executed
-			if log != nil {
+			if logsMap[definition.Name] != nil {
 				return nil
 			}
 
@@ -117,7 +126,11 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		}
 	}
 
-	fmt.Println(noOfMigrations)
+	if noOfMigrations > 0 {
+		fmt.Printf("%sSuccessfully executed %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+	} else {
+		fmt.Printf("%sNo new migrations%s\n", output.StyleInfo, output.StyleReset)
+	}
 	return nil
 }
 

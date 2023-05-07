@@ -32,7 +32,7 @@ func computeCreateMigrationLogQuery(tableName string) (string, error) {
 }
 
 func computeSelectMigrationLogQuery(tableName string) (string, error) {
-	return computeSQLQueryFromTemplate(tableName, selectMigrationTmpl)
+	return computeSQLQueryFromTemplate(tableName, selectMigrationsTmpl)
 }
 
 func computeInsertMigrationLogQuery(tableName string) (string, error) {
