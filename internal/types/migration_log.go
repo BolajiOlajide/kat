@@ -6,5 +6,5 @@ type MigrationLog struct {
 	ID            int
 	Name          string
 	MigrationTime time.Time
-	Duration      float32
+	Duration      time.Duration
 }
