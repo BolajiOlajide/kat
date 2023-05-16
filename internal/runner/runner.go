@@ -95,8 +95,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 
 			start := time.Now()
-			err = r.db.Exec(ctx, q)
-			if err != nil {
+			if err := r.db.Exec(ctx, q); err != nil {
 				return errors.Wrapf(err, "executing %s query", migrationKind)
 			}
 			duration := time.Since(start)
