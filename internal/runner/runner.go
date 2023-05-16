@@ -94,13 +94,14 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				migrationKind = "down"
 			}
 
+			start := time.Now()
 			err = r.db.Exec(ctx, q)
 			if err != nil {
 				return errors.Wrapf(err, "executing %s query", migrationKind)
 			}
+			duration := time.Since(start)
 
-			t := time.Now()
-			migrationTime := t.Format("2006-01-02 15:04:05.999-07")
+			migrationTime := start.Format("2006-01-02 15:04:05.999-07")
 			insertQuery := sqlf.Sprintf(
 				insertLogQuery,
 				sqlf.Join(migrationLogInsertColumns, ", "),
@@ -108,6 +109,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 					[]*sqlf.Query{
 						sqlf.Sprintf("%s", definition.Name),
 						sqlf.Sprintf("%s", migrationTime),
+						sqlf.Sprintf("%d * interval '1 microsecond'", duration),
 					},
 					", ",
 				),
@@ -140,6 +142,7 @@ func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {
 		&mlog.ID,
 		&mlog.Name,
 		&mlog.MigrationTime,
+		&mlog.Duration,
 	); err != nil {
 		return nil, err
 	}

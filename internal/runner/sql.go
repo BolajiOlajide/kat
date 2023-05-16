@@ -8,7 +8,8 @@ import "text/template"
 var createMigrationTableTmpl = template.Must(template.New("createMigrationsLogSQL").Parse(`CREATE TABLE IF NOT EXISTS {{ .TableName }} (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    migration_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    migration_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    duration INTERVAL NOT NULL
 );`))
 
 var dropMigrationTableStmt = template.Must(template.New("dropMigrationsLogSQL").Parse(`DROP TABLE IF EXISTS {{ .TableName }}`))

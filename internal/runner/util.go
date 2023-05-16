@@ -12,11 +12,13 @@ var migrationLogColumns = []string{
 	"id",
 	"name",
 	"migration_time",
+	"duration",
 }
 
 var migrationLogInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("migration_time"),
+	sqlf.Sprintf("duration"),
 }
 
 func computeMigrationLogColumns(tableName string) []*sqlf.Query {
