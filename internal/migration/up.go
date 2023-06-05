@@ -11,8 +11,6 @@ import (
 
 // Up is the command that runs the up migration operation.
 func Up(c *cli.Context, cfg types.Config) error {
-	ctx := c.Context
-
 	fs, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -34,12 +32,12 @@ func Up(c *cli.Context, cfg types.Config) error {
 	}
 	defer db.Close()
 
-	r, err := runner.NewRunner(ctx, db)
+	r, err := runner.NewRunner(c.Context, db)
 	if err != nil {
 		return err
 	}
 
-	return r.Run(ctx, runner.Options{
+	return r.Run(c.Context, runner.Options{
 		Operation:     types.UpMigrationOperation,
 		Definitions:   definitions,
 		MigrationInfo: cfg.Migration,
