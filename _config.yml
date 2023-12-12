@@ -40,5 +40,5 @@ sass:
 # Jekyll settings
 layouts_dir: ./doc/_layouts
 includes_dir: ./doc/_includes
-exclude: [ 'README.md', 'CHANGELOG.md' ]
+exclude: [ 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE' ]
 permalink: /:title/
