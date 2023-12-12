@@ -1,0 +1,44 @@
+# Theme settings
+doks:
+    baseurl: kat.bolaji.de
+    # Available themes: blue (default), green, purple, red and yellow
+    color_theme: yellow
+    header:
+        logo:
+            text: Kat
+            image:
+        nav:
+            - item_name: Item 1
+              item_url: '#'
+            - item_name: Item 2
+              item_url: '#'
+            - item_name: Item 3
+              item_url: '#'
+    footer:
+        content:
+            logo:
+                text: Kat
+                image:
+            copyright: Copyright &copy; 2023 - Present. - Kat <br>All rights reserved.
+        social_list:
+            - network_name: github
+              profile_url: 'https://github.com/BolajiOlajide'
+            - network_name: twitter
+              profile_url: 'https://x.com/Bolaji___'
+            - network_name: youtube
+              profile_url: 'https://www.youtube.com/channel/UCynulnc9t2YbpMENu0npmMA'
+    google_analytics:
+        tracking_code: "G-5XYGPTW4LV" # Add your Google Analytics tracking code to activate Google Analytics
+    comments:
+        disqus_forum_shortname: ""
+
+# SASS settings
+sass:
+    sass_dir: ./doc/_sass
+    style: compressed
+
+# Jekyll settings
+layouts_dir: ./doc/_layouts
+includes_dir: ./doc/_includes
+exclude: [ 'README.md', 'CHANGELOG.md' ]
+permalink: /:title/
