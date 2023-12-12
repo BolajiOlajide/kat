@@ -2,9 +2,15 @@
 # Page settings
 layout: homepage
 keywords:
+    - kat
+    - postgres
+    - database
+    - cli
+    - migrations
+    - sql
 
 # Hero section
-title: Project name
+title: Kat
 description: Project description
 buttons:
     - content: Button
