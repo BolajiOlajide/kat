@@ -5,9 +5,9 @@ keywords: kat,postgres,database,cli,migrations,sql
 title: Kat
 description: Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
 buttons:
-    # - content: Download now
-    #   url: '#'
-    #   external_url: false
+    - content: Get Started
+      url: '/install'
+      external_url: false
     - icon: github
       content: View on GitHub
       url: 'https://github.com/BolajiOlajide/kat'
@@ -16,24 +16,30 @@ buttons:
 # Author box
 author:
     title: About Author
-    title_url: '#'
+    title_url: 'https://bolaji.de'
     external_url: true
-    description: Author description
+    description: |
+        An avid technologist and problem-solver at heart, Bolaji blends a rich background in database management with a personal mission to make data migration as smooth and user-friendly as possible. Their creation, this database migrator tool, is a reflection of that dedication and a gift to fellow data enthusiasts.
 
 # Grid navigation
 grid_navigation:
     - title: Installation
       excerpt: How to install
-      cta: Read more
+      cta: Learn more
       url: '/install'
 
     - title: Configuration
       excerpt: Configure Kat in a new project.
-      cta: Read more
+      cta: Learn more
       url: '/config'
 
     - title: Migration
       excerpt: Performing a migration (up or down)
-      cta: Read more
+      cta: Learn more
       url: '/migration'
+
+    - title: Contributing
+      excerpt: Contribute to the development of Kat.
+      cta: Learn more
+      url: '/contributing'
 ---
