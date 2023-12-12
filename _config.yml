@@ -1,6 +1,6 @@
 # Theme settings
 doks:
-    baseurl: kat.bolaji.de
+    baseurl: ""
     # Available themes: blue (default), green, purple, red and yellow
     color_theme: yellow
     header:
@@ -19,7 +19,7 @@ doks:
             logo:
                 text: Kat
                 image:
-            copyright: Copyright &copy; 2023 - Present. - Kat <br>All rights reserved.
+            copyright: Copyright &copy; 2023 - Present. <br>All rights reserved.
         social_list:
             - network_name: github
               profile_url: 'https://github.com/BolajiOlajide'
@@ -28,7 +28,8 @@ doks:
             - network_name: youtube
               profile_url: 'https://www.youtube.com/channel/UCynulnc9t2YbpMENu0npmMA'
     google_analytics:
-        tracking_code: "G-5XYGPTW4LV" # Add your Google Analytics tracking code to activate Google Analytics
+        # Add your Google Analytics tracking code to activate Google Analytics
+        tracking_code: 'G-5XYGPTW4LV'
     comments:
         disqus_forum_shortname: ""
 
@@ -40,5 +41,5 @@ sass:
 # Jekyll settings
 layouts_dir: ./doc/_layouts
 includes_dir: ./doc/_includes
-exclude: [ 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE' ]
+exclude: [ 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE', 'install.sh', 'doks' ]
 permalink: /:title/

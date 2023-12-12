@@ -1,24 +1,16 @@
 ---
 # Page settings
 layout: homepage
-keywords:
-    - kat
-    - postgres
-    - database
-    - cli
-    - migrations
-    - sql
-
-# Hero section
+keywords: kat,postgres,database,cli,migrations,sql
 title: Kat
-description: Project description
+description: Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
 buttons:
-    - content: Button
-      url: '#'
-      external_url: false
+    # - content: Download now
+    #   url: '#'
+    #   external_url: false
     - icon: github
-      content: Button with icon
-      url: '#'
+      content: View on GitHub
+      url: 'https://github.com/BolajiOlajide/kat'
       external_url: true
 
 # Author box
@@ -30,8 +22,18 @@ author:
 
 # Grid navigation
 grid_navigation:
-    - title: Grid navigation
-      excerpt: Section description
+    - title: Installation
+      excerpt: How to install
       cta: Read more
-      url: '#'
+      url: '/install'
+
+    - title: Configuration
+      excerpt: Configure Kat in a new project.
+      cta: Read more
+      url: '/config'
+
+    - title: Migration
+      excerpt: Performing a migration (up or down)
+      cta: Read more
+      url: '/migration'
 ---
