@@ -21,7 +21,7 @@ doks:
             logo:
                 text: Kat
                 image:
-            copyright: Copyright &copy; 2023 - Present. <br>All rights reserved.
+            copyright: Copyright &copy; 2023 - Present. All rights reserved.
         social_list:
             - network_name: github
               profile_url: 'https://github.com/BolajiOlajide'
@@ -43,5 +43,5 @@ sass:
 # Jekyll settings
 layouts_dir: ./doc/_layouts
 includes_dir: ./doc/_includes
-exclude: [ 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE', 'install.sh', 'doks' ]
+exclude: [ 'kat.go', 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE', 'install.sh', 'doks' ]
 permalink: /:title/

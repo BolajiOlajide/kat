@@ -4,6 +4,7 @@ layout: homepage
 keywords: kat,postgres,database,cli,migrations,sql
 title: Kat
 description: Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
+permalink: /
 buttons:
     - content: Get Started
       url: '/install'

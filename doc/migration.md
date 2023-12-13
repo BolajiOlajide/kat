@@ -2,19 +2,13 @@
 # Page settings
 layout: default
 keywords: kat,postgres,database,cli,migrations,sql
-title: Kat - Installation
+title: Migration
 description: |
     Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
 comments: false
+permalink: /migration/
 page_nav:
-    next:
+    prev:
         content: Configuration
         url: '/config'
 ---
-
-# Installation
-
-There are multiple ways to install Kat.
-
-- Directly from Source
-- Via Curl
