@@ -45,6 +45,7 @@ var (
 	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
 	StyleSuccess    = Fg256Color(2)
 	StyleSuggestion = Fg256Color(244)
+	StyleHeading    = CombineStyles(StyleBold, Fg256Color(6))
 
 	StyleBold      = &style{"\033[1m"}
 	StyleItalic    = &style{"\033[3m"}
