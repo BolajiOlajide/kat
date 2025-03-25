@@ -3,11 +3,10 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 
-	cockroachErrors "github.com/cockroachdb/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 )
 
@@ -35,7 +34,7 @@ func (d *databaseTx) ValidateQuery(ctx context.Context, query *sqlf.Query) error
 	
 	// Skip empty queries
 	if strings.TrimSpace(sqlQuery) == "" {
-		return cockroachErrors.New("empty SQL query")
+		return errors.New("empty SQL query")
 	}
 	
 	// For non-SELECT queries, we need to wrap them in EXPLAIN
@@ -50,7 +49,7 @@ func (d *databaseTx) ValidateQuery(ctx context.Context, query *sqlf.Query) error
 	// Execute the EXPLAIN query to verify syntax
 	_, err := d.tx.ExecContext(ctx, explainQuery, query.Args()...)
 	if err != nil {
-		return cockroachErrors.Wrap(err, "SQL validation failed")
+		return errors.Wrap(err, "SQL validation failed")
 	}
 	
 	return nil
