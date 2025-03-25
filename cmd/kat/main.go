@@ -101,6 +101,21 @@ var kat = &cli.App{
 			Before:      config.ParseConfig,
 			Flags:       []cli.Flag{configFlag},
 		},
+		{
+			Name:        "down",
+			Usage:       "Rollback migrations",
+			Description: "Rollback the most recent migration or specify a count with --count flag",
+			Action:      down,
+			Before:      config.ParseConfig,
+			Flags: append([]cli.Flag{
+				&cli.IntFlag{
+					Name:    "count",
+					Aliases: []string{"n"},
+					Usage:   "number of migrations to roll back (default: 1)",
+					Value:   1,
+				},
+			}, []cli.Flag{configFlag}...),
+		},
 	},
 	UseShortOptionHandling: true,
 	HideVersion:            true,

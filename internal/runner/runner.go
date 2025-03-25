@@ -54,6 +54,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		return errors.Wrap(err, "compute insert log query")
 	}
 
+	// Get existing migration logs
 	query := sqlf.Sprintf(
 		selectLogQuery,
 		sqlf.Join(mcols, ", "),
@@ -76,9 +77,16 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	var noOfMigrations int
 	for _, definition := range options.Definitions {
 		err := r.db.WithTransact(ctx, func(tx database.Tx) (err error) {
-			// this means this migration has already been executed
-			if logsMap[definition.Name] != nil {
-				return nil
+			if options.Operation == types.UpMigrationOperation {
+				// Skip migrations that have already been executed
+				if logsMap[definition.Name] != nil {
+					return nil
+				}
+			} else if options.Operation == types.DownMigrationOperation {
+				// Skip migrations that haven't been executed
+				if logsMap[definition.Name] == nil {
+					return nil
+				}
 			}
 
 			noOfMigrations++
@@ -100,22 +108,37 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 			duration := time.Since(start)
 
-			migrationTime := start.Format("2006-01-02 15:04:05.999-07")
-			insertQuery := sqlf.Sprintf(
-				insertLogQuery,
-				sqlf.Join(migrationLogInsertColumns, ", "),
-				sqlf.Join(
-					[]*sqlf.Query{
-						sqlf.Sprintf("%s", definition.Name),
-						sqlf.Sprintf("%s", migrationTime),
-						sqlf.Sprintf("%d * interval '1 microsecond'", duration),
-					},
-					", ",
-				),
-			)
-			err = tx.Exec(ctx, insertQuery)
-			if err != nil {
-				return errors.Wrap(err, "inserting log entry")
+			// For UP operations, insert a log entry
+			// For DOWN operations, remove the log entry
+			if options.Operation == types.UpMigrationOperation {
+				migrationTime := start.Format("2006-01-02 15:04:05.999-07")
+				insertQuery := sqlf.Sprintf(
+					insertLogQuery,
+					sqlf.Join(migrationLogInsertColumns, ", "),
+					sqlf.Join(
+						[]*sqlf.Query{
+							sqlf.Sprintf("%s", definition.Name),
+							sqlf.Sprintf("%s", migrationTime),
+							sqlf.Sprintf("%d * interval '1 microsecond'", duration),
+						},
+						", ",
+					),
+				)
+				err = tx.Exec(ctx, insertQuery)
+				if err != nil {
+					return errors.Wrap(err, "inserting log entry")
+				}
+			} else {
+				// Delete the migration log entry for DOWN operations
+				deleteQuery := sqlf.Sprintf(
+					"DELETE FROM %s WHERE name = %s",
+					sqlf.Sprintf("%s", options.MigrationInfo.TableName),
+					definition.Name,
+				)
+				err = tx.Exec(ctx, deleteQuery)
+				if err != nil {
+					return errors.Wrap(err, "deleting log entry")
+				}
 			}
 
 			// add a new line incase there's an error
@@ -128,9 +151,17 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	}
 
 	if noOfMigrations > 0 {
-		fmt.Printf("%sSuccessfully executed %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+		if options.Operation == types.UpMigrationOperation {
+			fmt.Printf("%sSuccessfully applied %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+		} else {
+			fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+		}
 	} else {
-		fmt.Printf("%sNo new migrations%s\n", output.StyleInfo, output.StyleReset)
+		if options.Operation == types.UpMigrationOperation {
+			fmt.Printf("%sNo new migrations to apply%s\n", output.StyleInfo, output.StyleReset)
+		} else {
+			fmt.Printf("%sNo migrations to roll back%s\n", output.StyleInfo, output.StyleReset)
+		}
 	}
 	return nil
 }

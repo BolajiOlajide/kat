@@ -36,6 +36,14 @@ func up(c *cli.Context) error {
 	return migration.Up(c, cfg)
 }
 
+func down(c *cli.Context) error {
+	cfg, err := config.GetKatConfigFromCtx(c)
+	if err != nil {
+		return err
+	}
+	return migration.Down(c, cfg)
+}
+
 func initialize(c *cli.Context) error {
 	return migration.Init(c)
 }
