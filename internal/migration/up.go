@@ -10,7 +10,7 @@ import (
 )
 
 // Up is the command that runs the up migration operation.
-func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
+func Up(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) error {
 	fs, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -38,9 +38,10 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	}
 
 	return r.Run(c.Context, runner.Options{
-		Operation:     types.UpMigrationOperation,
-		Definitions:   definitions,
-		MigrationInfo: cfg.Migration,
-		DryRun:        dryRun,
+		Operation:      types.UpMigrationOperation,
+		Definitions:    definitions,
+		MigrationInfo:  cfg.Migration,
+		DryRun:         dryRun,
+		SkipValidation: skipValidation,
 	})
 }

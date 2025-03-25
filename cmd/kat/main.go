@@ -41,6 +41,14 @@ var dryRunFlag = &cli.BoolFlag{
 	Value:   false,
 }
 
+var skipValidationFlag = &cli.BoolFlag{
+	Name:    "skip-validation",
+	Usage:   "skip SQL validation before execution (not recommended)",
+	Aliases: []string{"s"},
+	EnvVars: []string{"KAT_SKIP_VALIDATION"},
+	Value:   false,
+}
+
 var kat = &cli.App{
 	Usage:       "Database migration tool",
 	Description: "Database migration tool based on Sourcegraph's internal tooling.",
@@ -107,7 +115,7 @@ var kat = &cli.App{
 			Description: "Apply migrations",
 			Action:      up,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{configFlag, dryRunFlag},
+			Flags:       []cli.Flag{configFlag, dryRunFlag, skipValidationFlag},
 		},
 		{
 			Name:        "down",
@@ -123,6 +131,7 @@ var kat = &cli.App{
 					Value:   1,
 				},
 				dryRunFlag,
+				skipValidationFlag,
 			}, []cli.Flag{configFlag}...),
 		},
 	},

@@ -34,13 +34,19 @@ func up(c *cli.Context) error {
 		return err
 	}
 	
-	// Pass the dry-run flag to the migration
+	// Get command flags
 	dryRun := c.Bool("dry-run")
+	skipValidation := c.Bool("skip-validation")
+	
 	if dryRun {
 		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not applied%s\n", output.StyleInfo, output.StyleReset)
 	}
 	
-	return migration.Up(c, cfg, dryRun)
+	if skipValidation {
+		fmt.Fprintf(os.Stdout, "%sWARNING: SQL validation is disabled. This is not recommended.%s\n", output.StyleInfo, output.StyleReset)
+	}
+	
+	return migration.Up(c, cfg, dryRun, skipValidation)
 }
 
 func down(c *cli.Context) error {
@@ -49,13 +55,19 @@ func down(c *cli.Context) error {
 		return err
 	}
 	
-	// Pass the dry-run flag to the migration
+	// Get command flags
 	dryRun := c.Bool("dry-run")
+	skipValidation := c.Bool("skip-validation")
+	
 	if dryRun {
 		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not rolled back%s\n", output.StyleInfo, output.StyleReset)
 	}
 	
-	return migration.Down(c, cfg, dryRun)
+	if skipValidation {
+		fmt.Fprintf(os.Stdout, "%sWARNING: SQL validation is disabled. This is not recommended.%s\n", output.StyleInfo, output.StyleReset)
+	}
+	
+	return migration.Down(c, cfg, dryRun, skipValidation)
 }
 
 func initialize(c *cli.Context) error {

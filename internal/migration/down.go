@@ -16,7 +16,7 @@ import (
 // Down is the command that rolls back migrations.
 // It rolls back the most recent migration by default,
 // or a specific number of migrations if specified.
-func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
+func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) error {
 	fs, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -63,10 +63,11 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 	}
 
 	return r.Run(c.Context, runner.Options{
-		Operation:     types.DownMigrationOperation,
-		Definitions:   filteredDefinitions,
-		MigrationInfo: cfg.Migration,
-		DryRun:        dryRun,
+		Operation:      types.DownMigrationOperation,
+		Definitions:    filteredDefinitions,
+		MigrationInfo:  cfg.Migration,
+		DryRun:         dryRun,
+		SkipValidation: skipValidation,
 	})
 }
 

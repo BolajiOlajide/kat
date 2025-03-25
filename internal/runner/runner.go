@@ -102,17 +102,27 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				migrationKind = "down"
 			}
 
+			// Validate the SQL syntax first (unless validation is explicitly skipped)
+			if !options.SkipValidation {
+				if err := tx.ValidateQuery(ctx, q); err != nil {
+					return errors.Wrapf(err, "validating %s migration for %s", migrationKind, definition.Name)
+				}
+			}
+
 			// In dry-run mode, validate the SQL but don't execute it
 			if options.DryRun {
-				// We can't validate the SQL without executing it in PostgreSQL
-				// So we just log that it would be executed
-				fmt.Printf("%s[DRY RUN] Would execute %s migration for %s%s\n", 
-					output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
+				if options.SkipValidation {
+					fmt.Printf("%s[DRY RUN] Would execute %s migration for %s (validation skipped)%s\n", 
+						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
+				} else {
+					fmt.Printf("%s[DRY RUN] Validated %s migration for %s%s\n", 
+						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
+				}
 				continue
 			}
 
 			start := time.Now()
-			if err := r.db.Exec(ctx, q); err != nil {
+			if err := tx.Exec(ctx, q); err != nil {
 				return errors.Wrapf(err, "executing %s query", migrationKind)
 			}
 			duration := time.Since(start)
