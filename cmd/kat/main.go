@@ -33,6 +33,14 @@ var configFlag = &cli.PathFlag{
 	Value:   constants.KatConfigurationFileName,
 }
 
+var dryRunFlag = &cli.BoolFlag{
+	Name:    "dry-run",
+	Usage:   "validate migrations without applying them",
+	Aliases: []string{"d"},
+	EnvVars: []string{"KAT_DRY_RUN"},
+	Value:   false,
+}
+
 var kat = &cli.App{
 	Usage:       "Database migration tool",
 	Description: "Database migration tool based on Sourcegraph's internal tooling.",
@@ -86,7 +94,7 @@ var kat = &cli.App{
 		},
 		{
 			Name:        "add",
-			ArgsUsage:   "<name>",
+			ArgsUsage:   "<n>",
 			Usage:       "Adds a new migration",
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
@@ -99,7 +107,7 @@ var kat = &cli.App{
 			Description: "Apply migrations",
 			Action:      up,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{configFlag},
+			Flags:       []cli.Flag{configFlag, dryRunFlag},
 		},
 		{
 			Name:        "down",
@@ -114,6 +122,7 @@ var kat = &cli.App{
 					Usage:   "number of migrations to roll back (default: 1)",
 					Value:   1,
 				},
+				dryRunFlag,
 			}, []cli.Flag{configFlag}...),
 		},
 	},

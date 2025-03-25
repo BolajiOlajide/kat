@@ -7,4 +7,5 @@ type Options struct {
 	Operation     types.MigrationOperationType
 	Definitions   []types.Definition
 	MigrationInfo types.MigrationInfo
+	DryRun        bool
 }

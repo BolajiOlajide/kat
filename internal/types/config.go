@@ -14,6 +14,7 @@ type Config struct {
 type MigrationInfo struct {
 	TableName string `yaml:"tablename"`
 	Directory string `yaml:"directory"`
+	DryRun    bool   `yaml:"dryRun,omitempty"`
 }
 
 func (c *Config) SetDefault() {

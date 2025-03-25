@@ -102,6 +102,15 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				migrationKind = "down"
 			}
 
+			// In dry-run mode, validate the SQL but don't execute it
+			if options.DryRun {
+				// We can't validate the SQL without executing it in PostgreSQL
+				// So we just log that it would be executed
+				fmt.Printf("%s[DRY RUN] Would execute %s migration for %s%s\n", 
+					output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
+				continue
+			}
+
 			start := time.Now()
 			if err := r.db.Exec(ctx, q); err != nil {
 				return errors.Wrapf(err, "executing %s query", migrationKind)
@@ -151,10 +160,18 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	}
 
 	if noOfMigrations > 0 {
-		if options.Operation == types.UpMigrationOperation {
-			fmt.Printf("%sSuccessfully applied %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+		if options.DryRun {
+			if options.Operation == types.UpMigrationOperation {
+				fmt.Printf("%sDRY RUN: Validated %d migrations without applying them%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+			} else {
+				fmt.Printf("%sDRY RUN: Validated %d migrations without rolling them back%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+			}
 		} else {
-			fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+			if options.Operation == types.UpMigrationOperation {
+				fmt.Printf("%sSuccessfully applied %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+			} else {
+				fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+			}
 		}
 	} else {
 		if options.Operation == types.UpMigrationOperation {

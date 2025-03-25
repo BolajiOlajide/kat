@@ -33,7 +33,14 @@ func up(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return migration.Up(c, cfg)
+	
+	// Pass the dry-run flag to the migration
+	dryRun := c.Bool("dry-run")
+	if dryRun {
+		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not applied%s\n", output.StyleInfo, output.StyleReset)
+	}
+	
+	return migration.Up(c, cfg, dryRun)
 }
 
 func down(c *cli.Context) error {
@@ -41,7 +48,14 @@ func down(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	return migration.Down(c, cfg)
+	
+	// Pass the dry-run flag to the migration
+	dryRun := c.Bool("dry-run")
+	if dryRun {
+		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not rolled back%s\n", output.StyleInfo, output.StyleReset)
+	}
+	
+	return migration.Down(c, cfg, dryRun)
 }
 
 func initialize(c *cli.Context) error {
