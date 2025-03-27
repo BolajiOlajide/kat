@@ -49,6 +49,22 @@ var skipValidationFlag = &cli.BoolFlag{
 	Value:   false,
 }
 
+var retryCountFlag = &cli.IntFlag{
+	Name:    "retry-count",
+	Usage:   "number of times to retry operations on transient errors (min: 0, max: 7)",
+	Aliases: []string{"r"},
+	EnvVars: []string{"KAT_RETRY_COUNT"},
+	Value:   3,
+}
+
+var retryDelayFlag = &cli.IntFlag{
+	Name:    "retry-delay",
+	Usage:   "initial delay between retries in milliseconds (min: 100, max: 3000)",
+	Aliases: []string{"rd"},
+	EnvVars: []string{"KAT_RETRY_DELAY"},
+	Value:   500,
+}
+
 var kat = &cli.App{
 	Usage:       "Database migration tool",
 	Description: "Database migration tool based on Sourcegraph's internal tooling.",
@@ -92,6 +108,42 @@ var kat = &cli.App{
 					EnvVars: []string{"KAT_MIGRATION_DIRECTORY"},
 					Value:   "migrations",
 				},
+				&cli.StringFlag{
+					Name:    "dbUser",
+					Usage:   "database username",
+					EnvVars: []string{"KAT_DB_USER"},
+					Value:   "postgres",
+				},
+				&cli.StringFlag{
+					Name:    "dbPassword",
+					Usage:   "database password",
+					EnvVars: []string{"KAT_DB_PASSWORD"},
+					Value:   "postgres",
+				},
+				&cli.StringFlag{
+					Name:    "dbName",
+					Usage:   "database name",
+					EnvVars: []string{"KAT_DB_NAME"},
+					Value:   "myapp",
+				},
+				&cli.StringFlag{
+					Name:    "dbPort",
+					Usage:   "database port",
+					EnvVars: []string{"KAT_DB_PORT"},
+					Value:   "5432",
+				},
+				&cli.StringFlag{
+					Name:    "dbHost",
+					Usage:   "database host",
+					EnvVars: []string{"KAT_DB_HOST"},
+					Value:   "localhost",
+				},
+				&cli.StringFlag{
+					Name:    "dbSSLMode",
+					Usage:   "database SSL mode (disable, allow, prefer, require, verify-ca, verify-full)",
+					EnvVars: []string{"KAT_DB_SSL_MODE"},
+					Value:   "disable",
+				},
 			},
 		},
 		{
@@ -130,9 +182,18 @@ var kat = &cli.App{
 					Usage:   "number of migrations to roll back (default: 1)",
 					Value:   1,
 				},
+				configFlag,
 				dryRunFlag,
 				skipValidationFlag,
 			}, []cli.Flag{configFlag}...),
+		},
+		{
+			Name:        "ping",
+			Usage:       "Test database connection",
+			Description: "Verifies the database connection with optional retry capabilities",
+			Action:      ping,
+			Before:      config.ParseConfig,
+			Flags:       []cli.Flag{configFlag, retryCountFlag, retryDelayFlag},
 		},
 	},
 	UseShortOptionHandling: true,

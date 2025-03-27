@@ -3,6 +3,7 @@ package migration
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
@@ -44,7 +45,9 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) er
 	}
 
 	// Get applied migrations to determine which ones to roll back
+	// No retry logic for migrations
 	migrationsToRollback, err := getAppliedMigrationsToRollback(c, db, cfg.Migration.TableName, count)
+
 	if err != nil {
 		return err
 	}
@@ -57,9 +60,10 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) er
 	// Filter definitions to include only those that need to be rolled back
 	filteredDefinitions := filterDefinitionsForRollback(definitions, migrationsToRollback)
 
+	// No retry for migrations
 	r, err := runner.NewRunner(c.Context, db)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "connecting to database")
 	}
 
 	return r.Run(c.Context, runner.Options{

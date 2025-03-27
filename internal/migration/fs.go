@@ -1,11 +1,15 @@
 package migration
 
 import (
+	"embed"
 	"io/fs"
 	"os"
 
 	"github.com/cockroachdb/errors"
 )
+
+//go:embed templates/init.tmpl
+var templatesFS embed.FS
 
 func getMigrationsFS(path string) (fs.FS, error) {
 	_, err := os.Stat(path)

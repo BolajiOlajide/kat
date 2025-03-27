@@ -1,0 +1,54 @@
+# Kat Configuration File
+# This file configures your database connection and migration settings
+
+# Migration configuration
+migration:
+  # The table name where migration records will be stored in your database
+  - tablename: {{ .TableName }}
+  # The directory where migration files will be stored
+  - directory: {{ .Directory }}
+
+# Database connection configuration
+# You can use either individual connection parameters OR a connection URL
+
+{{- if .UseConnString }}
+# Option 1: Connection URL
+database:
+  # Complete PostgreSQL connection string
+  - url: {{ .DatabaseURL }}
+
+# Option 2: Individual connection parameters (commented out)
+# database:
+#   # Database username
+#   - user: {{ .DBUser }}
+#   # Database password
+#   - password: {{ .DBPassword }}
+#   # Database name
+#   - name: {{ .DBName }}
+#   # Database port
+#   - port: {{ .DBPort }}
+#   # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+#   - sslmode: {{ .DBSSLMode }}
+#   # Database host
+#   - host: {{ .DBHost }}
+{{- else }}
+# Option 1: Individual connection parameters
+database:
+  # Database username
+  - user: {{ .DBUser }}
+  # Database password
+  - password: {{ .DBPassword }}
+  # Database name
+  - name: {{ .DBName }}
+  # Database port
+  - port: {{ .DBPort }}
+  # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+  - sslmode: {{ .DBSSLMode }}
+  # Database host
+  - host: {{ .DBHost }}
+
+# Option 2: Connection URL (uncomment to use)
+# database:
+#   # Complete PostgreSQL connection string
+#   - url: postgres://user:password@localhost/dbname?sslmode=disable
+{{- end }}

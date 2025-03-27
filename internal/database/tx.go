@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
+// Ensure databaseTx implements the Tx interface
 var _ Tx = &databaseTx{}
 
 type databaseTx struct {
@@ -17,8 +18,15 @@ type databaseTx struct {
 	bindVar sqlf.BindVar
 }
 
+// For transaction objects, we don't implement retry methods.
+// Retry functionality is limited to the ping command only.
+
 func (d *databaseTx) Ping(ctx context.Context) error {
 	return errors.New("ping not supported in transaction")
+}
+
+func (d *databaseTx) PingWithRetry(ctx context.Context, retryCount int, retryDelay int) error {
+	return errors.New("ping with retry not supported in transaction")
 }
 
 func (d *databaseTx) Exec(ctx context.Context, query *sqlf.Query) error {

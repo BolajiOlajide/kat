@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/cockroachdb/errors v1.9.1
+	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/urfave/cli/v2 v2.25.1
@@ -16,7 +17,10 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/getsentry/sentry-go v0.12.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect

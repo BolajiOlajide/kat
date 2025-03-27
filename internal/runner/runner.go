@@ -46,7 +46,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	}
 
 	// create migration log table if it doesn't exist. This action is idempotent.
-	if err = r.db.Exec(ctx, sqlf.Sprintf(createMigrationLogQuery)); err != nil {
+	// No retry for migrations
+	err = r.db.Exec(ctx, sqlf.Sprintf(createMigrationLogQuery))
+
+	if err != nil {
 		return errors.Wrap(err, "initializing migration table")
 	}
 
@@ -66,6 +69,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		selectLogQuery,
 		sqlf.Join(mcols, ", "),
 	)
+	// No retry for migrations
 	rows, err := r.db.Query(ctx, query)
 	if err != nil && err != sql.ErrNoRows {
 		return errors.Wrap(err, "scanning log")
@@ -83,9 +87,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	var noOfMigrations int
 	var successfulMigrations []successfulMigration
-	
+
 	for _, definition := range options.Definitions {
-		err := r.db.WithTransact(ctx, func(tx database.Tx) (err error) {
+		// Use retry functionality for transaction if configured
+		var txFunc = func(tx database.Tx) (err error) {
 			if options.Operation == types.UpMigrationOperation {
 				// Skip migrations that have already been executed
 				if logsMap[definition.Name] != nil {
@@ -121,20 +126,20 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			// In dry-run mode, validate the SQL but don't execute it
 			if options.DryRun {
 				if options.SkipValidation {
-					fmt.Printf("%s[DRY RUN] Would execute %s migration for %s (validation skipped)%s\n", 
+					fmt.Printf("%s[DRY RUN] Would execute %s migration for %s (validation skipped)%s\n",
 						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
 				} else {
-					fmt.Printf("%s[DRY RUN] Validated %s migration for %s%s\n", 
+					fmt.Printf("%s[DRY RUN] Validated %s migration for %s%s\n",
 						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
 				}
-				
+
 				// Add to successful migrations list for summary
 				successfulMigrations = append(successfulMigrations, successfulMigration{
 					Name:      definition.Name,
 					Operation: migrationKind,
 				})
-				
-				continue
+
+				return nil
 			}
 
 			start := time.Now()
@@ -186,14 +191,17 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			// add a new line incase there's an error
 			fmt.Print("\n")
 			return nil
-		})
-		
+		}
+
+		// Execute transaction without retry
+		err := r.db.WithTransact(ctx, txFunc)
+
 		if err != nil {
 			// Print detailed error information
 			fmt.Printf("\n%sMigration failed: %s%s\n", output.StyleFailure, definition.Name, output.StyleReset)
 			fmt.Printf("%sError details: %s%s\n", output.StyleFailure, err.Error(), output.StyleReset)
 			fmt.Printf("%sMigration process stopped to preserve database integrity%s\n", output.StyleInfo, output.StyleReset)
-			
+
 			return errors.Wrapf(err, "executing %s", definition.Name)
 		}
 	}
@@ -213,7 +221,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			}
 		}
-		
+
 		// Print detailed migration summary
 		printMigrationSummary(successfulMigrations, options.Operation, options.DryRun)
 	} else {
@@ -234,24 +242,24 @@ func printMigrationSummary(migrations []successfulMigration, operation types.Mig
 
 	// Print summary header
 	fmt.Printf("\n%sMigration Summary%s\n", output.StyleHeading, output.StyleReset)
-	
+
 	// Print list of successful migrations with duration
 	if dryRun {
 		fmt.Printf("%sValidated migrations:%s\n", output.StyleSuccess, output.StyleReset)
 	} else {
 		fmt.Printf("%sSuccessful migrations:%s\n", output.StyleSuccess, output.StyleReset)
 	}
-	
+
 	for _, migration := range migrations {
 		if dryRun {
-			fmt.Printf("  %s✓ %s (%s)%s\n", 
+			fmt.Printf("  %s✓ %s (%s)%s\n",
 				output.StyleSuccess, migration.Name, migration.Operation, output.StyleReset)
 		} else {
-			fmt.Printf("  %s✓ %s (%s) - %s%s\n", 
+			fmt.Printf("  %s✓ %s (%s) - %s%s\n",
 				output.StyleSuccess, migration.Name, migration.Operation, migration.Duration, output.StyleReset)
 		}
 	}
-	
+
 	// Print total count
 	operationName := "applied"
 	if operation == types.DownMigrationOperation {
@@ -260,8 +268,8 @@ func printMigrationSummary(migrations []successfulMigration, operation types.Mig
 	if dryRun {
 		operationName = "validated"
 	}
-	
-	fmt.Printf("\n%sTotal: %d migration(s) %s%s\n", 
+
+	fmt.Printf("\n%sTotal: %d migration(s) %s%s\n",
 		output.StyleInfo, len(migrations), operationName, output.StyleReset)
 }
 
