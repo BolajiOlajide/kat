@@ -57,12 +57,6 @@ func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, d
 
 // Init initializes a project for use with kat.
 func Init(c *cli.Context) (err error) {
-	defer func() {
-		if err != nil {
-			fmt.Printf("%sAn error occurred while initializing kat!%s\n", output.StyleFailure, output.StyleReset)
-		}
-	}()
-
 	wd, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "getting working directory")
