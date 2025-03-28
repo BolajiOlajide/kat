@@ -12,8 +12,8 @@ page_nav:
         content: Installation
         url: '/install'
     next: 
-        content: Migration
-        url: '/migration'
+        content: Initialization
+        url: '/init'
 ---
 
 Kat requires a configuration file to know where to look for migrations and to know which database to perform migrations on.

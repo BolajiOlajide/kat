@@ -9,6 +9,6 @@ comments: false
 permalink: /migration/
 page_nav:
     prev:
-        content: Configuration
-        url: '/config'
+        content: Initialization
+        url: '/init'
 ---

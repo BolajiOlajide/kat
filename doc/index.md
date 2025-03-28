@@ -33,6 +33,11 @@ grid_navigation:
       excerpt: Configure Kat in a new project.
       cta: Learn more
       url: '/config'
+      
+    - title: Initialization
+      excerpt: Set up a new project with kat init.
+      cta: Learn more
+      url: '/init'
 
     - title: Migration
       excerpt: Performing a migration (up or down)
