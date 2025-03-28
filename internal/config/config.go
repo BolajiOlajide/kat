@@ -46,8 +46,11 @@ func ParseConfig(c *cli.Context) error {
 		return err
 	}
 
+	// Expand environment variables in the config
+	configStr := os.ExpandEnv(string(f))
+
 	var cfg = &types.Config{}
-	err = yaml.Unmarshal(f, cfg)
+	err = yaml.Unmarshal([]byte(configStr), cfg)
 	if err != nil {
 		return errors.Wrap(err, "marshalling config")
 	}
