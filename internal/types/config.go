@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 type Config struct {
@@ -46,7 +48,7 @@ type DatabaseInfo struct {
 
 func (d *DatabaseInfo) ConnString() (string, error) {
 	if d.URL != "" {
-		err := d.ParseURL()
+		err := d.parseURL()
 		if err != nil {
 			return "", err
 		}
@@ -55,11 +57,11 @@ func (d *DatabaseInfo) ConnString() (string, error) {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", d.Host, d.Port, d.User, d.Password, d.Name, d.SSLMode), nil
 }
 
-func (d *DatabaseInfo) ParseURL() error {
+func (d *DatabaseInfo) parseURL() error {
 	// Parse the URL
 	parsedURL, err := url.Parse(d.URL)
 	if err != nil {
-		return fmt.Errorf("failed to parse URL: %v", err)
+		return errors.Newf("failed to parse URL: %v", err)
 	}
 
 	// Make sure the scheme is postgres or postgresql

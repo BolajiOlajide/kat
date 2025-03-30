@@ -4,9 +4,9 @@
 # Migration configuration
 migration:
   # The table name where migration records will be stored in your database
-  - tablename: {{ .TableName }}
+  tablename: {{ .TableName }}
   # The directory where migration files will be stored
-  - directory: {{ .Directory }}
+  directory: {{ .Directory }}
 
 # Database connection configuration
 # You can use either individual connection parameters OR a connection URL
@@ -15,40 +15,40 @@ migration:
 # Option 1: Connection URL
 database:
   # Complete PostgreSQL connection string
-  - url: {{ .DatabaseURL }}
+  url: {{ .DatabaseURL }}
 
 # Option 2: Individual connection parameters (commented out)
 # database:
 #   # Database username
-#   - user: {{ .DBUser }}
+#   user: {{ .DBUser }}
 #   # Database password
-#   - password: {{ .DBPassword }}
+#   password: {{ .DBPassword }}
 #   # Database name
-#   - name: {{ .DBName }}
+#   name: {{ .DBName }}
 #   # Database port
-#   - port: {{ .DBPort }}
+#   port: {{ .DBPort }}
 #   # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-#   - sslmode: {{ .DBSSLMode }}
+#   sslmode: {{ .DBSSLMode }}
 #   # Database host
-#   - host: {{ .DBHost }}
+#   host: {{ .DBHost }}
 {{- else }}
 # Option 1: Individual connection parameters
 database:
   # Database username
-  - user: {{ .DBUser }}
+  user: {{ .DBUser }}
   # Database password
-  - password: {{ .DBPassword }}
+  password: {{ .DBPassword }}
   # Database name
-  - name: {{ .DBName }}
+  name: {{ .DBName }}
   # Database port
-  - port: {{ .DBPort }}
+  port: {{ .DBPort }}
   # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-  - sslmode: {{ .DBSSLMode }}
+  sslmode: {{ .DBSSLMode }}
   # Database host
-  - host: {{ .DBHost }}
+  host: {{ .DBHost }}
 
 # Option 2: Connection URL (uncomment to use)
 # database:
 #   # Complete PostgreSQL connection string
-#   - url: postgres://user:password@localhost/dbname?sslmode=disable
+#   url: postgres://user:password@localhost/dbname?sslmode=disable
 {{- end }}

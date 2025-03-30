@@ -8,9 +8,9 @@ INSTALL_DIR="/usr/local/bin"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 
 # Set download URL based on operating system
-if [ $OS == "darwin" ]; then
+if [ "$OS" == "darwin" ]; then
   DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_darwin_amd64.tar.gz"
-elif [ $OS == "linux" ]; then
+elif [ "$OS" == "linux" ]; then
   DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_linux_amd64.tar.gz"
 else
   echo "Unsupported operating system: $OS"

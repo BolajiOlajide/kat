@@ -41,13 +41,6 @@ var dryRunFlag = &cli.BoolFlag{
 	Value:   false,
 }
 
-var skipValidationFlag = &cli.BoolFlag{
-	Name:    "skip-validation",
-	Usage:   "skip SQL validation before execution (not recommended)",
-	Aliases: []string{"s"},
-	EnvVars: []string{"KAT_SKIP_VALIDATION"},
-	Value:   false,
-}
 
 var retryCountFlag = &cli.IntFlag{
 	Name:    "retry-count",
@@ -148,14 +141,14 @@ var kat = &cli.App{
 		},
 		{
 			Name:        "version",
-			Usage:       "returns the current version of kat",
+			Usage:       "Show version",
 			Description: "This command returns the version of kat",
 			Action:      getVersion,
 		},
 		{
 			Name:        "add",
 			ArgsUsage:   "<n>",
-			Usage:       "Adds a new migration",
+			Usage:       "Create migration",
 			Description: "Creates a new migration file in the migrations directory",
 			Action:      add,
 			Before:      config.ParseConfig,
@@ -163,11 +156,11 @@ var kat = &cli.App{
 		},
 		{
 			Name:        "up",
-			Usage:       "Apply all migrations",
+			Usage:       "Run migrations",
 			Description: "Apply migrations",
 			Action:      up,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{configFlag, dryRunFlag, skipValidationFlag},
+			Flags:       []cli.Flag{configFlag, dryRunFlag},
 		},
 		{
 			Name:        "down",
@@ -175,7 +168,7 @@ var kat = &cli.App{
 			Description: "Rollback the most recent migration or specify a count with --count flag",
 			Action:      down,
 			Before:      config.ParseConfig,
-			Flags: append([]cli.Flag{
+			Flags: []cli.Flag{
 				&cli.IntFlag{
 					Name:    "count",
 					Aliases: []string{"n"},
@@ -184,8 +177,7 @@ var kat = &cli.App{
 				},
 				configFlag,
 				dryRunFlag,
-				skipValidationFlag,
-			}, []cli.Flag{configFlag}...),
+			},
 		},
 		{
 			Name:        "ping",

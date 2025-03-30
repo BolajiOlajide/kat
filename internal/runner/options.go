@@ -8,5 +8,4 @@ type Options struct {
 	Definitions    []types.Definition
 	MigrationInfo  types.MigrationInfo
 	DryRun         bool
-	SkipValidation bool
 }

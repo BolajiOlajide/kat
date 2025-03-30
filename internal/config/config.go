@@ -56,7 +56,6 @@ func ParseConfig(c *cli.Context) error {
 	}
 
 	cfg.SetDefault()
-	newContext := context.WithValue(c.Context, constants.KatConfigKey, *cfg)
-	c.Context = newContext
+	c.Context = context.WithValue(c.Context, constants.KatConfigKey, *cfg)
 	return nil
 }

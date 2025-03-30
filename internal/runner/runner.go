@@ -47,9 +47,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	// create migration log table if it doesn't exist. This action is idempotent.
 	// No retry for migrations
-	err = r.db.Exec(ctx, sqlf.Sprintf(createMigrationLogQuery))
-
-	if err != nil {
+	if err := r.db.Exec(ctx, sqlf.Sprintf(createMigrationLogQuery)); err != nil {
 		return errors.Wrap(err, "initializing migration table")
 	}
 
@@ -69,7 +67,6 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		selectLogQuery,
 		sqlf.Join(mcols, ", "),
 	)
-	// No retry for migrations
 	rows, err := r.db.Query(ctx, query)
 	if err != nil && err != sql.ErrNoRows {
 		return errors.Wrap(err, "scanning log")
@@ -116,22 +113,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				migrationKind = "down"
 			}
 
-			// Validate the SQL syntax first (unless validation is explicitly skipped)
-			if !options.SkipValidation {
-				if err := tx.ValidateQuery(ctx, q); err != nil {
-					return errors.Wrapf(err, "validating %s migration for %s", migrationKind, definition.Name)
-				}
-			}
-
-			// In dry-run mode, validate the SQL but don't execute it
+			// In dry-run mode, don't execute the SQL
 			if options.DryRun {
-				if options.SkipValidation {
-					fmt.Printf("%s[DRY RUN] Would execute %s migration for %s (validation skipped)%s\n",
-						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
-				} else {
-					fmt.Printf("%s[DRY RUN] Validated %s migration for %s%s\n",
-						output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
-				}
+				fmt.Printf("%s[DRY RUN] Would execute %s migration for %s%s\n",
+					output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
 
 				// Add to successful migrations list for summary
 				successfulMigrations = append(successfulMigrations, successfulMigration{
@@ -172,7 +157,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 				// Delete the migration log entry for DOWN operations
 				deleteQuery := sqlf.Sprintf(
 					"DELETE FROM %s WHERE name = %s",
-					sqlf.Sprintf("%s", options.MigrationInfo.TableName),
+					sqlf.Sprintf(options.MigrationInfo.TableName),
 					definition.Name,
 				)
 				err = tx.Exec(ctx, deleteQuery)

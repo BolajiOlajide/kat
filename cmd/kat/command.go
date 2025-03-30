@@ -38,18 +38,13 @@ func up(c *cli.Context) error {
 
 	// Get command flags
 	dryRun := c.Bool("dry-run")
-	skipValidation := c.Bool("skip-validation")
 
 	if dryRun {
-		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not applied%s\n", output.StyleInfo, output.StyleReset)
-	}
-
-	if skipValidation {
-		fmt.Fprintf(os.Stdout, "%sWARNING: SQL validation is disabled. This is not recommended.%s\n", output.StyleInfo, output.StyleReset)
+		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will not be applied%s\n", output.StyleInfo, output.StyleReset)
 	}
 
 	// Note: Retry is not used for migrations, only for the ping command
-	return migration.Up(c, cfg, dryRun, skipValidation)
+	return migration.Up(c, cfg, dryRun)
 }
 
 func down(c *cli.Context) error {
@@ -60,18 +55,13 @@ func down(c *cli.Context) error {
 
 	// Get command flags
 	dryRun := c.Bool("dry-run")
-	skipValidation := c.Bool("skip-validation")
 
 	if dryRun {
-		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will be validated but not rolled back%s\n", output.StyleInfo, output.StyleReset)
-	}
-
-	if skipValidation {
-		fmt.Fprintf(os.Stdout, "%sWARNING: SQL validation is disabled. This is not recommended.%s\n", output.StyleInfo, output.StyleReset)
+		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will not be rolled back%s\n", output.StyleInfo, output.StyleReset)
 	}
 
 	// Note: Retry is not used for migrations, only for the ping command
-	return migration.Down(c, cfg, dryRun, skipValidation)
+	return migration.Down(c, cfg, dryRun)
 }
 
 func initialize(c *cli.Context) error {

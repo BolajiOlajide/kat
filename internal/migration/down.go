@@ -17,7 +17,7 @@ import (
 // Down is the command that rolls back migrations.
 // It rolls back the most recent migration by default,
 // or a specific number of migrations if specified.
-func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) error {
+func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 	fs, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -67,11 +67,10 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) er
 	}
 
 	return r.Run(c.Context, runner.Options{
-		Operation:      types.DownMigrationOperation,
-		Definitions:    filteredDefinitions,
-		MigrationInfo:  cfg.Migration,
-		DryRun:         dryRun,
-		SkipValidation: skipValidation,
+		Operation:     types.DownMigrationOperation,
+		Definitions:   filteredDefinitions,
+		MigrationInfo: cfg.Migration,
+		DryRun:        dryRun,
 	})
 }
 
@@ -79,12 +78,10 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool, skipValidation bool) er
 func getAppliedMigrationsToRollback(c *cli.Context, db database.DB, tableName string, count int) ([]string, error) {
 	// Check if the migrations table exists
 	var exists bool
-	err := db.QueryRow(c.Context, sqlf.Sprintf(
+	if err := db.QueryRow(c.Context, sqlf.Sprintf(
 		"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = %s)",
 		tableName,
-	)).Scan(&exists)
-
-	if err != nil {
+	)).Scan(&exists); err != nil {
 		return nil, errors.Wrap(err, "checking if migrations table exists")
 	}
 
@@ -95,7 +92,7 @@ func getAppliedMigrationsToRollback(c *cli.Context, db database.DB, tableName st
 	// Get the most recent migrations in descending order
 	query := sqlf.Sprintf(
 		"SELECT name FROM %s ORDER BY migration_time DESC LIMIT %d",
-		sqlf.Sprintf("%s", tableName),
+		sqlf.Sprintf(tableName),
 		count,
 	)
 

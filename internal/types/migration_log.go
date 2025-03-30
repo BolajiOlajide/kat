@@ -1,10 +1,14 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type MigrationLog struct {
 	ID            int
 	Name          string
 	MigrationTime time.Time
-	Duration      time.Duration
+	Duration      pgtype.Interval
 }

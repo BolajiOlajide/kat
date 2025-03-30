@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/BolajiOlajide/kat/internal/output"
@@ -60,33 +59,6 @@ func (d *database) Exec(ctx context.Context, query *sqlf.Query) error {
 	return err
 }
 
-// ValidateQuery checks if a SQL query is valid without executing it
-// It uses Postgres's EXPLAIN to validate the query syntax
-func (d *database) ValidateQuery(ctx context.Context, query *sqlf.Query) error {
-	// Extract the SQL query
-	sqlQuery := query.Query(d.bindVar)
-
-	// Skip empty queries
-	if strings.TrimSpace(sqlQuery) == "" {
-		return errors.New("empty SQL query")
-	}
-
-	// For non-SELECT queries, we need to wrap them in EXPLAIN
-	// This validates the query without executing it
-	var explainQuery string
-	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(sqlQuery)), "SELECT") {
-		explainQuery = fmt.Sprintf("EXPLAIN %s", sqlQuery)
-	} else {
-		explainQuery = fmt.Sprintf("EXPLAIN (ANALYZE FALSE) %s", sqlQuery)
-	}
-
-	// Execute the EXPLAIN query to verify syntax
-	if _, execErr := d.db.ExecContext(ctx, explainQuery, query.Args()...); execErr != nil {
-		return errors.Wrap(execErr, "SQL validation failed")
-	}
-
-	return nil
-}
 
 func (d *database) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return d.db.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
