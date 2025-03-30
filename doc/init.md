@@ -9,11 +9,11 @@ comments: false
 permalink: /init/
 page_nav:
     prev:
+        content: Installation
+        url: '/install'
+    next:
         content: Configuration
         url: '/config'
-    next:
-        content: Migration
-        url: '/migration'
 ---
 
 # Initializing a Project with Kat

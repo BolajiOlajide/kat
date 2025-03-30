@@ -9,96 +9,178 @@ comments: false
 permalink: /config/
 page_nav:
     prev:
-        content: Installation
-        url: '/install'
-    next: 
         content: Initialization
         url: '/init'
+    next: 
+        content: Database Connectivity
+        url: '/ping'
 ---
 
-Kat requires a configuration file to know where to look for migrations and to know which database to perform migrations on.
+# Understanding Kat Configuration
+
+After [initializing](/init/) your project with `kat init`, a configuration file (`kat.conf.yaml`) is created for you. This guide explains how each configuration option works and how they enable successful database migrations.
+
+## Configuration File Overview
+
+The `kat.conf.yaml` file contains all the settings Kat needs to connect to your database and manage migrations. You can specify a different configuration file using the `--config` flag:
+
+```bash
+kat --config /path/to/your/config.yaml <command>
+```
+
+## Configuration Structure
+
+Your configuration file has two main sections:
+- `migration`: Settings related to migration files and tracking
+- `database`: Connection details for your PostgreSQL database
+
+Here's the basic configuration structure:
 
 ```yaml
 migration:
-    tablename: migration_logs
-    directory: /Users/bolaji/Desktop/kat-test/migrations
+  tablename: migrations
+  directory: migrations
 database:
-    url: postgres://bolaji:andela@localhost:5432/katest
+  url: postgres://username:password@hostname:5432/dbname
 ```
 
-# Configuration Guide for Kat
+## Understanding Migration Configuration
 
-After installing Kat, the next step is to configure it for your specific environment and requirements. This guide provides detailed instructions on how to configure the tool effectively.
+The `migration` section defines how Kat manages and tracks your migrations:
 
-## Overview
+| Option | Description | Default | Required |
+|--------|-------------|---------|----------|
+| `tablename` | Name of the table where Kat tracks applied migrations | `migrations` | No |
+| `directory` | Directory where your SQL migration files are stored | `migrations` | No |
+| `dryRun` | Execute migrations without making actual database changes | `false` | No |
 
-Before configuring Kat, it's important to understand the key components that require configuration:
+### How Migration Tracking Works
 
-- Database Connections: Setting up source and target database connections.
-- Migration Settings: Configuring migration options, such as data mapping, filtering, and scheduling.
-- Security Settings: Ensuring secure data transfer and access control.
+Kat creates a table (specified by `tablename`) in your database to track which migrations have been applied. This ensures migrations are only applied once and enables features like:
 
-## Database Connections
+- Tracking migration history
+- Applying pending migrations
+- Rolling back migrations
 
-### Setting Up Source Database
+The `directory` option tells Kat where to find your migration files. Each migration consists of "up" and "down" SQL files.
 
-1. Open [Your Tool Name] and navigate to the 'Database Connections' section.
-2. Click on 'Add New Source Database'.
-3. Provide the following details:
-   - Database Type: [e.g., MySQL, PostgreSQL]
-   - Hostname: [Source database hostname]
-   - Port: [Source database port]
-   - Username: [Database username]
-   - Password: [Database password]
-4. Click 'Test Connection' to verify the details.
-5. Save the connection.
+### Migration Configuration Example
 
-### Setting Up Target Database
+```yaml
+migration:
+  tablename: migration_logs  # Custom table name for tracking
+  directory: /path/to/migrations  # Path to migration files
+  dryRun: false  # Actually apply migrations
+```
 
-1. In the 'Database Connections' section, click on 'Add New Target Database'.
-2. Repeat steps 3-5 as above, providing details for your target database.
+## Understanding Database Configuration
 
-## Migration Settings
+Kat offers two ways to configure your database connection:
 
-### Data Mapping
+### 1. Using a Connection URL
 
-1. Navigate to 'Data Mapping' under the 'Migration Settings'.
-2. Select source and target databases.
-3. Map source tables to target tables.
-4. [Any additional mapping options, e.g., column mapping, data type conversion]
+The simplest approach is to provide a PostgreSQL connection URL:
 
-### Filtering Data
+```yaml
+database:
+  url: postgres://username:password@hostname:5432/dbname?sslmode=disable
+```
 
-1. In 'Data Filtering', specify criteria to include or exclude specific data.
-2. [Details on how to add filters, e.g., by date, by row count]
+The URL format follows the standard PostgreSQL connection string format:
+`postgres://[username]:[password]@[hostname]:[port]/[dbname]?[params]`
 
-### Scheduling Migrations
+### 2. Using Individual Parameters
 
-1. Go to 'Migration Scheduling'.
-2. Set up a migration schedule [Details on how to schedule, e.g., one-time, recurring].
+You can also specify connection details individually:
 
-## Security Settings
+```yaml
+database:
+  user: username
+  password: password
+  host: localhost
+  port: 5432
+  name: dbname
+  sslmode: disable
+```
 
-### Setting Up Encryption
+| Option | Description | Default | Required if URL not provided |
+|--------|-------------|---------|----------|
+| `user` | Database username | - | Yes |
+| `password` | Database password | - | Yes |
+| `host` | Database hostname or IP | - | Yes |
+| `port` | Database port | `5432` | No |
+| `name` | Database name | - | Yes |
+| `sslmode` | SSL mode (disable, require, etc.) | `disable` | No |
 
-1. Navigate to 'Security Settings'.
-2. Enable data encryption during transfer [Specific instructions].
+### How Database Connection Works
 
-### Access Control
+Kat establishes a connection to your PostgreSQL database using the provided credentials. This connection is used to:
 
-1. Set up user roles and permissions [Details on how to configure user access].
+1. Create/read the migration tracking table
+2. Execute migration SQL scripts
+3. Manage transactions during migrations
 
-## Saving and Applying Configuration
+## Securing Database Credentials
 
-1. After configuring the settings, click 'Save Configuration'.
-2. Apply the configuration by clicking 'Start Migration' or 'Apply'.
+Kat supports environment variables in the configuration file. Use `${VARIABLE_NAME}` syntax to reference environment variables:
 
-## Troubleshooting
+```yaml
+database:
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  host: ${DB_HOST}
+  name: ${DB_NAME}
+```
 
-For any issues during the configuration process, refer to our [troubleshooting guide](Insert link to troubleshooting guide) or contact [support contact details].
+This allows you to keep sensitive information out of your configuration file and use different credentials across environments.
+
+## Configuration Examples for Common Scenarios
+
+### Basic Local Development
+
+```yaml
+migration:
+  tablename: migrations
+  directory: migrations
+database:
+  user: postgres
+  password: postgres
+  host: localhost
+  port: 5432
+  name: myapp_development
+  sslmode: disable
+```
+
+### Production with Environment Variables
+
+```yaml
+migration:
+  tablename: migrations
+  directory: /app/migrations
+database:
+  url: postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require
+```
+
+### CI/CD Pipeline
+
+```yaml
+migration:
+  tablename: migrations
+  directory: migrations
+  dryRun: true  # Verify migrations without applying them
+database:
+  url: postgres://ci_user:${CI_DB_PASSWORD}@db-host/myapp_test
+```
+
+## Troubleshooting Configuration Issues
+
+If you encounter issues with your configuration:
+
+1. Verify your database connection details
+2. Check that your migration directory exists and contains SQL files
+3. Ensure your database user has sufficient permissions
+4. Try running with the `--verbose` flag for more detailed logs
 
 ## Next Steps
 
-With the configuration complete, you are now ready to start your database migration. Proceed to the [Migration section](Insert link to migration section) for detailed steps on executing your database migration.
-
----
+Now that you understand how to configure Kat, you're ready to [create and run migrations](/migration/) to manage your database schema.
