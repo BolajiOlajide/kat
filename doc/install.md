@@ -9,72 +9,113 @@ comments: false
 permalink: /install/
 page_nav:
     next:
-        content: Configuration
-        url: '/config'
+        content: Initialization
+        url: '/init'
 ---
 
-# Installation Guide for Kat
+# Installing Kat
 
-Welcome to the installation guide for Kat. This document provides step-by-step instructions to help you successfully install the tool on your system. Before proceeding, ensure your system meets the minimum requirements.
+Kat is a CLI tool for performing PostgreSQL database migrations. This guide covers different methods to install Kat on your system.
 
 ## Prerequisites
 
-Before installing Kat, ensure your system meets the following prerequisites:
+Before installing Kat, ensure your system meets the following requirements:
 
-- Operating System: [Specify supported OS, e.g., Windows 10, Ubuntu 20.04]
-- Memory: [Specify minimum RAM, e.g., 4GB]
-- Processor: [Specify minimum processor requirement, e.g., Intel i3]
-- Additional Requirements: [Any other requirements, e.g., specific database versions, network settings]
+- **PostgreSQL**: Kat is designed to work with PostgreSQL databases
+- **Go**: Version 1.16 or higher (only required for building from source)
 
-## Downloading the Tool
+## Installation Methods
 
-1. Visit the Kat official download page: [Insert download URL]
-2. Choose the version suitable for your operating system.
-3. Click on the download link/button to start the download process.
+### Using the Install Script (Recommended)
 
-## Installation Steps
+For macOS and Linux, the easiest way to install Kat is using the install script:
 
-Follow these steps to install Kat on your system:
+```bash
+curl -sSL https://raw.githubusercontent.com/BolajiOlajide/kat/main/install.sh | bash
+```
 
-### Windows
+This will:
+1. Detect your operating system (macOS or Linux)
+2. Download the appropriate pre-compiled binary from GitHub Releases
+3. Install it to `/usr/local/bin`, making it available in your PATH
 
-1. Locate the downloaded `.exe` file.
-2. Double-click the file to start the installation wizard.
-3. Follow the on-screen instructions to complete the installation.
-   - Choose the installation directory (optional).
-   - Agree to the terms and conditions.
-4. Click 'Install' to begin the installation process.
-5. Once installed, click 'Finish' to exit the installer.
+### Manual Installation from Pre-compiled Binaries
 
-### Linux
+You can also download and install the binary manually:
 
-1. Open a terminal window.
-2. Navigate to the directory where the downloaded `.tar.gz` file is located.
-3. Extract the file using the command: `tar -xvzf [file name].tar.gz`
-4. Navigate to the extracted directory: `cd [extracted folder name]`
-5. Run the installation script: `./install.sh`
-6. Follow the terminal prompts to complete the installation.
+1. Visit the [GitHub Releases page](https://github.com/BolajiOlajide/kat/releases)
+2. Download the appropriate archive for your operating system:
+   - macOS: `kat_v1.0.0_darwin_amd64.tar.gz`
+   - Linux: `kat_v1.0.0_linux_amd64.tar.gz`
+3. Extract the binary:
+   ```bash
+   tar -xzf kat_v1.0.0_[os]_amd64.tar.gz
+   ```
+4. Move the binary to a location in your PATH:
+   ```bash
+   sudo mv kat /usr/local/bin/
+   ```
+5. Make it executable:
+   ```bash
+   sudo chmod +x /usr/local/bin/kat
+   ```
 
-### macOS
+### Installing from Source
 
-1. Locate the downloaded `.dmg` file.
-2. Double-click the file to open the installer.
-3. Drag and drop the [Your Tool Name] icon to the Applications folder.
-4. Wait for the copying process to complete.
+If you prefer to build from source or need to customize the installation:
 
-## Post-Installation Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/BolajiOlajide/kat.git
+   cd kat
+   ```
 
-After installing Kat, perform the following steps to ensure proper setup:
+2. Install using make:
+   ```bash
+   make install
+   ```
 
-1. Open [Your Tool Name] from your applications directory.
-2. [Any additional steps, e.g., setting up a user account, configuring initial settings]
+   This runs `go install ./...`, which compiles and installs the binary to your Go bin directory.
+
+3. Alternatively, you can run:
+   ```bash
+   go install github.com/BolajiOlajide/kat/cmd/kat@latest
+   ```
+
+   This will download, compile, and install the latest version directly.
+
+## Verifying the Installation
+
+To verify that Kat was installed correctly, run:
+
+```bash
+kat version
+```
+
+You should see output showing the version of Kat that you installed.
 
 ## Troubleshooting
 
-If you encounter any issues during the installation process, refer to the [troubleshooting guide](/troubleshooting) or [create a support issue](https://github.com/BolajiOlajide/kat/issues/new).
+### Common Issues
+
+1. **Command not found**
+   - Ensure the installation directory is in your PATH
+   - For Go installations, make sure `$GOPATH/bin` is in your PATH
+
+2. **Permission denied**
+   - Make sure the binary is executable: `chmod +x /path/to/kat`
+   - You might need to use `sudo` for some installation steps
+
+3. **Installation fails**
+   - Check your Go version: `go version`
+   - Ensure you have internet access to download dependencies
+
+### Getting Help
+
+If you encounter any issues during installation:
+- Check the [GitHub Issues](https://github.com/BolajiOlajide/kat/issues) to see if others have faced similar problems
+- Open a new issue with details about your environment and the error message
 
 ## Next Steps
 
-Now that you have successfully installed Kat, proceed to the [Configuration section](/config) of the documentation to configure your tool.
-
----
+After successfully installing Kat, the next step is to [initialize](/init/) your project with Kat's configuration and directory structure.

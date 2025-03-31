@@ -1,5 +1,5 @@
 /*
-This file was referenced from https://github.com/sourcegraph/sourcegraph/blob/0aa8310ca4d924c084a7a3f836d7a4cbc45c3338/lib/output/style.go#L12
+This file was referenced from https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/0aa8310ca4d924c084a7a3f836d7a4cbc45c3338/lib/output/style.go#L12
 */
 package output
 
