@@ -39,6 +39,11 @@ grid_navigation:
       cta: Learn more
       url: '/init'
 
+    - title: Database Connectivity
+      excerpt: Test database connectivity with kat ping.
+      cta: Learn more
+      url: '/ping'
+
     - title: Migration
       excerpt: Performing a migration (up or down)
       cta: Learn more
