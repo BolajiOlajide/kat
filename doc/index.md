@@ -20,7 +20,7 @@ author:
     title_url: 'https://bolaji.de'
     external_url: true
     description: |
-        An avid technologist and problem-solver at heart, Bolaji blends a rich background in database management with a personal mission to make data migration as smooth and user-friendly as possible. Their creation, this database migrator tool, is a reflection of that dedication and a gift to fellow data enthusiasts.
+        An avid technologist and problem-solver at heart, Bolaji is a full-stack software engineer with over 5 years of experience, currently boosting developer productivity at Sourcegraph. 
 
 # Grid navigation
 grid_navigation:
