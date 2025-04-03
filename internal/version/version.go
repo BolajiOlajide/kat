@@ -7,3 +7,7 @@ var version = "dev"
 func Version() string {
 	return version
 }
+
+func IsDev() bool {
+	return version == "dev"
+}

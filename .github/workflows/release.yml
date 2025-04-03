@@ -1,0 +1,114 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (without v prefix)'
+        required: true
+      prerelease:
+        description: 'Is this a prerelease?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Build binaries
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CGO_ENABLED: 0
+        run: |
+          # Create directory for binaries
+          mkdir -p dist
+
+          # Build for MacOS
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-amd64 ./cmd/kat
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-arm64 ./cmd/kat
+
+          # Build for Linux
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-amd64 ./cmd/kat
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-arm64 ./cmd/kat
+
+          # Compress binaries
+          cd dist
+          zip -j kat-darwin-amd64.zip kat-darwin-amd64
+          zip -j kat-darwin-arm64.zip kat-darwin-arm64
+          zip -j kat-linux-amd64.zip kat-linux-amd64
+          zip -j kat-linux-arm64.zip kat-linux-arm64
+          cd ..
+
+      - name: Create git tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
+          git push origin v${{ github.event.inputs.version }}
+
+      - name: Create Release with GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
+          PRERELEASE: ${{ github.event.inputs.prerelease }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "$PRERELEASE" == "true" ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create v${VERSION} \
+            --title "Kat v${VERSION}" \
+            ${PRERELEASE_FLAG} \
+            --notes "## Kat v${VERSION}
+
+          CLI tool for PostgreSQL migrations.
+
+          ### Installation
+
+          #### MacOS
+          ```
+          # Intel
+          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-amd64.zip
+          unzip kat.zip
+          chmod +x kat-darwin-amd64
+          mv kat-darwin-amd64 /usr/local/bin/kat
+
+          # Apple Silicon
+          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-arm64.zip
+          unzip kat.zip
+          chmod +x kat-darwin-arm64
+          mv kat-darwin-arm64 /usr/local/bin/kat
+          ```
+
+          #### Linux
+          ```
+          # AMD64
+          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-amd64.zip
+          unzip kat.zip
+          chmod +x kat-linux-amd64
+          mv kat-linux-amd64 /usr/local/bin/kat
+
+          # ARM64
+          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-arm64.zip
+          unzip kat.zip
+          chmod +x kat-linux-arm64
+          mv kat-linux-arm64 /usr/local/bin/kat
+          ```" \
+            dist/kat-darwin-amd64.zip dist/kat-darwin-arm64.zip dist/kat-linux-amd64.zip dist/kat-linux-arm64.zip
