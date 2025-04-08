@@ -3,112 +3,160 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version number (without v prefix)'
+      bump_type:
+        description: 'Type of version bump (major, minor, or patch)'
         required: true
-      prerelease:
-        description: 'Is this a prerelease?'
-        type: boolean
-        default: false
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  calculate-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calculate.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.20'
-
-      - name: Run tests
-        run: go test ./...
-
-      - name: Build binaries
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          CGO_ENABLED: 0
+      - name: Calculate next version
+        id: calculate
         run: |
-          # Create directory for binaries
-          mkdir -p dist
+          # Get the latest release version
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | grep -o '"tag_name": "v[0-9]*\.[0-9]*\.[0-9]*"' | cut -d'"' -f4)
 
-          # Build for MacOS
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-amd64 ./cmd/kat
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-arm64 ./cmd/kat
-
-          # Build for Linux
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-amd64 ./cmd/kat
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-arm64 ./cmd/kat
-
-          # Compress binaries
-          cd dist
-          zip -j kat-darwin-amd64.zip kat-darwin-amd64
-          zip -j kat-darwin-arm64.zip kat-darwin-arm64
-          zip -j kat-linux-amd64.zip kat-linux-amd64
-          zip -j kat-linux-arm64.zip kat-linux-arm64
-          cd ..
-
-      - name: Create git tag
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag -a v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
-          git push origin v${{ github.event.inputs.version }}
-
-      - name: Create Release with GitHub CLI
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.inputs.version }}
-          PRERELEASE: ${{ github.event.inputs.prerelease }}
-        run: |
-          PRERELEASE_FLAG=""
-          if [[ "$PRERELEASE" == "true" ]]; then
-            PRERELEASE_FLAG="--prerelease"
+          if [ -z "$LATEST_VERSION" ]; then
+            # If no releases exist, start with 0.0.0
+            LATEST_VERSION="v0.0.0"
           fi
 
-          gh release create v${VERSION} \
-            --title "Kat v${VERSION}" \
-            ${PRERELEASE_FLAG} \
-            --notes "## Kat v${VERSION}
+          # Remove 'v' prefix for version calculation
+          VERSION=${LATEST_VERSION#v}
 
-          CLI tool for PostgreSQL migrations.
+          # Split version into major, minor, patch
+          IFS='.' read -r -a version_parts <<< "$VERSION"
+          MAJOR=${version_parts[0]}
+          MINOR=${version_parts[1]}
+          PATCH=${version_parts[2]}
 
-          ### Installation
+          # Increment based on bump type
+          case "${{ github.event.inputs.bump_type }}" in
+            "major")
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            "minor")
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            "patch")
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
 
-          #### MacOS
-          ```
-          # Intel
-          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-amd64.zip
-          unzip kat.zip
-          chmod +x kat-darwin-amd64
-          mv kat-darwin-amd64 /usr/local/bin/kat
+          # Construct new version
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "new version is $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-          # Apple Silicon
-          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-arm64.zip
-          unzip kat.zip
-          chmod +x kat-darwin-arm64
-          mv kat-darwin-arm64 /usr/local/bin/kat
-          ```
+  # build-and-release:
+  #   needs: calculate-version
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-          #### Linux
-          ```
-          # AMD64
-          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-amd64.zip
-          unzip kat.zip
-          chmod +x kat-linux-amd64
-          mv kat-linux-amd64 /usr/local/bin/kat
+  #     - name: Set up Go
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         go-version: '1.20'
 
-          # ARM64
-          curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-arm64.zip
-          unzip kat.zip
-          chmod +x kat-linux-arm64
-          mv kat-linux-arm64 /usr/local/bin/kat
-          ```" \
-            dist/kat-darwin-amd64.zip dist/kat-darwin-arm64.zip dist/kat-linux-amd64.zip dist/kat-linux-arm64.zip
+  #     - name: Run tests
+  #       run: go test ./...
+
+  #     - name: Build binaries
+  #       env:
+  #         VERSION: ${{ needs.calculate-version.outputs.version }}
+  #         CGO_ENABLED: 0
+  #       run: |
+  #         # Create directory for binaries
+  #         mkdir -p dist
+
+  #         # Build for MacOS
+  #         GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-amd64 ./cmd/kat
+  #         GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-darwin-arm64 ./cmd/kat
+
+  #         # Build for Linux
+  #         GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-amd64 ./cmd/kat
+  #         GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=${VERSION}" -o dist/kat-linux-arm64 ./cmd/kat
+
+  #         # Compress binaries
+  #         cd dist
+  #         zip -j kat-darwin-amd64.zip kat-darwin-amd64
+  #         zip -j kat-darwin-arm64.zip kat-darwin-arm64
+  #         zip -j kat-linux-amd64.zip kat-linux-amd64
+  #         zip -j kat-linux-arm64.zip kat-linux-arm64
+  #         cd ..
+
+  #     - name: Create git tag
+  #       run: |
+  #         git config --local user.email "action@github.com"
+  #         git config --local user.name "GitHub Action"
+  #         git tag -a v${{ needs.calculate-version.outputs.version }} -m "Release v${{ needs.calculate-version.outputs.version }}"
+  #         git push origin v${{ needs.calculate-version.outputs.version }}
+
+  #     - name: Create Release with GitHub CLI
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         VERSION: ${{ needs.calculate-version.outputs.version }}
+  #         PRERELEASE: ${{ github.event.inputs.prerelease }}
+  #       run: |
+  #         PRERELEASE_FLAG=""
+  #         if [[ "$PRERELEASE" == "true" ]]; then
+  #           PRERELEASE_FLAG="--prerelease"
+  #         fi
+
+  #         gh release create v${VERSION} \
+  #           --title "Kat v${VERSION}" \
+  #           ${PRERELEASE_FLAG} \
+  #           --notes "## Kat v${VERSION}
+
+  #         CLI tool for PostgreSQL migrations.
+
+  #         ### Installation
+
+  #         #### MacOS
+  #         ```
+  #         # Intel
+  #         curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-amd64.zip
+  #         unzip kat.zip
+  #         chmod +x kat-darwin-amd64
+  #         mv kat-darwin-amd64 /usr/local/bin/kat
+
+  #         # Apple Silicon
+  #         curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-darwin-arm64.zip
+  #         unzip kat.zip
+  #         chmod +x kat-darwin-arm64
+  #         mv kat-darwin-arm64 /usr/local/bin/kat
+  #         ```
+
+  #         #### Linux
+  #         ```
+  #         # AMD64
+  #         curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-amd64.zip
+  #         unzip kat.zip
+  #         chmod +x kat-linux-amd64
+  #         mv kat-linux-amd64 /usr/local/bin/kat
+
+  #         # ARM64
+  #         curl -L -o kat.zip https://github.com/BolajiOlajide/kat/releases/download/v${VERSION}/kat-linux-arm64.zip
+  #         unzip kat.zip
+  #         chmod +x kat-linux-arm64
+  #         mv kat-linux-arm64 /usr/local/bin/kat
+  #         ```" \
+  #           dist/kat-darwin-amd64.zip dist/kat-darwin-arm64.zip dist/kat-linux-amd64.zip dist/kat-linux-arm64.zip
