@@ -1,0 +1,67 @@
+# GoReleaser configuration for kat
+before:
+  hooks:
+    - go mod download
+    - go mod tidy
+builds:
+  - main: ./cmd/kat/
+    id: "kat"
+    binary: kat
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    goos:
+      - linux
+      - darwin
+
+      # need help with testing on windows to ensure this works
+      # - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/BolajiOlajide/kat/internal/version.version={{.Version}}
+archives:
+  - id: bin
+    format: binary
+    wrap_in_directory: false
+    name_template: "kat_{{ .Os }}_{{ .Arch }}"
+
+  - id: tarball
+    format: tar.gz
+    name_template: >-
+      kat_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    # format_overrides:
+    #   - goos: windows
+    #     format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+release:
+  github:
+    owner: BolajiOlajide
+    name: kat
+  draft: true
+  replace_existing_draft: true
+  mode: append
+  # Header for the release body.
+  #
+  # Templates: allowed.
+  header: |
+    ## Kat ({{ .Date }})
+
+    Welcome to this new release!
+
