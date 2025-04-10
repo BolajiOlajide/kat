@@ -85,3 +85,10 @@ jobs:
           git config --local user.name "GitHub Action"
           git tag -a v${{ needs.calculate-version.outputs.version }} -m "Release v${{ needs.calculate-version.outputs.version }}"
           git push origin v${{ needs.calculate-version.outputs.version }}
+
+  goreleaser:
+    needs: build-and-release
+    uses: ./.github/workflows/goreleaser.yml
+    with:
+      version: ${{ needs.calculate-version.outputs.version }}
+    secrets: inherit
