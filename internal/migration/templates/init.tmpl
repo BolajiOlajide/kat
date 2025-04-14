@@ -5,7 +5,7 @@
 migration:
   # The table name where migration records will be stored in your database
   tablename: {{ .TableName }}
-  # The directory where migration files will be stored
+  # The directory where migration files will be stored relative to the location of the `kat.conf.yaml`
   directory: {{ .Directory }}
 
 # Database connection configuration
