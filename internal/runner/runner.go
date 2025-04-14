@@ -207,8 +207,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 		}
 
-		// Print detailed migration summary
-		printMigrationSummary(successfulMigrations, options.Operation, options.DryRun)
+		// Print detailed migration summary if verbose mode is enabled
+		if options.Verbose {
+			printMigrationSummary(successfulMigrations, options.Operation, options.DryRun)
+		}
 	} else {
 		if options.Operation == types.UpMigrationOperation {
 			fmt.Printf("%sNo new migrations to apply%s\n", output.StyleInfo, output.StyleReset)

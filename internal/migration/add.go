@@ -32,9 +32,11 @@ func Add(name string, cfg types.Config) error {
 	}
 
 	fmt.Printf("%sMigration created successfully!%s\n", output.StyleSuccess, output.StyleReset)
-	fmt.Printf("%sUp query file: %s%s\n", output.StyleInfo, m.Up, output.StyleReset)
-	fmt.Printf("%sDown query file: %s%s\n", output.StyleInfo, m.Down, output.StyleReset)
-	fmt.Printf("%sMetadata file: %s%s\n", output.StyleInfo, m.Metadata, output.StyleReset)
+	if cfg.Verbose {
+		fmt.Printf("%sUp query file: %s%s\n", output.StyleInfo, m.Up, output.StyleReset)
+		fmt.Printf("%sDown query file: %s%s\n", output.StyleInfo, m.Down, output.StyleReset)
+		fmt.Printf("%sMetadata file: %s%s\n", output.StyleInfo, m.Metadata, output.StyleReset)
+	}
 
 	return nil
 }

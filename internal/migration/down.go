@@ -71,6 +71,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		Definitions:   filteredDefinitions,
 		MigrationInfo: cfg.Migration,
 		DryRun:        dryRun,
+		Verbose:       cfg.Verbose,
 	})
 }
 

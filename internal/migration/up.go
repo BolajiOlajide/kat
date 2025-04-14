@@ -44,5 +44,6 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 		Definitions:   definitions,
 		MigrationInfo: cfg.Migration,
 		DryRun:        dryRun,
+		Verbose:       cfg.Verbose,
 	})
 }

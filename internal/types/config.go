@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Migration MigrationInfo `yaml:"migration"`
 	Database  DatabaseInfo  `yaml:"database"`
+	Verbose   bool          `yaml:"verbose"`
 }
 
 type MigrationInfo struct {
