@@ -5,6 +5,7 @@ timestamp: %d
 description: |
   <add comment about your migration in here>
 `
+
 const downMigrationFileTemplate = `-- Undo the changes made in the up migration
 `
 

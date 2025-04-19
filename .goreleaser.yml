@@ -3,6 +3,9 @@ before:
   hooks:
     - go mod download
     - go mod tidy
+
+report_sizes: true
+
 builds:
   - main: ./cmd/kat/
     id: "kat"
@@ -21,27 +24,21 @@ builds:
       - arm64
     ldflags:
       - -s -w -X github.com/BolajiOlajide/kat/internal/version.version={{.Version}}
-archives:
-  - id: bin
-    format: binary
-    wrap_in_directory: false
-    name_template: "kat_{{ .Os }}_{{ .Arch }}"
 
-  - id: tarball
-    format: tar.gz
+archives:
+  - formats: [binary, tar.gz]
+    wrap_in_directory: false
     name_template: >-
-      kat_
-      {{- title .Os }}_
+      kat_{{ .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    # format_overrides:
-    #   - goos: windows
-    #     format: zip
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
@@ -50,6 +47,19 @@ changelog:
       - '^test:'
       - '^ci:'
       - '^chore:'
+
+signs:
+  - artifacts: checksum
+    cmd: gpg2
+    args:
+      - "--batch"
+      - "-u"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+
 release:
   github:
     owner: BolajiOlajide
