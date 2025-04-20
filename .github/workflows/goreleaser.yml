@@ -29,8 +29,7 @@ jobs:
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
         with:
-          # https://sourcegraph.com/github.com/crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec/-/blob/src/main.ts?L27
-          gpgPrivateKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Run GoReleaser
