@@ -31,17 +31,18 @@ Before installing Kat, ensure your system meets the following requirements:
 For macOS and Linux, the easiest way to install Kat is using the install script:
 
 ```bash
-# Install latest version
+# Install latest version (automatically fetches the latest release)
 curl -sSL https://kat.bolaji.de/install | bash
 
 # Install specific version
-curl -sSL https://kat.bolaji.de/install | VERSION=v1.2.0 bash
+curl -sSL https://kat.bolaji.de/install | VERSION=v1.0.0 bash
 ```
 
 This will:
 1. Detect your operating system (macOS or Linux)
-2. Download the appropriate pre-compiled binary from GitHub Releases
-3. Install it to `/usr/local/bin`, making it available in your PATH
+2. Fetch the latest release version from GitHub if no version is specified
+3. Download the appropriate pre-compiled binary from GitHub Releases
+4. Install it to `/usr/local/bin`, making it available in your PATH
 
 ### Manual Installation from Pre-compiled Binaries
 

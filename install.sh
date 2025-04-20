@@ -2,8 +2,12 @@
 set -e
 
 # Define variables
-# Use provided VERSION or default to latest
-VERSION=${VERSION:-"v1.0.0"}
+# If VERSION is not provided, fetch the latest version from GitHub API
+if [ -z "$VERSION" ]; then
+  echo "No version specified, fetching latest release..."
+  VERSION=$(curl -s https://api.github.com/repos/BolajiOlajide/kat/releases/latest | grep '"tag_name":' | sed -E 's/.*"tag_name": ?"([^"]+)".*/\1/')
+  echo "Latest version: $VERSION"
+fi
 INSTALL_DIR="/usr/local/bin"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 
