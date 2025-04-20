@@ -41,7 +41,7 @@ cd kat
 make install
 ```
 
-For more installation options, see the [installation documentation](https://bolajiolajide.github.io/kat/install/).
+For more installation options, see the [installation documentation](https://kat.bolaji.de/install/).
 
 ## Quick Start
 
@@ -95,7 +95,7 @@ database:
 | `kat version` | Display the current version |
 | `kat --help` | Show help for all commands |
 
-For detailed usage instructions, see the [documentation](https://bolajiolajide.github.io/kat/).
+For detailed usage instructions, see the [documentation](https://kat.bolaji.de/).
 
 ## Migration Structure
 
@@ -111,13 +111,13 @@ migrations/
 
 ## Documentation
 
-Visit the [Kat documentation site](https://bolajiolajide.github.io/kat/) for detailed guides on:
+Visit the [Kat documentation site](https://kat.bolaji.de/) for detailed guides on:
 
-- [Installation](https://bolajiolajide.github.io/kat/install/)
-- [Initialization](https://bolajiolajide.github.io/kat/init/)
-- [Configuration](https://bolajiolajide.github.io/kat/config/)
-- [Database Connectivity](https://bolajiolajide.github.io/kat/ping/)
-- [Working with Migrations](https://bolajiolajide.github.io/kat/migration/)
+- [Installation](https://kat.bolaji.de/installation/)
+- [Initialization](https://kat.bolaji.de/init/)
+- [Configuration](https://kat.bolaji.de/config/)
+- [Database Connectivity](https://kat.bolaji.de/ping/)
+- [Working with Migrations](https://kat.bolaji.de/migration/)
 
 ## Contributing
 
