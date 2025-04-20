@@ -2,8 +2,8 @@
 set -e
 
 # Define variables
-VERSION="v1.0.0"
-DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_$VERSION.tar.gz"
+# Use provided VERSION or default to latest
+VERSION=${VERSION:-"v1.0.0"}
 INSTALL_DIR="/usr/local/bin"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 

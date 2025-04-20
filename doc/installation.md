@@ -6,7 +6,7 @@ title: Installation
 description: |
     Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
 comments: false
-permalink: /install/
+permalink: /installation/
 page_nav:
     next:
         content: Initialization
@@ -22,7 +22,7 @@ Kat is a CLI tool for performing PostgreSQL database migrations. This guide cove
 Before installing Kat, ensure your system meets the following requirements:
 
 - **PostgreSQL**: Kat is designed to work with PostgreSQL databases
-- **Go**: Version 1.16 or higher (only required for building from source)
+- **Go**: Version 1.20 or higher (only required for building from source)
 
 ## Installation Methods
 
@@ -31,7 +31,11 @@ Before installing Kat, ensure your system meets the following requirements:
 For macOS and Linux, the easiest way to install Kat is using the install script:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BolajiOlajide/kat/main/install.sh | bash
+# Install latest version
+curl -sSL https://kat.bolaji.de/install | bash
+
+# Install specific version
+curl -sSL https://kat.bolaji.de/install | VERSION=v1.2.0 bash
 ```
 
 This will:
@@ -44,12 +48,12 @@ This will:
 You can also download and install the binary manually:
 
 1. Visit the [GitHub Releases page](https://github.com/BolajiOlajide/kat/releases)
-2. Download the appropriate archive for your operating system:
-   - macOS: `kat_v1.0.0_darwin_amd64.tar.gz`
-   - Linux: `kat_v1.0.0_linux_amd64.tar.gz`
+2. Download the appropriate archive for your operating system (replace `[VERSION]` with the version you want, e.g. `v1.0.0`):
+   - macOS: `kat_[VERSION]_darwin_amd64.tar.gz`
+   - Linux: `kat_[VERSION]_linux_amd64.tar.gz`
 3. Extract the binary:
    ```bash
-   tar -xzf kat_v1.0.0_[os]_amd64.tar.gz
+   tar -xzf kat_[VERSION]_[os]_amd64.tar.gz
    ```
 4. Move the binary to a location in your PATH:
    ```bash

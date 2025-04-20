@@ -7,7 +7,7 @@ description: Kat is a PostgreSQL database migration tool. It allows you run your
 permalink: /
 buttons:
     - content: Get Started
-      url: '/install'
+      url: '/installation'
       external_url: false
     - icon: github
       content: View on GitHub
@@ -27,7 +27,7 @@ grid_navigation:
     - title: Installation
       excerpt: How to install
       cta: Learn more
-      url: '/install'
+      url: '/installation'
 
     - title: Configuration
       excerpt: Configure Kat in a new project.
