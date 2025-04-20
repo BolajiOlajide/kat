@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+
+# Define variables
+# If VERSION is not provided, fetch the latest version from GitHub API
+if [ -z "$VERSION" ]; then
+  echo "No version specified, fetching latest release..."
+  VERSION=$(curl -s https://api.github.com/repos/BolajiOlajide/kat/releases/latest | grep '"tag_name":' | sed -E 's/.*"tag_name": ?"([^"]+)".*/\1/')
+  echo "Latest version: $VERSION"
+fi
+INSTALL_DIR="/usr/local/bin"
+OS=$(uname | tr '[:upper:]' '[:lower:]')
+
+# Set download URL based on operating system
+if [ "$OS" == "darwin" ]; then
+  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_darwin_amd64.tar.gz"
+elif [ "$OS" == "linux" ]; then
+  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_linux_amd64.tar.gz"
+else
+  echo "Unsupported operating system: $OS"
+  exit 1
+fi
+
+# Download and extract binary
+curl -sL "$DOWNLOAD_URL" | tar xz -C $INSTALL_DIR kat
+
+echo "kat $VERSION has been installed to $INSTALL_DIR"
