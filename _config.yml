@@ -45,5 +45,3 @@ layouts_dir: ./doc/_layouts
 includes_dir: ./doc/_includes
 exclude: [ 'kat.go', 'README.md', 'CHANGELOG.md', 'internal/', 'cmd/', '.github/', 'examples/', 'go.mod', 'go.sum', 'Makefile', 'LICENSE', 'install.sh', 'doks' ]
 permalink: /:title/
-plugins:
-  - jekyll-redirect-from
