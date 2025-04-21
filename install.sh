@@ -11,17 +11,41 @@ fi
 INSTALL_DIR="/usr/local/bin"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 
-# Set download URL based on operating system
+# Detect architecture
+ARCH=$(uname -m)
+case $ARCH in
+  x86_64|x86-64|x64|amd64)
+    ARCH="amd64"
+    ;;
+  arm64|aarch64)
+    ARCH="arm64"
+    ;;
+  *)
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+    ;;
+esac
+echo "Detected architecture: $ARCH"
+
+# Set download URL based on operating system and architecture
 if [ "$OS" == "darwin" ]; then
-  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_darwin_amd64.tar.gz"
+  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_darwin_${ARCH}.tar.gz"
 elif [ "$OS" == "linux" ]; then
-  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_${VERSION}_linux_amd64.tar.gz"
+  DOWNLOAD_URL="https://github.com/BolajiOlajide/kat/releases/download/$VERSION/kat_linux_${ARCH}.tar.gz"
 else
   echo "Unsupported operating system: $OS"
   exit 1
 fi
 
+# Verify binary exists before downloading
+if ! curl --output /dev/null --silent --head --fail "$DOWNLOAD_URL"; then
+  echo "Error: Binary for $OS on $ARCH architecture not found for version $VERSION"
+  echo "Please check available releases at: https://github.com/BolajiOlajide/kat/releases"
+  exit 1
+fi
+
 # Download and extract binary
-curl -sL $DOWNLOAD_URL | tar xz -C $INSTALL_DIR kat
+echo "Downloading kat $VERSION for $OS on $ARCH..."
+curl -sL "$DOWNLOAD_URL" | tar xz -C $INSTALL_DIR kat
 
 echo "kat $VERSION has been installed to $INSTALL_DIR"
