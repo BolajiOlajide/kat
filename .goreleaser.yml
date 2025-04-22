@@ -37,7 +37,7 @@ snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  sort: asc
+  use: github
   filters:
     exclude:
       - '^docs:'
@@ -71,4 +71,8 @@ release:
     ## Kat ({{ .Date }})
 
     Welcome to this new release!
+
+    ## Changelog
+
+    {{ .Changelog }}
 
