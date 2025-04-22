@@ -24,7 +24,8 @@ if [ -z "$VERSION" ]; then
   echo "Latest version: '$VERSION'"
 fi
 
-INSTALL_DIR="/usr/local/bin"
+# Allow users to override the installation directory
+KAT_INSTALL_DIR=${KAT_INSTALL_DIR:-"/usr/local/bin"}
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 
 # Detect architecture
@@ -62,6 +63,6 @@ fi
 
 # Download and extract binary
 echo "Downloading 'kat $VERSION' for $OS ($ARCH)..."
-curl -sL "$DOWNLOAD_URL" | tar xz -C $INSTALL_DIR kat
+curl -sL "$DOWNLOAD_URL" | tar xz -C "$KAT_INSTALL_DIR" kat
 
-echo "kat $VERSION has been installed in '$INSTALL_DIR'"
+echo "kat $VERSION has been installed in '$KAT_INSTALL_DIR'"

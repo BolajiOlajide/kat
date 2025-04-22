@@ -32,11 +32,16 @@ For macOS and Linux, the easiest way to install Kat is using the install script:
 
 ```bash
 # Install latest version (automatically fetches the latest release)
-curl -sSL https://kat.bolaji.de/install | bash
+curl -sSL https://kat.bolaji.de/install | sudo bash
 
 # Install specific version
-curl -sSL https://kat.bolaji.de/install | VERSION=v1.0.0 bash
+curl -sSL https://kat.bolaji.de/install | VERSION=v1.0.0 sudo bash
+
+# Install to a custom directory (no sudo required if you have write permissions)
+curl -sSL https://kat.bolaji.de/install | KAT_INSTALL_DIR=$HOME/bin bash
 ```
+
+> **Note:** `sudo` is required because the script installs Kat to `/usr/local/bin`, which typically requires administrator privileges. If you want to install without sudo, you can modify the installation directory by setting the `KAT_INSTALL_DIR` environment variable to a location you have write permissions for (e.g., `KAT_INSTALL_DIR=$HOME/bin`).
 
 This will:
 1. Detect your operating system (macOS or Linux)
