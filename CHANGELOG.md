@@ -27,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.3] - 2025-04-21
 
+### Changed
+- Removed binary uploads from release process
+- Polished documentation for better clarity
+
+### Fixed
+- Fixed architecture detection in install script to properly support different CPU architectures
+
 ## [0.0.2] - 2025-04-20
 
 ### Added
