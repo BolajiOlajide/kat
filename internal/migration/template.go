@@ -2,6 +2,7 @@ package migration
 
 const metadataFileTemplate = `name: %s
 timestamp: %d
+skipTransaction: false
 description: |
   <add comment about your migration in here>
 `

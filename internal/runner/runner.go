@@ -87,7 +87,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	for _, definition := range options.Definitions {
 		// Use retry functionality for transaction if configured
-		var txFunc = func(tx database.Tx) (err error) {
+		var txFunc = func(tx database.DB) (err error) {
 			if options.Operation == types.UpMigrationOperation {
 				// Skip migrations that have already been executed
 				if logsMap[definition.Name] != nil {
@@ -178,8 +178,17 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			return nil
 		}
 
-		// Execute transaction without retry
-		err := r.db.WithTransact(ctx, txFunc)
+		var err error
+		// Check if this migration should skip transaction wrapping
+		if definition.SkipTransaction {
+			// Execute without transaction wrapping
+			err = txFunc(r.db)
+		} else {
+			// Execute with transaction wrapping
+			err = r.db.WithTransact(ctx, func(tx database.Tx) error {
+				return txFunc(tx)
+			})
+		}
 
 		if err != nil {
 			// Print detailed error information
