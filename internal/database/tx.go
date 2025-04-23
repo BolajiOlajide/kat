@@ -32,7 +32,6 @@ func (d *databaseTx) Exec(ctx context.Context, query *sqlf.Query) error {
 	return err
 }
 
-
 func (d *databaseTx) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return d.tx.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
