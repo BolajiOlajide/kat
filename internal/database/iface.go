@@ -23,14 +23,7 @@ type Scanner interface {
 }
 
 type Tx interface {
-	// For transactions, we only implement the basic DB interface methods,
-	// not the retry versions since retries happen at the DB level
-	Close() error
-	Ping(context.Context) error
-	Exec(context.Context, *sqlf.Query) error
-	QueryRow(context.Context, *sqlf.Query) *sql.Row
-	Query(context.Context, *sqlf.Query) (*sql.Rows, error)
-	WithTransact(ctx context.Context, f func(Tx) error) error
+	DB
 
 	Commit() error
 	Rollback() error

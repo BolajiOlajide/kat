@@ -1,0 +1,34 @@
+# Kat Configuration File
+# This file configures your database connection and migration settings
+
+# Migration configuration
+migration:
+  # The table name where migration records will be stored in your database
+  tablename: migrations
+  # The directory where migration files will be stored relative to the location of the `kat.conf.yaml`
+  directory: migrations
+
+# Show detailed migration summary and file information (true/false)
+verbose: true
+
+# Database connection configuration
+# You can use either individual connection parameters OR a connection URL
+# Option 1: Individual connection parameters
+database:
+  # Database username
+  user: bolaji
+  # Database password
+  password: $DATABASE_PASSWORD
+  # Database name
+  name: kat-test
+  # Database port
+  port: 5432
+  # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+  sslmode: disable
+  # Database host
+  host: localhost
+
+# Option 2: Connection URL (uncomment to use)
+# database:
+#   # Complete PostgreSQL connection string
+#   url: postgres://user:password@localhost/dbname?sslmode=disable

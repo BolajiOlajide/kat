@@ -87,7 +87,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	for _, definition := range options.Definitions {
 		// Use retry functionality for transaction if configured
-		var txFunc = func(tx database.Tx) (err error) {
+		var txFunc = func(tx database.DB) (err error) {
 			if options.Operation == types.UpMigrationOperation {
 				// Skip migrations that have already been executed
 				if logsMap[definition.Name] != nil {
@@ -178,8 +178,17 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			return nil
 		}
 
-		// Execute transaction without retry
-		err := r.db.WithTransact(ctx, txFunc)
+		var err error
+		// Check if this migration should skip transaction wrapping
+		if definition.SkipTransaction {
+			// Execute without transaction wrapping
+			err = txFunc(r.db)
+		} else {
+			// Execute with transaction wrapping
+			err = r.db.WithTransact(ctx, func(tx database.Tx) error {
+				return txFunc(tx)
+			})
+		}
 
 		if err != nil {
 			// Print detailed error information
@@ -195,15 +204,15 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		// Print basic summary line
 		if options.DryRun {
 			if options.Operation == types.UpMigrationOperation {
-				fmt.Printf("%sDRY RUN: Validated %d migrations without applying them%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sDRY RUN: Validated %d migration(s) without applying them%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			} else {
-				fmt.Printf("%sDRY RUN: Validated %d migrations without rolling them back%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sDRY RUN: Validated %d migration(s) without rolling them back%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			}
 		} else {
 			if options.Operation == types.UpMigrationOperation {
-				fmt.Printf("%sSuccessfully applied %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sSuccessfully applied %d migration(s)%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			} else {
-				fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sSuccessfully rolled back %d migration(s)%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			}
 		}
 

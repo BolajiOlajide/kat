@@ -1,0 +1,7 @@
+name: 1745368551_add_user_tbl
+timestamp: 1745368551
+skipTransaction: false
+description: |
+  Creates a users table with essential fields for user management, including email, username, and password storage.
+  Includes indexes for performance optimization and a trigger for automatic timestamp updates.
+  The migration is idempotent and includes proper rollback support.

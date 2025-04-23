@@ -1,0 +1,7 @@
+name: 1745369660_add_transactions_tbl
+timestamp: 1745369660
+skipTransaction: true
+description: |
+  Creates a transactions table with support for credit/debit operations and various transaction states.
+  Includes proper relationships to users table, enums for type and status, and indexes for common queries.
+  The migration is idempotent and includes proper rollback support.
