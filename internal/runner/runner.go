@@ -204,15 +204,15 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		// Print basic summary line
 		if options.DryRun {
 			if options.Operation == types.UpMigrationOperation {
-				fmt.Printf("%sDRY RUN: Validated %d migrations without applying them%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sDRY RUN: Validated %d migration(s) without applying them%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			} else {
-				fmt.Printf("%sDRY RUN: Validated %d migrations without rolling them back%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sDRY RUN: Validated %d migration(s) without rolling them back%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			}
 		} else {
 			if options.Operation == types.UpMigrationOperation {
-				fmt.Printf("%sSuccessfully applied %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sSuccessfully applied %d migration(s)%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			} else {
-				fmt.Printf("%sSuccessfully rolled back %d migrations%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
+				fmt.Printf("%sSuccessfully rolled back %d migration(s)%s\n", output.StyleInfo, noOfMigrations, output.StyleReset)
 			}
 		}
 
