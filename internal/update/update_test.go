@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/BolajiOlajide/kat/internal/version"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,6 +28,10 @@ func TestCheckForUpdates(t *testing.T) {
 					"name": "kat_1.0.1_darwin_amd64.tar.gz",
 					"browser_download_url": "https://example.com/download/darwin"
 				},
+        {
+					"name": "kat_1.0.1_darwin_arm64.tar.gz",
+					"browser_download_url": "https://example.com/download/darwin"
+				},
 				{
 					"name": "kat_1.0.1_windows_amd64.zip",
 					"browser_download_url": "https://example.com/download/windows"
@@ -35,16 +40,18 @@ func TestCheckForUpdates(t *testing.T) {
 		}`)
 	}))
 	defer server.Close()
-	
+
 	// Save the original constant value and restore it after the test
-	originalReleaseURL := GitHubReleaseURL
-	GitHubReleaseURL = server.URL
-	defer func() { GitHubReleaseURL = originalReleaseURL }()
+	originalReleaseURL := gitHubReleaseURL
+	gitHubReleaseURL = server.URL
 
 	// Mock current version
-	oldVersion := version.Version
-	version.Version = func() string { return "1.0.0" }
-	defer func() { version.Version = oldVersion }()
+	version.MockVersion = func() string { return "v1.0.0" }
+
+	t.Cleanup(func() {
+		version.MockVersion = nil
+		gitHubReleaseURL = originalReleaseURL
+	})
 
 	// Test when update is available
 	hasUpdate, latestVersion, downloadURL, err := CheckForUpdates()
@@ -65,7 +72,7 @@ func TestCheckForUpdates(t *testing.T) {
 	assert.Equal(t, expectedURL, downloadURL)
 
 	// Test when already up to date
-	version.Version = func() string { return "1.0.1" }
+	version.MockVersion = func() string { return "v1.0.1" }
 	hasUpdate, _, _, err = CheckForUpdates()
 	assert.NoError(t, err)
 	assert.False(t, hasUpdate)

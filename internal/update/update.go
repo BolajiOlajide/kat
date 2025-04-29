@@ -17,7 +17,7 @@ import (
 )
 
 // GitHubReleaseURL is the URL for GitHub's latest release API
-var GitHubReleaseURL = "https://api.github.com/repos/BolajiOlajide/kat/releases/latest"
+var gitHubReleaseURL = "https://api.github.com/repos/BolajiOlajide/kat/releases/latest"
 
 // ReleaseInfo represents the GitHub release API response
 type ReleaseInfo struct {
@@ -40,7 +40,7 @@ func CheckForUpdates() (bool, string, string, error) {
 	}
 
 	// Create a request to the GitHub API
-	req, err := http.NewRequest("GET", GitHubReleaseURL, nil)
+	req, err := http.NewRequest("GET", gitHubReleaseURL, nil)
 	if err != nil {
 		return false, "", "", errors.Newf("error creating request: %w", err)
 	}
@@ -79,9 +79,10 @@ func CheckForUpdates() (bool, string, string, error) {
 	hasUpdate := lv.GreaterThan(cv)
 
 	// Find the appropriate download URL for current platform
+	platformSuffix := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
 	downloadURL := ""
+
 	if hasUpdate {
-		platformSuffix := fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH)
 		for _, asset := range release.Assets {
 			if strings.Contains(asset.Name, platformSuffix) {
 				downloadURL = asset.BrowserDownloadURL
