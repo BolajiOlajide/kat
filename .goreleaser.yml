@@ -68,11 +68,6 @@ release:
   #
   # Templates: allowed.
   header: |
-    ## Kat ({{ .Date }})
+    ## Kat ({{ .Version }})
 
     Welcome to this new release!
-
-    ## Changelog
-
-    {{ .Changelog }}
-
