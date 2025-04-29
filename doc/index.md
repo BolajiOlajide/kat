@@ -49,6 +49,11 @@ grid_navigation:
       cta: Learn more
       url: '/migration'
 
+    - title: Update
+      excerpt: Update Kat to the latest version.
+      cta: Learn more
+      url: '/update'
+
     - title: Contributing
       excerpt: Contribute to the development of Kat.
       cta: Learn more

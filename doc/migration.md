@@ -11,6 +11,9 @@ page_nav:
     prev:
         content: Database Connectivity
         url: '/ping'
+    next:
+        content: Update
+        url: '/update'
 ---
 
 # Working with Migrations in Kat
