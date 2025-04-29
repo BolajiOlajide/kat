@@ -41,7 +41,6 @@ var dryRunFlag = &cli.BoolFlag{
 	Value:   false,
 }
 
-
 var retryCountFlag = &cli.IntFlag{
 	Name:    "retry-count",
 	Usage:   "number of times to retry operations on transient errors (min: 0, max: 7)",
@@ -74,6 +73,20 @@ var kat = &cli.App{
 		},
 	},
 	Commands: []*cli.Command{
+		{
+			Name:        "update",
+			Usage:       "Update kat to the latest version",
+			Description: "Check for and install the latest version of kat",
+			Action:      update,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "yes",
+					Usage:   "skip confirmation prompt",
+					Aliases: []string{"y"},
+					Value:   false,
+				},
+			},
+		},
 		{
 			Name:        "init",
 			ArgsUsage:   "<directory>",

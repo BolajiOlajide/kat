@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/output"
+	updatepkg "github.com/BolajiOlajide/kat/internal/update"
 	"github.com/BolajiOlajide/kat/internal/version"
 	"github.com/keegancsmith/sqlf"
 )
@@ -70,6 +73,65 @@ func initialize(c *cli.Context) error {
 
 func getVersion(c *cli.Context) error {
 	fmt.Fprintf(os.Stdout, "%sVersion: %s%s\n", output.StyleInfo, version.Version(), output.StyleReset)
+	return nil
+}
+
+func update(c *cli.Context) error {
+	if version.IsDev() {
+		fmt.Fprintf(os.Stdout, "%sYou are running kat in dev mode. The update command is not available in dev mode.%s\n", output.StyleInfo, output.StyleReset)
+		return nil
+	}
+
+	fmt.Fprintf(os.Stdout, "%sChecking for updates...%s\n", output.StyleInfo, output.StyleReset)
+
+	// Check if a newer version is available
+	hasUpdate, latestVersion, downloadURL, err := updatepkg.CheckForUpdates()
+	if err != nil {
+		return fmt.Errorf("failed to check for updates: %w", err)
+	}
+
+	// No update available
+	if !hasUpdate {
+		fmt.Fprintf(os.Stdout, "%sKat is already at the latest version.%s\n", output.StyleSuccess, output.StyleReset)
+		return nil
+	}
+
+	// Update available - notify the user
+	fmt.Fprintf(os.Stdout, "%sA new version of Kat is available: %s%s\n", 
+		output.StyleInfo, latestVersion, output.StyleReset)
+
+	// Get the path to the current executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// In case the executable is a symlink, get the real path
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve executable path: %w", err)
+	}
+
+	// Confirm the update with the user, unless -y flag is provided
+	if !c.Bool("yes") {
+		fmt.Fprintf(os.Stdout, "\nDo you want to update to version %s? [y/N]: ", latestVersion)
+		var response string
+		fmt.Scanln(&response)
+		response = strings.ToLower(strings.TrimSpace(response))
+		if response != "y" && response != "yes" {
+			fmt.Fprintf(os.Stdout, "%sUpdate cancelled.%s\n", output.StyleInfo, output.StyleReset)
+			return nil
+		}
+	}
+
+	// Download and install the update
+	err = updatepkg.DownloadAndReplace(downloadURL, execPath, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("failed to update: %w", err)
+	}
+
+	fmt.Fprintf(os.Stdout, "%sKat has been updated to version %s%s\n", 
+		output.StyleSuccess, latestVersion, output.StyleReset)
 	return nil
 }
 

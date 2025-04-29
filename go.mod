@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.23.2
 
 require (
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/cockroachdb/errors v1.9.1
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.5.4
