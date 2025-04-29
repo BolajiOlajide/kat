@@ -97,7 +97,7 @@ func update(c *cli.Context) error {
 	}
 
 	// Update available - notify the user
-	fmt.Fprintf(os.Stdout, "%sA new version of Kat is available: %s%s\n", 
+	fmt.Fprintf(os.Stdout, "%sA new version of Kat is available: %s%s\n",
 		output.StyleInfo, latestVersion, output.StyleReset)
 
 	// Get the path to the current executable
@@ -130,7 +130,7 @@ func update(c *cli.Context) error {
 		return fmt.Errorf("failed to update: %w", err)
 	}
 
-	fmt.Fprintf(os.Stdout, "%sKat has been updated to version %s%s\n", 
+	fmt.Fprintf(os.Stdout, "%sKat has been updated to version %s%s\n",
 		output.StyleSuccess, latestVersion, output.StyleReset)
 	return nil
 }

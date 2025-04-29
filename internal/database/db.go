@@ -59,7 +59,6 @@ func (d *database) Exec(ctx context.Context, query *sqlf.Query) error {
 	return err
 }
 
-
 func (d *database) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return d.db.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
