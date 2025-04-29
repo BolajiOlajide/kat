@@ -76,7 +76,6 @@ Make sure you have a PostgreSQL instance available for integration tests. You ca
 ## Code Style
 
 - Follow standard Go code formatting guidelines
-- Use `goimports` to organize imports (available in the `.bin` directory)
 - Run `go fmt ./...` before committing
 
 ## Pull Request Process
@@ -107,7 +106,6 @@ Feature requests are welcome! Please provide:
 ## Communication
 
 - Use GitHub Issues for bug reports and feature requests
-- For questions, you can open a Discussion on GitHub
 
 ## Releasing
 
