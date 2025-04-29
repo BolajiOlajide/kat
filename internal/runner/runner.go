@@ -179,9 +179,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		}
 
 		// Execute transaction without retry
-		err := r.db.WithTransact(ctx, txFunc)
-
-		if err != nil {
+		if err := r.db.WithTransact(ctx, txFunc); err != nil {
 			// Print detailed error information
 			fmt.Printf("\n%sMigration failed: %s%s\n", output.StyleFailure, definition.Name, output.StyleReset)
 			fmt.Printf("%sError details: %s%s\n", output.StyleFailure, err.Error(), output.StyleReset)

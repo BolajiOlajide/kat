@@ -6,13 +6,11 @@ import "text/template"
 // you cannot use SQL parameters to specify table names, column names, or other structural elements of a SQL query.
 // We construct this statement using a template so as to prevent SQL injection
 var createMigrationTableTmpl = template.Must(template.New("createMigrationsLogSQL").Parse(`CREATE TABLE IF NOT EXISTS {{ .TableName }} (
-    id SERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     migration_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     duration INTERVAL NOT NULL
 );`))
-
-var dropMigrationTableStmt = template.Must(template.New("dropMigrationsLogSQL").Parse(`DROP TABLE IF EXISTS {{ .TableName }}`))
 
 var selectMigrationsTmpl = template.Must(template.New("selectMigrationLogTemplate").Parse(`SELECT %s FROM {{ .TableName }}`))
 
