@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Upcoming security improvements
 
+## [0.0.4] - 2025-04-29
+
+### Added
+- Added `update` command to automatically check for and install new versions
+- Added comprehensive documentation for updating Kat and contributing to the project
+- Added test coverage for update functionality
+
 ## [0.0.3] - 2025-04-21
 
 ### Changed
@@ -52,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple CLI interface
 
 [Unreleased]: https://github.com/BolajiOlajide/kat/compare/v0.0.3...HEAD
+[0.0.4]: https://github.com/BolajiOlajide/kat/compare/v0.0.4...v0.0.3
 [0.0.3]: https://github.com/BolajiOlajide/kat/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/BolajiOlajide/kat/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/BolajiOlajide/kat/releases/tag/v0.0.1
