@@ -6,8 +6,8 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/BolajiOlajide/kat/internal/constants"
-	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/v0/internal/constants"
+	"github.com/BolajiOlajide/kat/v0/internal/output"
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 )

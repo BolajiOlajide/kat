@@ -1,6 +1,6 @@
 package version
 
-// Use `-ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=x.x.x"` to set this at Build time.
+// Use `-ldflags "-X github.com/BolajiOlajide/kat/v0/internal/version.version=x.x.x"` to set this at Build time.
 var version = "dev"
 
 var MockVersion func() string

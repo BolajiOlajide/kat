@@ -1,7 +1,7 @@
 # Kat Project Agent Configuration
 
 ## Build & Test Commands
-- Build: `go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=$(VERSION)" ./cmd/kat`
+- Build: `go build -ldflags "-X github.com/BolajiOlajide/kat/v0/internal/version.version=$(VERSION)" ./cmd/kat`
 - Install: `go install ./...`
 - Run: `go run ./cmd/kat $(ARGS)`
 - Run with custom args: `make run ARGS="your args here"`

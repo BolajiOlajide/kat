@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/v0/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"gopkg.in/yaml.v3"

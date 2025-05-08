@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/v0/internal/output"
+	"github.com/BolajiOlajide/kat/v0/internal/types"
 )
 
 // Add creates a new directory with stub migration files in the given schema and returns the

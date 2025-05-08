@@ -8,10 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 
-	"github.com/BolajiOlajide/kat/internal/database"
-	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/runner"
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/v0/internal/database"
+	"github.com/BolajiOlajide/kat/v0/internal/output"
+	"github.com/BolajiOlajide/kat/v0/internal/runner"
+	"github.com/BolajiOlajide/kat/v0/internal/types"
 )
 
 // Down is the command that rolls back migrations.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/v0/internal/output"
 	"github.com/cockroachdb/errors"
 
 	// Import the postgres driver

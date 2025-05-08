@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BolajiOlajide/kat/internal/database"
-	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/v0/internal/database"
+	"github.com/BolajiOlajide/kat/v0/internal/output"
+	"github.com/BolajiOlajide/kat/v0/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 )

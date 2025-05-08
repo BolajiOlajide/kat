@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/v0/internal/types"
 )
 
 // FilePerm is the standard permission for migration files (readable by all, writable by owner)
