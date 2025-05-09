@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func computeDefinitions(fs fs.FS) ([]types.Definition, error) {
+func ComputeDefinitions(fs fs.FS) ([]types.Definition, error) {
 	// Make sure the root directory exists. All migrations must be in a subdirectory.
 	// Also using `http.FS` here because it's API is more robust than `fs.FS`.
 	root, err := http.FS(fs).Open("/")

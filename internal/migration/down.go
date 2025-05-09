@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -14,16 +15,13 @@ import (
 	"github.com/BolajiOlajide/kat/v0/internal/types"
 )
 
-// Down is the command that rolls back migrations.
-// It rolls back the most recent migration by default,
-// or a specific number of migrations if specified.
 func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
-	fs, err := getMigrationsFS(cfg.Migration.Directory)
+	f, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
 	}
 
-	definitions, err := computeDefinitions(fs)
+	definitions, err := ComputeDefinitions(f)
 	if err != nil {
 		return err
 	}
@@ -37,17 +35,24 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 
 	count := c.Int("count")
 	if count < 1 {
 		return errors.New("count must be a positive number")
 	}
 
+	return DownWithFS(c.Context, db, definitions, cfg, count, dryRun)
+}
+
+// Down is the command that rolls back migrations.
+// It rolls back the most recent migration by default,
+// or a specific number of migrations if specified.
+func DownWithFS(ctx context.Context, db database.DB, definitions []types.Definition, cfg types.Config, count int, dryRun bool) error {
+	defer db.Close()
+
 	// Get applied migrations to determine which ones to roll back
 	// No retry logic for migrations
-	migrationsToRollback, err := getAppliedMigrationsToRollback(c, db, cfg.Migration.TableName, count)
-
+	migrationsToRollback, err := getAppliedMigrationsToRollback(ctx, db, cfg.Migration.TableName, count)
 	if err != nil {
 		return err
 	}
@@ -61,12 +66,12 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 	filteredDefinitions := filterDefinitionsForRollback(definitions, migrationsToRollback)
 
 	// No retry for migrations
-	r, err := runner.NewRunner(c.Context, db)
+	r, err := runner.NewRunner(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "connecting to database")
 	}
 
-	return r.Run(c.Context, runner.Options{
+	return r.Run(ctx, runner.Options{
 		Operation:     types.DownMigrationOperation,
 		Definitions:   filteredDefinitions,
 		MigrationInfo: cfg.Migration,
@@ -76,10 +81,10 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 }
 
 // getAppliedMigrationsToRollback returns the names of migrations that should be rolled back
-func getAppliedMigrationsToRollback(c *cli.Context, db database.DB, tableName string, count int) ([]string, error) {
+func getAppliedMigrationsToRollback(ctx context.Context, db database.DB, tableName string, count int) ([]string, error) {
 	// Check if the migrations table exists
 	var exists bool
-	if err := db.QueryRow(c.Context, sqlf.Sprintf(
+	if err := db.QueryRow(ctx, sqlf.Sprintf(
 		"SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = %s)",
 		tableName,
 	)).Scan(&exists); err != nil {
@@ -97,7 +102,7 @@ func getAppliedMigrationsToRollback(c *cli.Context, db database.DB, tableName st
 		count,
 	)
 
-	rows, err := db.Query(c.Context, query)
+	rows, err := db.Query(ctx, query)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
