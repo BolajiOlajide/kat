@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err, "fetching connection string")
 
-	db, err := database.NewDB(connStr, sqlf.PostgresBindVar)
+	db, err := database.New(connStr)
 	require.NoError(t, err, "creating database service")
 
 	r, err := NewRunner(ctx, db)

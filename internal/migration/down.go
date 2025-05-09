@@ -31,7 +31,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
-	db, err := database.NewDB(dbConn, sqlf.PostgresBindVar)
+	db, err := database.New(dbConn)
 	if err != nil {
 		return err
 	}

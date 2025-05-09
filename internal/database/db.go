@@ -164,12 +164,12 @@ func withRetry(retryCount int, initialDelay int, f func() error) error {
 	return errors.Wrapf(err, "failed after %d retries", retryCount)
 }
 
-// NewDB returns a new instance of the database
-func NewDB(url string, bindvar sqlf.BindVar) (DB, error) {
+// New returns a new instance of the database
+func New(url string) (DB, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
 
-	return &database{db: db, bindVar: bindvar}, nil
+	return &database{db: db, bindVar: sqlf.PostgresBindVar}, nil
 }
