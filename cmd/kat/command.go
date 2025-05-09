@@ -14,7 +14,6 @@ import (
 	"github.com/BolajiOlajide/kat/internal/output"
 	updatepkg "github.com/BolajiOlajide/kat/internal/update"
 	"github.com/BolajiOlajide/kat/internal/version"
-	"github.com/keegancsmith/sqlf"
 )
 
 func add(c *cli.Context) error {
@@ -153,7 +152,7 @@ func ping(c *cli.Context) error {
 	retryDelay := c.Int("retry-delay")
 
 	// Create DB connection
-	db, err := database.NewDB(dbConn, sqlf.PostgresBindVar)
+	db, err := database.New(dbConn)
 	if err != nil {
 		return err
 	}
