@@ -7,14 +7,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
-	"github.com/BolajiOlajide/kat/internal/version"
 )
-
-// Version returns the current version of the application.
-// This function delegates to version.Version() to get the version string.
-func Version() string {
-	return version.Version()
-}
 
 type Migration struct {
 	db                 database.DB
