@@ -4,10 +4,10 @@ import (
 	"context"
 	"io/fs"
 
-	"github.com/BolajiOlajide/kat/v0/internal/database"
-	"github.com/BolajiOlajide/kat/v0/internal/migration"
-	"github.com/BolajiOlajide/kat/v0/internal/types"
-	"github.com/BolajiOlajide/kat/v0/internal/version"
+	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/migration"
+	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/internal/version"
 )
 
 // Version returns the current version of the application.

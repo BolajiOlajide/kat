@@ -6,9 +6,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 
-	"github.com/BolajiOlajide/kat/v0/internal/database"
-	"github.com/BolajiOlajide/kat/v0/internal/runner"
-	"github.com/BolajiOlajide/kat/v0/internal/types"
+	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/runner"
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // Up is the command that runs the up migration operation.

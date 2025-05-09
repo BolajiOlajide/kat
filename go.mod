@@ -1,4 +1,4 @@
-module github.com/BolajiOlajide/kat/v0
+module github.com/BolajiOlajide/kat
 
 go 1.23.0
 

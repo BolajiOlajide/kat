@@ -13,4 +13,4 @@ start_doc:
 	bundle exec jekyll serve
 
 build:
-	go build -ldflags "-X github.com/BolajiOlajide/kat/v0/internal/version.version=$(VERSION)" ./cmd/kat
+	go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=$(VERSION)" ./cmd/kat

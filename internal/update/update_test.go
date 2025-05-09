@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/BolajiOlajide/kat/v0/internal/version"
+	"github.com/BolajiOlajide/kat/internal/version"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/BolajiOlajide/kat/v0/internal/output"
-	"github.com/BolajiOlajide/kat/v0/internal/version"
+	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/version"
 	"github.com/Masterminds/semver/v3"
 	"github.com/cockroachdb/errors"
 )

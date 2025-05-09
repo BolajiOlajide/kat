@@ -11,8 +11,8 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/BolajiOlajide/kat/v0/internal/database"
-	"github.com/BolajiOlajide/kat/v0/internal/types"
+	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 const dropRecreateQuery = `-- as a superuser or the database owner:

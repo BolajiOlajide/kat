@@ -9,8 +9,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.com/BolajiOlajide/kat/v0/internal/constants"
-	"github.com/BolajiOlajide/kat/v0/internal/types"
+	"github.com/BolajiOlajide/kat/internal/constants"
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 var errConfigNotFound = errors.Newf("config file not provided. Provide one via the `-c` flag or have the %s in the current working directory.", constants.KatConfigurationFileName)

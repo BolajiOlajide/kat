@@ -1,6 +1,6 @@
 package runner
 
-import "github.com/BolajiOlajide/kat/v0/internal/types"
+import "github.com/BolajiOlajide/kat/internal/types"
 
 // Options represents the options for the runner.
 type Options struct {
