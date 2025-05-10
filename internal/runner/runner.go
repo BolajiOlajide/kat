@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
@@ -84,8 +86,37 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	var noOfMigrations int
 	var successfulMigrations []successfulMigration
-
-	for _, definition := range options.Definitions {
+	
+	var definitionsToRun []types.Definition
+	
+	if options.Operation == types.UpMigrationOperation {
+		// Build a migration graph for proper dependency ordering
+		migrationGraph, err := graph.NewMigrationGraph(options.Definitions)
+		if err != nil {
+			return errors.Wrap(err, "building migration graph")
+		}
+		
+		// Get migrations that need to be applied, respecting parent dependencies
+		definitionsToRun = migrationGraph.GetMissingMigrations(logsMap)
+	} else if options.Operation == types.DownMigrationOperation {
+		// For down operations, we want to run migrations in reverse order
+		// Get all applied migrations and sort them by timestamp in descending order
+		var appliedDefinitions []types.Definition
+		for _, def := range options.Definitions {
+			if logsMap[def.Name] != nil {
+				appliedDefinitions = append(appliedDefinitions, def)
+			}
+		}
+		
+		// Sort by timestamp descending for down migrations
+		sort.Slice(appliedDefinitions, func(i, j int) bool {
+			return appliedDefinitions[i].Timestamp > appliedDefinitions[j].Timestamp
+		})
+		
+		definitionsToRun = appliedDefinitions
+	}
+	
+	for _, definition := range definitionsToRun {
 		// Use retry functionality for transaction if configured
 		var txFunc = func(tx database.Tx) (err error) {
 			if options.Operation == types.UpMigrationOperation {
@@ -136,23 +167,28 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			// For UP operations, insert a log entry
 			// For DOWN operations, remove the log entry
 			if options.Operation == types.UpMigrationOperation {
-				migrationTime := start.Format("2006-01-02 15:04:05.999-07")
-				insertQuery := sqlf.Sprintf(
-					insertLogQuery,
-					sqlf.Join(migrationLogInsertColumns, ", "),
-					sqlf.Join(
-						[]*sqlf.Query{
-							sqlf.Sprintf("%s", definition.Name),
-							sqlf.Sprintf("%s", migrationTime),
-							sqlf.Sprintf("%d * interval '1 microsecond'", duration),
-						},
-						", ",
-					),
-				)
-				err = tx.Exec(ctx, insertQuery)
-				if err != nil {
-					return errors.Wrap(err, "inserting log entry")
-				}
+			migrationTime := start.Format("2006-01-02 15:04:05.999-07")
+			
+			// Format parent array for storage
+			parentsArray := formatParentsForDB(definition.MigrationMetadata.Parents)
+			
+			insertQuery := sqlf.Sprintf(
+			insertLogQuery,
+			sqlf.Join(migrationLogInsertColumns, ", "),
+			sqlf.Join(
+			[]*sqlf.Query{
+			 sqlf.Sprintf("%s", definition.Name),
+			  sqlf.Sprintf("%s", migrationTime),
+			   sqlf.Sprintf("%d * interval '1 microsecond'", duration),
+			   sqlf.Sprintf("%s", parentsArray),
+			  },
+			 ", ",
+			 ),
+					)
+					err = tx.Exec(ctx, insertQuery)
+					if err != nil {
+						return errors.Wrap(err, "inserting log entry")
+					}
 			} else {
 				// Delete the migration log entry for DOWN operations
 				deleteQuery := sqlf.Sprintf(
@@ -265,6 +301,7 @@ func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {
 		&mlog.Name,
 		&mlog.MigrationTime,
 		&mlog.Duration,
+		&mlog.Parents,
 	); err != nil {
 		return nil, err
 	}

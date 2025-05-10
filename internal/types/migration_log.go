@@ -11,4 +11,5 @@ type MigrationLog struct {
 	Name          string
 	MigrationTime time.Time
 	Duration      pgtype.Interval
+	Parents       []int64
 }

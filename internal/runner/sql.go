@@ -9,7 +9,8 @@ var createMigrationTableTmpl = template.Must(template.New("createMigrationsLogSQ
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     migration_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    duration INTERVAL NOT NULL
+    duration INTERVAL NOT NULL,
+    parents BIGINT[] NOT NULL DEFAULT '{}'
 );`))
 
 var selectMigrationsTmpl = template.Must(template.New("selectMigrationLogTemplate").Parse(`SELECT %s FROM {{ .TableName }}`))

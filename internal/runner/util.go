@@ -13,12 +13,14 @@ var migrationLogColumns = []string{
 	"name",
 	"migration_time",
 	"duration",
+	"parents",
 }
 
 var migrationLogInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("migration_time"),
 	sqlf.Sprintf("duration"),
+	sqlf.Sprintf("parents"),
 }
 
 func computeMigrationLogColumns(tableName string) []*sqlf.Query {
@@ -51,4 +53,22 @@ func computeSQLQueryFromTemplate(tableName string, tmpl *template.Template) (str
 		return "", err
 	}
 	return query.String(), nil
+}
+
+// formatParentsForDB converts a slice of parent migration timestamps to a PostgreSQL array literal
+func formatParentsForDB(parents []int64) string {
+	if len(parents) == 0 {
+		return "ARRAY[]::BIGINT[]"
+	}
+
+	var b bytes.Buffer
+	b.WriteString("ARRAY[")
+	for i, parent := range parents {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(fmt.Sprintf("%d", parent))
+	}
+	b.WriteString("]::BIGINT[]")
+	return b.String()
 }
