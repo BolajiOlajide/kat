@@ -25,6 +25,12 @@ func main() {
 
 var verbose bool
 
+var descriptionFlag = &cli.StringFlag{
+	Name:    "description",
+	Usage:   "-d <description of the migration>",
+	Aliases: []string{"d"},
+}
+
 var configFlag = &cli.PathFlag{
 	Name:    "config",
 	Usage:   "the configuration file for kat",
@@ -163,9 +169,9 @@ var kat = &cli.App{
 			ArgsUsage:   "<n>",
 			Usage:       "Create migration",
 			Description: "Creates a new migration file in the migrations directory",
-			Action:      add,
+			Action:      addExec,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{configFlag},
+			Flags:       []cli.Flag{configFlag, descriptionFlag},
 		},
 		{
 			Name:        "up",
