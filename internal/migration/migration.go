@@ -12,7 +12,7 @@ import (
 // FilePerm is the standard permission for migration files (readable by all, writable by owner)
 const FilePerm = 0644
 
-func saveMigration(m types.Migration, name string) (err error) {
+func saveMigration(m types.Migration, name, migrationDirName string) (err error) {
 	defer func() {
 		if err != nil {
 			// undo any changes to the fs on error. we don't care about the errors here.

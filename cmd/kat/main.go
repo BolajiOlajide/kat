@@ -163,7 +163,7 @@ var kat = &cli.App{
 			ArgsUsage:   "<n>",
 			Usage:       "Create migration",
 			Description: "Creates a new migration file in the migrations directory",
-			Action:      add,
+			Action:      addExec,
 			Before:      config.ParseConfig,
 			Flags:       []cli.Flag{configFlag},
 		},
