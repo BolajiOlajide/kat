@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/config"
@@ -16,7 +18,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/version"
 )
 
-func add(c *cli.Context) error {
+func addExec(c *cli.Context) error {
 	args := c.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no migration name specified", 1)
@@ -25,11 +27,25 @@ func add(c *cli.Context) error {
 		return cli.Exit("too many arguments", 1)
 	}
 
-	cfg, err := config.GetKatConfigFromCtx(c)
-	if err != nil {
-		return err
+	name := strings.TrimSpace(args[0])
+	if name == "" {
+		return errors.New("migration name cannot be empty. Please provide a descriptive name for your migration.")
 	}
-	return migration.Add(args[0], cfg)
+
+	addModel := migration.NewAddModel(c, name)
+	program := tea.NewProgram(
+		addModel,
+		tea.WithContext(c.Context),
+	)
+	defer program.Kill()
+
+	p := output.NewProgressWriter(program)
+	addModel.SetProgressWriter(p)
+
+	go p.Start()
+
+	_, err := program.Run()
+	return err
 }
 
 func up(c *cli.Context) error {
