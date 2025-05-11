@@ -3,8 +3,8 @@ package migration
 const metadataFileTemplate = `name: %s
 timestamp: %d
 description: |
-  <add comment about your migration in here>
-parents: %s
+  # <add comment about your migration in here>
+parents: %v
 `
 
 const downMigrationFileTemplate = `-- Undo the changes made in the up migration

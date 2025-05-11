@@ -12,8 +12,8 @@ type Migration struct {
 type MigrationMetadata struct {
 	Name        string  `yaml:"name"`
 	Timestamp   int64   `yaml:"timestamp"`
-	Description string  `yaml:"description"`
-	Parents     []int64 `yaml:"parents,omitempty"`
+	Description string  `yaml:"description,omitempty"`
+	Parents     []int64 `yaml:"parents,omitempty,flow"`
 }
 
 // MigrationOperationType represents the type of migration operation.

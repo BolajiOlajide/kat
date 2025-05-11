@@ -33,6 +33,12 @@ var configFlag = &cli.PathFlag{
 	Value:   constants.KatConfigurationFileName,
 }
 
+var descriptionFlag = &cli.StringFlag{
+	Name:    "description",
+	Usage:   "-d <description of the migration>",
+	Aliases: []string{"d"},
+}
+
 var dryRunFlag = &cli.BoolFlag{
 	Name:    "dry-run",
 	Usage:   "validate migrations without applying them",
@@ -163,9 +169,9 @@ var kat = &cli.App{
 			ArgsUsage:   "<n>",
 			Usage:       "Create migration",
 			Description: "Creates a new migration file in the migrations directory",
-			Action:      add,
+			Action:      addExec,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{configFlag},
+			Flags:       []cli.Flag{configFlag, descriptionFlag},
 		},
 		{
 			Name:        "up",
