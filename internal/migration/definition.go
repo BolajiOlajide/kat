@@ -49,26 +49,67 @@ func ComputeDefinitions(fs fs.FS) ([]types.Definition, error) {
 }
 
 func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
-	upFilename := fmt.Sprintf("%s/up.sql", filename)
-	downFilename := fmt.Sprintf("%s/down.sql", filename)
-	metadataFilename := fmt.Sprintf("%s/metadata.yaml", filename)
-
-	upQuery, err := readQueryFromFile(fs, upFilename)
-	if err != nil {
-		return types.Definition{}, err
-	}
-
-	downQuery, err := readQueryFromFile(fs, downFilename)
-	if err != nil {
-		return types.Definition{}, err
-	}
-
-	metadata, err := readFile(fs, metadataFilename)
+	// Read all migration files in a single function call
+	upQuery, downQuery, metadata, err := readMigrationFiles(fs, filename)
 	if err != nil {
 		return types.Definition{}, err
 	}
 
 	return populateDefinition(upQuery, downQuery, metadata)
+}
+
+func readMigrationFiles(fs fs.FS, dirname string) (*sqlf.Query, *sqlf.Query, []byte, error) {
+	upFilename := fmt.Sprintf("%s/up.sql", dirname)
+	downFilename := fmt.Sprintf("%s/down.sql", dirname)
+	metadataFilename := fmt.Sprintf("%s/metadata.yaml", dirname)
+
+	// Read up.sql file
+	upFile, err := fs.Open(upFilename)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to open up.sql for migration %s", dirname)
+	}
+	defer upFile.Close()
+
+	// Read down.sql file
+	downFile, err := fs.Open(downFilename)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to open down.sql for migration %s", dirname)
+	}
+	defer downFile.Close()
+
+	// Read metadata.yaml file
+	metadataFile, err := fs.Open(metadataFilename)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to open metadata.yaml for migration %s", dirname)
+	}
+	defer metadataFile.Close()
+
+	// Use buffered readers for all files
+	upReader := bufio.NewReader(upFile)
+	downReader := bufio.NewReader(downFile)
+	metadataReader := bufio.NewReader(metadataFile)
+
+	// Read file contents
+	upContent, err := io.ReadAll(upReader)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to read up.sql for migration %s", dirname)
+	}
+
+	downContent, err := io.ReadAll(downReader)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to read down.sql for migration %s", dirname)
+	}
+
+	metadata, err := io.ReadAll(metadataReader)
+	if err != nil {
+		return nil, nil, nil, errors.Wrapf(err, "failed to read metadata.yaml for migration %s", dirname)
+	}
+
+	// Convert SQL content to queries
+	upQuery := queryFromString(string(upContent))
+	downQuery := queryFromString(string(downContent))
+
+	return upQuery, downQuery, metadata, nil
 }
 
 func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.Definition, error) {
@@ -82,25 +123,4 @@ func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.
 		DownQuery:         downQuery,
 		MigrationMetadata: payload,
 	}, nil
-}
-
-func readFile(fs fs.FS, filepath string) ([]byte, error) {
-	file, err := fs.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	// This reduces system calls when reading files, especially beneficial for larger SQL migration files.
-	reader := bufio.NewReader(file)
-	return io.ReadAll(reader)
-}
-
-func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
-	file, err := readFile(fs, filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	return queryFromString(string(file)), nil
 }
