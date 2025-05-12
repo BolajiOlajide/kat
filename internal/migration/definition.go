@@ -1,6 +1,7 @@
 package migration
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/fs"
@@ -27,19 +28,19 @@ func ComputeDefinitions(fs fs.FS) ([]types.Definition, error) {
 		return nil, err
 	}
 
-	definitions := make([]types.Definition, len(migrations))
-	for index, file := range migrations {
+	definitions := make([]types.Definition, 0, len(migrations))
+	for _, file := range migrations {
 		if !file.IsDir() {
 			// if this is not a directory, skip it
 			continue
 		}
 
-		definition, err := computeDefinition(fs, file.Name())
+		def, err := computeDefinition(fs, file.Name())
 		if err != nil {
 			return nil, errors.Wrap(err, "malformed migration definition")
 		}
 
-		definitions[index] = definition
+		definitions = append(definitions, def)
 	}
 
 	// We sort the definitions by their ID so that they are executed in the correct order.
@@ -76,13 +77,11 @@ func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.
 		return types.Definition{}, err
 	}
 
-	var definition = types.Definition{
+	return types.Definition{
 		UpQuery:           upQuery,
 		DownQuery:         downQuery,
 		MigrationMetadata: payload,
-	}
-
-	return definition, nil
+	}, nil
 }
 
 func readFile(fs fs.FS, filepath string) ([]byte, error) {
@@ -92,7 +91,9 @@ func readFile(fs fs.FS, filepath string) ([]byte, error) {
 	}
 	defer file.Close()
 
-	return io.ReadAll(file)
+	// This reduces system calls when reading files, especially beneficial for larger SQL migration files.
+	reader := bufio.NewReader(file)
+	return io.ReadAll(reader)
 }
 
 func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
