@@ -13,6 +13,9 @@ type MigrationMetadata struct {
 	Name        string  `yaml:"name"`
 	Timestamp   int64   `yaml:"timestamp"`
 	Description string  `yaml:"description,omitempty"`
+	
+	// Parents represents the timestamps of parent migrations in the dependency graph.
+	// This field is used to define dependencies between migrations.
 	Parents     []int64 `yaml:"parents,omitempty,flow"`
 }
 
