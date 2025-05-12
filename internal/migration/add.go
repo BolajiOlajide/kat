@@ -21,7 +21,7 @@ func Add(c *cli.Context, name string) error {
 		return err
 	}
 
-	f, err := getMigrationsFS(cfg.Migration.Directory)
+	_, err = getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return errors.Wrap(err, "getting migrations")
 	}
