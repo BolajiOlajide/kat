@@ -9,6 +9,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 )
 
@@ -18,6 +19,11 @@ func Add(c *cli.Context, name string) error {
 	cfg, err := config.GetKatConfigFromCtx(c)
 	if err != nil {
 		return err
+	}
+
+	_, err = getMigrationsFS(cfg.Migration.Directory)
+	if err != nil {
+		return errors.Wrap(err, "getting migrations")
 	}
 
 	timestamp := time.Now().UTC().Unix()
