@@ -1,11 +1,5 @@
 package migration
 
-const metadataFileTemplate = `name: %s
-timestamp: %d
-description: |
-  <add comment about your migration in here>
-`
-
 const downMigrationFileTemplate = `-- Undo the changes made in the up migration
 --
 -- Note: All migrations in kat are automatically wrapped in a transaction.

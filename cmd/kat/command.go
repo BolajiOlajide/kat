@@ -16,7 +16,7 @@ import (
 	"github.com/BolajiOlajide/kat/internal/version"
 )
 
-func add(c *cli.Context) error {
+func addExec(c *cli.Context) error {
 	args := c.Args().Slice()
 	if len(args) == 0 {
 		return cli.Exit("no migration name specified", 1)
@@ -25,11 +25,7 @@ func add(c *cli.Context) error {
 		return cli.Exit("too many arguments", 1)
 	}
 
-	cfg, err := config.GetKatConfigFromCtx(c)
-	if err != nil {
-		return err
-	}
-	return migration.Add(args[0], cfg)
+	return migration.Add(c, args[0])
 }
 
 func up(c *cli.Context) error {
