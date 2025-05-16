@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/cockroachdb/errors"
-
-	// Import the postgres driver
 	"github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/BolajiOlajide/kat/internal/output"
 )
 
 var _ DB = &database{}

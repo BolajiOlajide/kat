@@ -1,8 +1,9 @@
 package runner
 
 import (
-	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/dominikbraun/graph"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // Options represents the options for the runner.

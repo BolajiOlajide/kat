@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/urfave/cli/v2"
+
 	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
-	"github.com/cockroachdb/errors"
-	"github.com/urfave/cli/v2"
 )
 
 // Add creates a new directory with stub migration files in the given schema and returns the
@@ -39,11 +40,26 @@ func Add(c *cli.Context, name string) error {
 		Timestamp: timestamp,
 	}
 
+	f, err := getMigrationsFS(cfg.Migration.Directory)
+	if err != nil {
+		return err
+	}
+
+	defs, err := ComputeDefinitions(f)
+	if err != nil {
+		return err
+	}
+
+	leaves, err := ComputeLeaves(defs)
+	if err != nil {
+		return err
+	}
+
 	md := types.MigrationMetadata{
 		Name:        sanitizedName,
 		Timestamp:   timestamp,
 		Description: c.String("description"),
-		Parents:     nil,
+		Parents:     leaves,
 	}
 
 	if err := saveMigration(m, md); err != nil {

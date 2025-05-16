@@ -1,12 +1,12 @@
 package migration
 
 import (
-	"github.com/cockroachdb/errors"
 	"io/fs"
 
-	"github.com/BolajiOlajide/kat/internal/types"
-
+	"github.com/cockroachdb/errors"
 	"github.com/dominikbraun/graph"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 var definitionHash = func(d types.Definition) int64 {
@@ -67,4 +67,21 @@ func ComputeDefinitions(f fs.FS) (graph.Graph[int64, types.Definition], error) {
 	}
 
 	return g, nil
+}
+
+func ComputeLeaves(g graph.Graph[int64, types.Definition]) ([]int64, error) {
+	// build the adjacency map: for each vertex, map of outgoing edges
+	adj, err := g.AdjacencyMap()
+	if err != nil {
+		return nil, errors.Wrap(err, "adjacency map")
+	}
+
+	var leaves []int64
+	for v, outs := range adj {
+		// no outgoing neighbors → it's a leaf
+		if len(outs) == 0 {
+			leaves = append(leaves, v)
+		}
+	}
+	return leaves, nil
 }
