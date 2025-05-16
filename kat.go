@@ -2,6 +2,7 @@ package kat
 
 import (
 	"context"
+	"github.com/dominikbraun/graph"
 	"io/fs"
 
 	"github.com/BolajiOlajide/kat/internal/database"
@@ -11,7 +12,7 @@ import (
 
 type Migration struct {
 	db                 database.DB
-	definitions        []types.Definition
+	definitions        graph.Graph[int64, types.Definition]
 	migrationTableName string
 }
 

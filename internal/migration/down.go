@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/dominikbraun/graph"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -47,7 +48,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 // Down is the command that rolls back migrations.
 // It rolls back the most recent migration by default,
 // or a specific number of migrations if specified.
-func DownWithFS(ctx context.Context, db database.DB, definitions []types.Definition, cfg types.Config, count int, dryRun bool) error {
+func DownWithFS(ctx context.Context, db database.DB, definitions graph.Graph[int64, types.Definition], cfg types.Config, count int, dryRun bool) error {
 	defer db.Close()
 
 	// Get applied migrations to determine which ones to roll back
