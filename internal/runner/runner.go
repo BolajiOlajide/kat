@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/dominikbraun/graph"
 	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/dominikbraun/graph"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
-	"github.com/cockroachdb/errors"
-	"github.com/keegancsmith/sqlf"
 )
 
 // Runner is the interface that every runner must implement.

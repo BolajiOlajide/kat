@@ -2,13 +2,15 @@ package migration
 
 import (
 	"fmt"
-	"github.com/BolajiOlajide/kat/internal/types"
-	"github.com/cockroachdb/errors"
-	"github.com/keegancsmith/sqlf"
-	"gopkg.in/yaml.v3"
 	"io"
 	"io/fs"
 	"net/http"
+
+	"github.com/cockroachdb/errors"
+	"github.com/keegancsmith/sqlf"
+	"gopkg.in/yaml.v3"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // extractMigrationFiles reads the root directory of the provided filesystem and returns
