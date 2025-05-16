@@ -7,6 +7,7 @@ toolchain go1.23.2
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/cockroachdb/errors v1.9.1
+	github.com/dominikbraun/graph v0.23.0
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.5.4
 	github.com/keegancsmith/sqlf v1.1.1

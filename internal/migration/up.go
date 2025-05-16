@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
+	"github.com/dominikbraun/graph"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/database"
@@ -32,17 +33,18 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	if err != nil {
 		return err
 	}
-
-	return UpWithFS(c.Context, db, definitions, cfg, dryRun)
-}
-
-func UpWithFS(ctx context.Context, db database.DB, definitions []types.Definition, cfg types.Config, dryRun bool) error {
 	defer db.Close()
 
-	// No retry for migrations, just basic connection
+	if err := ApplyMigrations(c.Context, db, definitions, cfg, dryRun); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ApplyMigrations(ctx context.Context, db database.DB, definitions graph.Graph[int64, types.Definition], cfg types.Config, dryRun bool) error {
 	r, err := runner.NewRunner(ctx, db)
 	if err != nil {
-		return errors.Wrap(err, "connecting to database")
+		return errors.Wrap(err, "initializing runner")
 	}
 
 	return r.Run(ctx, runner.Options{
