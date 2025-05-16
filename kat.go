@@ -2,8 +2,9 @@ package kat
 
 import (
 	"context"
-	"github.com/dominikbraun/graph"
 	"io/fs"
+
+	"github.com/dominikbraun/graph"
 
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/migration"
@@ -38,7 +39,7 @@ func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error)
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are executed in order and tracked in the specified migration table.
 func (m *Migration) Up(ctx context.Context) error {
-	return migration.UpWithFS(ctx, m.db, m.definitions, types.Config{
+	return migration.ApplyMigrations(ctx, m.db, m.definitions, types.Config{
 		Migration: types.MigrationInfo{
 			TableName: m.migrationTableName,
 		},
@@ -49,7 +50,7 @@ func (m *Migration) Up(ctx context.Context) error {
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are rolled back in reverse order and removed from the migration table.
 func (m *Migration) Down(ctx context.Context, count int) error {
-	return migration.DownWithFS(ctx, m.db, m.definitions, types.Config{
+	return migration.RollbackMigrations(ctx, m.db, m.definitions, types.Config{
 		Migration: types.MigrationInfo{
 			TableName: m.migrationTableName,
 		},
