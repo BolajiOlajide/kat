@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"sort"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -28,7 +29,17 @@ func extractMigrationFiles(f fs.FS) ([]fs.FileInfo, error) {
 	}
 	defer func() { _ = root.Close() }()
 
-	return root.Readdir(0)
+	fis, err := root.Readdir(0)
+	if err != nil {
+		return nil, err
+	}
+	// Sort files alphabetically by name to ensure consistent, deterministic ordering
+	// across different operating systems and filesystems. This is necessary because
+	// the order returned by Readdir is filesystem-dependent and not guaranteed to be consistent.
+	sort.Slice(fis, func(i, j int) bool {
+		return fis[i].Name() < fis[j].Name()
+	})
+	return fis, nil
 }
 
 func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
@@ -41,27 +52,27 @@ func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
 	return populateDefinition(upQuery, downQuery, metadata)
 }
 
-func readMigrationFiles(fs fs.FS, dirname string) (*sqlf.Query, *sqlf.Query, []byte, error) {
+func readMigrationFiles(f fs.FS, dirname string) (*sqlf.Query, *sqlf.Query, []byte, error) {
 	upFilename := fmt.Sprintf("%s/up.sql", dirname)
 	downFilename := fmt.Sprintf("%s/down.sql", dirname)
 	metadataFilename := fmt.Sprintf("%s/metadata.yaml", dirname)
 
 	// Read up.sql file
-	upFile, err := fs.Open(upFilename)
+	upFile, err := f.Open(upFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open up.sql for migration %s", dirname)
 	}
 	defer upFile.Close()
 
 	// Read down.sql file
-	downFile, err := fs.Open(downFilename)
+	downFile, err := f.Open(downFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open down.sql for migration %s", dirname)
 	}
 	defer downFile.Close()
 
 	// Read metadata.yaml file
-	metadataFile, err := fs.Open(metadataFilename)
+	metadataFile, err := f.Open(metadataFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open metadata.yaml for migration %s", dirname)
 	}

@@ -1,7 +1,9 @@
 package migration
 
 import (
+	"fmt"
 	"io/fs"
+	"sort"
 
 	"github.com/cockroachdb/errors"
 	"github.com/dominikbraun/graph"
@@ -58,6 +60,8 @@ func ComputeDefinitions(f fs.FS) (graph.Graph[int64, types.Definition], error) {
 			return nil, errors.Wrap(err, "error adding vertex")
 		}
 
+		fmt.Println(definition.Parents, definition.Name, definition.Timestamp, file.Name())
+
 		// Then we define the relationship with its parent by adding its edges.
 		for _, parent := range definition.Parents {
 			if err := g.AddEdge(parent, definition.Timestamp); err != nil {
@@ -83,5 +87,6 @@ func ComputeLeaves(g graph.Graph[int64, types.Definition]) ([]int64, error) {
 			leaves = append(leaves, v)
 		}
 	}
+	sort.Slice(leaves, func(i, j int) bool { return leaves[i] < leaves[j] })
 	return leaves, nil
 }
