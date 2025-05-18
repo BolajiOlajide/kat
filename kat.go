@@ -2,18 +2,18 @@ package kat
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 
-	"github.com/dominikbraun/graph"
-
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 type Migration struct {
 	db                 database.DB
-	definitions        graph.Graph[int64, types.Definition]
+	definitions        *graph.Graph
 	migrationTableName string
 }
 
@@ -23,6 +23,18 @@ func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error)
 		return nil, err
 	}
 
+	return newMigration(db, f, migrationTableName)
+}
+
+func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, error) {
+	d, err := database.NewWithDB(db)
+	if err != nil {
+		return nil, err
+	}
+	return newMigration(d, f, migrationTableName)
+}
+
+func newMigration(db database.DB, f fs.FS, migrationTableName string) (*Migration, error) {
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err

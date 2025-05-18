@@ -170,5 +170,9 @@ func New(url string) (DB, error) {
 		return nil, err
 	}
 
+	return NewWithDB(db)
+}
+
+func NewWithDB(db *sql.DB) (DB, error) {
 	return &database{db: db, bindVar: sqlf.PostgresBindVar}, nil
 }
