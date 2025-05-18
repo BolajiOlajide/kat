@@ -20,7 +20,7 @@ author:
     title_url: 'https://bolaji.de'
     external_url: true
     description: |
-        An avid technologist and problem-solver at heart, Bolaji is a full-stack software engineer with over 5 years of experience, currently boosting developer productivity at Sourcegraph. 
+        An avid technologist and problem-solver at heart, Bolaji is a full-stack software engineer with over 5 years of experience, currently boosting developer productivity at Sourcegraph.
 
 # Grid navigation
 grid_navigation:
@@ -33,7 +33,7 @@ grid_navigation:
       excerpt: Configure Kat in a new project.
       cta: Learn more
       url: '/config'
-      
+
     - title: Initialization
       excerpt: Set up a new project with kat init.
       cta: Learn more
@@ -48,6 +48,11 @@ grid_navigation:
       excerpt: Performing a migration (up or down)
       cta: Learn more
       url: '/migration'
+
+    - title: Export
+      excerpt: Exporting Migration Graph
+      cta: Learn more
+      url: '/export'
 
     - title: Update
       excerpt: Update Kat to the latest version.
