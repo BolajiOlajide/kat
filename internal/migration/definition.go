@@ -33,6 +33,7 @@ func extractMigrationFiles(f fs.FS) ([]fs.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Sort files alphabetically by name to ensure consistent, deterministic ordering
 	// across different operating systems and filesystems. This is necessary because
 	// the order returned by Readdir is filesystem-dependent and not guaranteed to be consistent.

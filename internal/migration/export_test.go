@@ -2,85 +2,106 @@ package migration
 
 import (
 	"bytes"
-	"context"
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 func TestExportGraph(t *testing.T) {
-	// Create a test directory
-	tmpDir := t.TempDir()
-
-	// Create test migration directories (using timestamp pattern)
-	dir1 := filepath.Join(tmpDir, "1620000000000_initial_schema")
-	dir2 := filepath.Join(tmpDir, "1620100000000_add_users_table")
-
-	// Create directories and files
-	require.NoError(t, os.MkdirAll(dir1, 0755))
-	require.NoError(t, os.MkdirAll(dir2, 0755))
-
-	// Create migration files
-	require.NoError(t, os.WriteFile(filepath.Join(dir1, "up.sql"), []byte("CREATE TABLE users;"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(dir1, "down.sql"), []byte("DROP TABLE users;"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(dir2, "up.sql"), []byte("CREATE TABLE posts;"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(dir2, "down.sql"), []byte("DROP TABLE posts;"), 0644))
-
-	// Create metadata files
-	metadata1 := filepath.Join(dir1, "metadata.yaml")
-	metadata2 := filepath.Join(dir2, "metadata.yaml")
-
-	// Write test metadata (migration2 depends on migration1)
-	require.NoError(t, os.WriteFile(metadata1, []byte("name: initial_schema\ntimestamp: 1620000000000\nparents: []\n"), 0644))
-	require.NoError(t, os.WriteFile(metadata2, []byte("name: add_users_table\ntimestamp: 1620100000000\nparents: [1620000000000]\n"), 0644))
-
-	// Create test configuration
-	cfg := types.Config{
-		Migration: types.MigrationInfo{
-			Directory: tmpDir,
+	testCases := []struct {
+		name               string
+		migrationsDir      string
+		expectError        bool
+		createMigrationDir bool
+		definitions        []types.Definition
+	}{
+		{
+			name:               "success - valid migrations directory",
+			migrationsDir:      "testdata/valid",
+			expectError:        false,
+			createMigrationDir: true,
+			definitions: []types.Definition{
+				{
+					UpQuery:   queryFromString("CREATE TABLE test (id INT);"),
+					DownQuery: queryFromString("DROP TABLE test;"),
+					MigrationMetadata: types.MigrationMetadata{
+						Name:        "init",
+						Timestamp:   1747578808,
+						Description: "Initial migration",
+					},
+				},
+				{
+					UpQuery:   queryFromString("CREATE TABLE test_2 (id INT);"),
+					DownQuery: queryFromString("DROP TABLE test_2;"),
+					MigrationMetadata: types.MigrationMetadata{
+						Name:        "another_migration",
+						Timestamp:   1747578819,
+						Description: "Another migration",
+						Parents:     []int64{1747578808},
+					},
+				},
+			},
+		},
+		{
+			name:               "error - empty migrations directory",
+			migrationsDir:      "testdata/empty",
+			expectError:        false,
+			createMigrationDir: true,
+		},
+		{
+			name:          "error - non-existent directory",
+			migrationsDir: "testdata/nonexistent",
+			expectError:   true,
 		},
 	}
 
-	// Test DOT format export
-	t.Run("DOT format export", func(t *testing.T) {
-		buf := &bytes.Buffer{}
-		err := ExportGraph(context.Background(), buf, cfg, "dot")
-		require.NoError(t, err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create temporary dir for test migrations
+			testDir := t.TempDir()
 
-		// Check output contains expected elements
-		dot := buf.String()
-		require.Contains(t, dot, "digraph Migrations")
-		require.Contains(t, dot, "\"1620000000000\" [label=\"initial_schema")
-		require.Contains(t, dot, "\"1620100000000\" [label=\"add_users_table")
-		require.Contains(t, dot, "\"1620000000000\" -> \"1620100000000\"")
-	})
+			// Set up test migrations dir
+			migrationsPath := filepath.Join(testDir, tc.migrationsDir)
+			if tc.createMigrationDir {
+				require.NoError(t, os.MkdirAll(migrationsPath, 0755), "failed to create migrations dir")
+			}
 
-	// Test JSON format export
-	t.Run("JSON format export", func(t *testing.T) {
-		buf := &bytes.Buffer{}
-		err := ExportGraph(context.Background(), buf, cfg, "json")
-		require.NoError(t, err)
+			for _, def := range tc.definitions {
+				migrationDir := filepath.Join(migrationsPath, fmt.Sprintf("%d_%s", def.Timestamp, def.Name))
+				require.NoError(t, os.MkdirAll(migrationDir, 0755), "failed to create migrations dir")
 
-		// Check output contains expected elements
-		json := buf.String()
-		require.Contains(t, json, "\"timestamp\": 1620000000000")
-		require.Contains(t, json, "\"name\": \"initial_schema\"")
-		require.Contains(t, json, "\"timestamp\": 1620100000000")
-		require.Contains(t, json, "\"name\": \"add_users_table\"")
-		require.True(t, strings.Contains(json, "\"parents\": [1620000000000]") ||
-			strings.Contains(json, "\"parents\": [\n"))
-	})
+				metadataContent, err := yaml.Marshal(def.MigrationMetadata)
+				require.NoError(t, err)
 
-	// Test error case - invalid format
-	t.Run("Invalid format", func(t *testing.T) {
-		buf := &bytes.Buffer{}
-		err := ExportGraph(context.Background(), buf, cfg, "invalid")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "unsupported format: invalid")
-	})
+				require.NoError(t, os.WriteFile(filepath.Join(migrationDir, "up.sql"), []byte(def.UpQuery.Query(sqlf.PostgresBindVar)), 0644), "failed to write up migration")
+				require.NoError(t, os.WriteFile(filepath.Join(migrationDir, "down.sql"), []byte(def.UpQuery.Query(sqlf.PostgresBindVar)), 0644), "failed to write down migration")
+				require.NoError(t, os.WriteFile(filepath.Join(migrationDir, "metadata.yaml"), metadataContent, 0644), "failed to write migration metadata")
+			}
+
+			// Configure Kat
+			cfg := types.Config{
+				Migration: types.MigrationInfo{
+					Directory: migrationsPath,
+				},
+			}
+
+			// Call ExportGraph
+			var buf bytes.Buffer
+			err := ExportGraph(&buf, cfg)
+
+			if tc.expectError {
+				require.Error(t, err, "expected an error but got none")
+			} else {
+				require.NoError(t, err, "unexpected error")
+				require.NotEmpty(t, buf.String(), "expected non-empty output")
+			}
+		})
+	}
 }

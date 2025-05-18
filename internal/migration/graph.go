@@ -3,8 +3,6 @@ package migration
 import (
 	"io/fs"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/BolajiOlajide/kat/internal/graph"
 )
 
@@ -40,11 +38,11 @@ func ComputeDefinitions(f fs.FS) (*graph.Graph, error) {
 
 		definition, err := computeDefinition(f, file.Name())
 		if err != nil {
-			return g, errors.Wrap(err, "malformed migration definition")
+			return g, err
 		}
 
 		if err := g.AddDefinition(definition); err != nil {
-			return nil, errors.Wrap(err, "failed to add definition to graph")
+			return nil, err
 		}
 	}
 
