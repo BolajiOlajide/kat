@@ -80,18 +80,17 @@ var kat = &cli.App{
 	},
 	Commands: []*cli.Command{
 		{
-			Name:        "graph",
+			Name:        "export",
 			Usage:       "Export migration graph",
 			Description: "Generate a directed acyclic graph (DAG) visualization of migrations",
-			Action:      graphExport,
+			Action:      exportExec,
 			Before:      config.ParseConfig,
 			Flags: []cli.Flag{
 				configFlag,
 				&cli.StringFlag{
-					Name:    "format",
-					Usage:   "output format (dot, json)",
+					Name:    "file",
+					Usage:   "filename to write the directed acyclic graph to (defaults to stdout)",
 					Aliases: []string{"f"},
-					Value:   "dot",
 				},
 			},
 		},

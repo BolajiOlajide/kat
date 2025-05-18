@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -174,19 +175,28 @@ func ping(c *cli.Context) error {
 	return nil
 }
 
-func graphExport(c *cli.Context) error {
+func exportExec(c *cli.Context) error {
 	// Get configuration
 	cfg, err := config.GetKatConfigFromCtx(c)
 	if err != nil {
 		return err
 	}
 
+	var wrt io.Writer
+
 	// Get format parameter
-	format := c.String("format")
-	if format != "dot" && format != "json" {
-		return cli.Exit(fmt.Sprintf("unsupported format: %s (supported: dot, json)", format), 1)
+	file := c.String("file")
+	if file == "" {
+		wrt = os.Stdout
+	} else {
+		f, err := os.Create(file)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		wrt = f
 	}
 
 	// Export the graph
-	return migration.ExportGraph(c.Context, os.Stdout, cfg, format)
+	return migration.ExportGraph(wrt, cfg)
 }

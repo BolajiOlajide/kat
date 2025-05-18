@@ -1,10 +1,12 @@
 package graph
 
 import (
+	"io"
 	"sort"
 
 	"github.com/cockroachdb/errors"
 	graphlib "github.com/dominikbraun/graph"
+	graphlibdraw "github.com/dominikbraun/graph/draw"
 
 	"github.com/BolajiOlajide/kat/internal/types"
 )
@@ -85,8 +87,6 @@ func (g *Graph) Order() (int, error) {
 	return g.graph.Order()
 }
 
-// GetInternalGraph returns the underlying graph library implementation.
-// This is primarily used for graph export functions.
-func (g *Graph) GetInternalGraph() graphlib.Graph[int64, types.Definition] {
-	return g.graph
+func (g *Graph) Draw(w io.Writer) error {
+	return graphlibdraw.DOT(g.graph, w)
 }
