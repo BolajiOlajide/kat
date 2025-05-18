@@ -84,3 +84,9 @@ func (g *Graph) TopologicalSort() ([]int64, error) {
 func (g *Graph) Order() (int, error) {
 	return g.graph.Order()
 }
+
+// GetInternalGraph returns the underlying graph library implementation.
+// This is primarily used for graph export functions.
+func (g *Graph) GetInternalGraph() graphlib.Graph[int64, types.Definition] {
+	return g.graph
+}

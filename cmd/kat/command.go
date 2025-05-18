@@ -173,3 +173,20 @@ func ping(c *cli.Context) error {
 		output.StyleSuccess, output.StyleReset)
 	return nil
 }
+
+func graphExport(c *cli.Context) error {
+	// Get configuration
+	cfg, err := config.GetKatConfigFromCtx(c)
+	if err != nil {
+		return err
+	}
+
+	// Get format parameter
+	format := c.String("format")
+	if format != "dot" && format != "json" {
+		return cli.Exit(fmt.Sprintf("unsupported format: %s (supported: dot, json)", format), 1)
+	}
+
+	// Export the graph
+	return migration.ExportGraph(c.Context, os.Stdout, cfg, format)
+}
