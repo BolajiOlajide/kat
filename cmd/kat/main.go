@@ -80,6 +80,21 @@ var kat = &cli.App{
 	},
 	Commands: []*cli.Command{
 		{
+			Name:        "export",
+			Usage:       "Export migration graph",
+			Description: "Generate a directed acyclic graph (DAG) visualization of migrations",
+			Action:      exportExec,
+			Before:      config.ParseConfig,
+			Flags: []cli.Flag{
+				configFlag,
+				&cli.StringFlag{
+					Name:    "file",
+					Usage:   "filename to write the directed acyclic graph to (defaults to stdout)",
+					Aliases: []string{"f"},
+				},
+			},
+		},
+		{
 			Name:        "update",
 			Usage:       "Update kat to the latest version",
 			Description: "Check for and install the latest version of kat",

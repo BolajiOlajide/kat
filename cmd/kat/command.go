@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -172,4 +173,30 @@ func ping(c *cli.Context) error {
 	fmt.Fprintf(os.Stdout, "%sSuccessfully connected to database!%s\n",
 		output.StyleSuccess, output.StyleReset)
 	return nil
+}
+
+func exportExec(c *cli.Context) error {
+	// Get configuration
+	cfg, err := config.GetKatConfigFromCtx(c)
+	if err != nil {
+		return err
+	}
+
+	var wrt io.Writer
+
+	// Get format parameter
+	file := c.String("file")
+	if file == "" {
+		wrt = os.Stdout
+	} else {
+		f, err := os.Create(file)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		wrt = f
+	}
+
+	// Export the graph
+	return migration.ExportGraph(wrt, cfg)
 }

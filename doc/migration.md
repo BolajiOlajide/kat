@@ -12,8 +12,8 @@ page_nav:
         content: Database Connectivity
         url: '/ping'
     next:
-        content: Update
-        url: '/update'
+        content: Exporting Migrations
+        url: '/export'
 ---
 
 # Working with Migrations in Kat
@@ -156,8 +156,8 @@ kat up --dry-run
 ```
 Attempting to ping database
 Successfully connected to database!
-1679012345_create_users_table 
-1679023456_add_email_column 
+1679012345_create_users_table
+1679023456_add_email_column
 Successfully applied 2 migrations
 
 Migration Summary
@@ -210,7 +210,7 @@ kat down --dry-run
 ```
 Attempting to ping database
 Successfully connected to database!
-1679023456_add_email_column 
+1679023456_add_email_column
 Successfully rolled back 1 migrations
 
 Migration Summary
@@ -352,7 +352,7 @@ DROP TABLE IF EXISTS products;
 
 ```sql
 -- up.sql
-ALTER TABLE users 
+ALTER TABLE users
 ADD COLUMN email VARCHAR(255) UNIQUE,
 ADD COLUMN active BOOLEAN DEFAULT true;
 
@@ -386,7 +386,7 @@ DROP CONSTRAINT IF EXISTS fk_user_id;
 
 ```sql
 -- up.sql
-INSERT INTO roles (name) VALUES 
+INSERT INTO roles (name) VALUES
 ('admin'),
 ('user'),
 ('guest');

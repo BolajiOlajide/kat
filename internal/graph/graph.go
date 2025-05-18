@@ -1,10 +1,12 @@
 package graph
 
 import (
+	"io"
 	"sort"
 
 	"github.com/cockroachdb/errors"
 	graphlib "github.com/dominikbraun/graph"
+	graphlibdraw "github.com/dominikbraun/graph/draw"
 
 	"github.com/BolajiOlajide/kat/internal/types"
 )
@@ -83,4 +85,8 @@ func (g *Graph) TopologicalSort() ([]int64, error) {
 }
 func (g *Graph) Order() (int, error) {
 	return g.graph.Order()
+}
+
+func (g *Graph) Draw(w io.Writer) error {
+	return graphlibdraw.DOT(g.graph, w)
 }

@@ -9,8 +9,8 @@ comments: false
 permalink: /update/
 page_nav:
     prev:
-        content: Migrations
-        url: '/migration'
+        content: Exporting Migrations
+        url: '/export'
     next:
         content: Contributing
         url: '/contributing'
