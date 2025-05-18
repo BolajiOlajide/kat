@@ -12,6 +12,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
@@ -24,6 +25,13 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO public;`
 
 const migrationTableName = "migration_logs"
+
+func createMigrationDef(t *testing.T, defs ...types.Definition) *graph.Graph {
+	t.Helper()
+	g := graph.New()
+	require.NoError(t, g.AddDefinitions(defs...))
+	return g
+}
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
@@ -68,15 +76,13 @@ func TestRun(t *testing.T) {
 			name: "up migration",
 			options: Options{
 				Operation: types.UpMigrationOperation,
-				Definitions: []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_users",
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				Definitions: createMigrationDef(t, types.Definition{
+					MigrationMetadata: types.MigrationMetadata{
+						Name: "create_users",
 					},
-				},
+					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				}),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -87,15 +93,13 @@ func TestRun(t *testing.T) {
 			name: "DRYRUN: up migration",
 			options: Options{
 				Operation: types.UpMigrationOperation,
-				Definitions: []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_users",
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				Definitions: createMigrationDef(t, types.Definition{
+					MigrationMetadata: types.MigrationMetadata{
+						Name: "create_users",
 					},
-				},
+					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				}),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -113,15 +117,13 @@ func TestRun(t *testing.T) {
         CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
 				Operation: types.UpMigrationOperation,
-				Definitions: []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_users",
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				Definitions: createMigrationDef(t, types.Definition{
+					MigrationMetadata: types.MigrationMetadata{
+						Name: "create_users",
 					},
-				},
+					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				}),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -131,31 +133,31 @@ func TestRun(t *testing.T) {
 		{
 			name: "down migration",
 			pre: createMigrationLogQuery + `
-        INSERT INTO "migration_logs"("name","migration_time","duration")
-          VALUES
-        ('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
-        ('create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291');
+		INSERT INTO "migration_logs"("name","migration_time","duration")
+		 VALUES
+		('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291');
 
-        CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
-        CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
+		CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
 				Operation: types.DownMigrationOperation,
-				Definitions: []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_users",
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				Definitions: createMigrationDef(t, types.Definition{
+					MigrationMetadata: types.MigrationMetadata{
+						Name:      "create_users",
+						Timestamp: 1747525262,
 					},
-					{
+					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+				},
+					types.Definition{
 						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_transactions",
+							Name:      "create_transactions",
+							Timestamp: 1747525318,
 						},
 						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
 						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
-					},
-				},
+					}),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -175,22 +177,24 @@ func TestRun(t *testing.T) {
 			options: Options{
 				Operation: types.DownMigrationOperation,
 				DryRun:    true,
-				Definitions: []types.Definition{
+				Definitions: createMigrationDef(t, []types.Definition{
 					{
 						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_users",
+							Name:      "create_users",
+							Timestamp: 1747525262,
 						},
 						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
 						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
 					},
 					{
 						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_transactions",
+							Name:      "create_transactions",
+							Timestamp: 1747525318,
 						},
 						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
 						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
 					},
-				},
+				}...),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -209,15 +213,16 @@ func TestRun(t *testing.T) {
         CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
 				Operation: types.DownMigrationOperation,
-				Definitions: []types.Definition{
+				Definitions: createMigrationDef(t, []types.Definition{
 					{
 						MigrationMetadata: types.MigrationMetadata{
-							Name: "create_transactions",
+							Name:      "create_transactions",
+							Timestamp: 1747525318,
 						},
 						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
 						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
 					},
-				},
+				}...),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -228,7 +233,7 @@ func TestRun(t *testing.T) {
 			name: "no migrations to apply (up)",
 			options: Options{
 				Operation:   types.UpMigrationOperation,
-				Definitions: []types.Definition{},
+				Definitions: graph.New(),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -239,7 +244,7 @@ func TestRun(t *testing.T) {
 			name: "no migrations to apply (down)",
 			options: Options{
 				Operation:   types.DownMigrationOperation,
-				Definitions: []types.Definition{},
+				Definitions: graph.New(),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -250,7 +255,7 @@ func TestRun(t *testing.T) {
 			name: "DRYRUN: no migrations to apply (up)",
 			options: Options{
 				Operation:   types.UpMigrationOperation,
-				Definitions: []types.Definition{},
+				Definitions: graph.New(),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -262,7 +267,7 @@ func TestRun(t *testing.T) {
 			name: "DRYRUN: no migrations to apply (down)",
 			options: Options{
 				Operation:   types.DownMigrationOperation,
-				Definitions: []types.Definition{},
+				Definitions: graph.New(),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},

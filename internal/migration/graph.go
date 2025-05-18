@@ -1,19 +1,12 @@
 package migration
 
 import (
-	"fmt"
 	"io/fs"
-	"sort"
 
 	"github.com/cockroachdb/errors"
-	"github.com/dominikbraun/graph"
 
-	"github.com/BolajiOlajide/kat/internal/types"
+	"github.com/BolajiOlajide/kat/internal/graph"
 )
-
-var definitionHash = func(d types.Definition) int64 {
-	return d.Timestamp
-}
 
 // ComputeDefinitions builds a directed acyclic graph (DAG) from migration definitions.
 // It scans the provided filesystem for migration directories, creates vertices for each migration,
@@ -22,13 +15,8 @@ var definitionHash = func(d types.Definition) int64 {
 //
 // The function expects directories to be timestamp-prefixed following Kat's convention.
 // It returns the constructed graph and any errors encountered during graph construction.
-func ComputeDefinitions(f fs.FS) (graph.Graph[int64, types.Definition], error) {
-	// create a DAG (Directed Acyclic graph) to represent a migration. This makes it easy
-	// to compute execution order for migrations and also to export the graph as a digraph
-	// diagram.
-	// You can visualize using an online tool like:
-	// https://dreampuf.github.io/GraphvizOnline
-	g := graph.New(definitionHash, graph.Acyclic(), graph.Directed())
+func ComputeDefinitions(f fs.FS) (*graph.Graph, error) {
+	g := graph.New()
 
 	mf, err := extractMigrationFiles(f)
 	if err != nil {
@@ -52,41 +40,13 @@ func ComputeDefinitions(f fs.FS) (graph.Graph[int64, types.Definition], error) {
 
 		definition, err := computeDefinition(f, file.Name())
 		if err != nil {
-			return nil, errors.Wrap(err, "malformed migration definition")
+			return g, errors.Wrap(err, "malformed migration definition")
 		}
 
-		// We add each migration as a vertex to the graph
-		if err := g.AddVertex(definition); err != nil {
-			return nil, errors.Wrap(err, "error adding vertex")
-		}
-
-		fmt.Println(definition.Parents, definition.Name, definition.Timestamp, file.Name())
-
-		// Then we define the relationship with its parent by adding its edges.
-		for _, parent := range definition.Parents {
-			if err := g.AddEdge(parent, definition.Timestamp); err != nil {
-				return nil, errors.Wrapf(err, "error adding edge for parent: %d", parent)
-			}
+		if err := g.AddDefinition(definition); err != nil {
+			return nil, errors.Wrap(err, "failed to add definition to graph")
 		}
 	}
 
 	return g, nil
-}
-
-func ComputeLeaves(g graph.Graph[int64, types.Definition]) ([]int64, error) {
-	// build the adjacency map: for each vertex, map of outgoing edges
-	adj, err := g.AdjacencyMap()
-	if err != nil {
-		return nil, errors.Wrap(err, "adjacency map")
-	}
-
-	var leaves []int64
-	for v, outs := range adj {
-		// no outgoing neighbors → it's a leaf
-		if len(outs) == 0 {
-			leaves = append(leaves, v)
-		}
-	}
-	sort.Slice(leaves, func(i, j int) bool { return leaves[i] < leaves[j] })
-	return leaves, nil
 }

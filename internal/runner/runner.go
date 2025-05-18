@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/dominikbraun/graph"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/BolajiOlajide/kat/internal/database"
@@ -88,13 +87,13 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	var successfulMigrations []successfulMigration
 
 	// we use a topological sort to determine the correct sequence of execution
-	sortedDefs, err := graph.TopologicalSort(options.Definitions)
+	sortedDefs, err := options.Definitions.ExecutionOrder()
 	if err != nil {
 		return errors.Wrap(err, "sorting definitions")
 	}
 
 	for _, hash := range sortedDefs {
-		definition, err := options.Definitions.Vertex(hash)
+		definition, err := options.Definitions.GetDefinition(hash)
 		if err != nil {
 			return err
 		}

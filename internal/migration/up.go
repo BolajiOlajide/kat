@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-	"github.com/dominikbraun/graph"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
@@ -41,7 +41,7 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	return nil
 }
 
-func ApplyMigrations(ctx context.Context, db database.DB, definitions graph.Graph[int64, types.Definition], cfg types.Config, dryRun bool) error {
+func ApplyMigrations(ctx context.Context, db database.DB, definitions *graph.Graph, cfg types.Config, dryRun bool) error {
 	r, err := runner.NewRunner(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "initializing runner")

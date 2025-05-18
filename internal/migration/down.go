@@ -7,11 +7,11 @@ import (
 	"iter"
 
 	"github.com/cockroachdb/errors"
-	"github.com/dominikbraun/graph"
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -53,7 +53,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 // RollbackMigrations is the command that rolls back migrations.
 // It rolls back the most recent migration by default,
 // or a specific number of migrations if specified.
-func RollbackMigrations(ctx context.Context, db database.DB, definitions graph.Graph[int64, types.Definition], cfg types.Config, count int, dryRun bool) error {
+func RollbackMigrations(ctx context.Context, db database.DB, definitions *graph.Graph, cfg types.Config, count int, dryRun bool) error {
 	// Get applied migrations to determine which ones to roll back
 	// No retry logic for migrations
 	migrationsToRollback, err := getAppliedMigrationsToRollback(ctx, db, cfg.Migration.TableName, count)
@@ -146,9 +146,9 @@ func getAppliedMigrationsToRollback(ctx context.Context, db database.DB, tableNa
 // filterDefinitionsForRollback filters definitions to match migrations that should be rolled back.
 // It creates a new graph containing only the migrations that need to be rolled back while
 // preserving their dependency relationships.
-func filterDefinitionsForRollback(definitions graph.Graph[int64, types.Definition], appliedMigrations iter.Seq2[int64, error]) (graph.Graph[int64, types.Definition], error) {
+func filterDefinitionsForRollback(definitions *graph.Graph, appliedMigrations iter.Seq2[int64, error]) (*graph.Graph, error) {
 	// Create a new graph with the same properties as the original
-	filteredGraph := graph.New(definitionHash, graph.Acyclic(), graph.Directed())
+	filteredGraph := graph.New()
 
 	// Add all vertices that need to be rolled back to the filtered graph
 	for tsToRollback, err := range appliedMigrations {
@@ -156,13 +156,15 @@ func filterDefinitionsForRollback(definitions graph.Graph[int64, types.Definitio
 			return nil, errors.Wrap(err, "invalid name for migration")
 		}
 
-		def, err := definitions.Vertex(tsToRollback)
+		def, err := definitions.GetDefinition(tsToRollback)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get definition")
 		}
 
 		// Successfully found the vertex, add it to our filtered graph
-		filteredGraph.AddVertex(def)
+		if err := filteredGraph.AddDefinition(def); err != nil {
+			return nil, errors.Wrap(err, "unable to add filtered definition")
+		}
 	}
 
 	return filteredGraph, nil

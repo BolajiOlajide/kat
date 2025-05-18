@@ -50,7 +50,7 @@ func Add(c *cli.Context, name string) error {
 		return err
 	}
 
-	leaves, err := ComputeLeaves(defs)
+	leaves, err := defs.Leaves()
 	if err != nil {
 		return err
 	}
