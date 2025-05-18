@@ -99,6 +99,7 @@ database:
 | `kat up` | Apply all pending migrations |
 | `kat down [--count N]` | Roll back the most recent migration(s) |
 | `kat ping` | Test database connectivity |
+| `kat export` | Export the migration graph |
 | `kat version` | Display the current version |
 | `kat --help` | Show help for all commands |
 
