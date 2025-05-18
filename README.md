@@ -10,6 +10,7 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 ## Features
 
 - **Simple SQL Migrations**: Write raw SQL for both up and down migrations
+- **Graph-Based Migration System**: Automatically calculates and manages dependencies between migrations
 - **Timestamp-Based Ordering**: Migrations are automatically sorted by creation time
 - **Transaction Support**: Migrations run within transactions for safety
 - **Migration Tracking**: Applied migrations are recorded in a database table
@@ -52,9 +53,12 @@ kat init
 # Create a new migration
 kat add create_users_table
 
+# Create another migration (dependencies automatically calculated)
+kat add create_posts_table
+
 # Edit the generated migration files in migrations/TIMESTAMP_create_users_table/
 
-# Apply all pending migrations
+# Apply all pending migrations (ordered based on dependencies)
 kat up
 
 # Roll back the most recent migration
@@ -62,6 +66,9 @@ kat down
 
 # Test database connection
 kat ping
+
+# Visualize your migration graph (requires Graphviz)
+kat graph --format dot > migrations.dot
 ```
 
 ## Usage
@@ -106,7 +113,7 @@ migrations/
   └─ 1679012345_create_users_table/
       ├─ up.sql      # SQL to apply the migration
       ├─ down.sql    # SQL to reverse the migration
-      └─ metadata.yaml  # Migration metadata
+      └─ metadata.yaml  # Migration metadata including dependencies
 ```
 
 ## Documentation

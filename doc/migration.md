@@ -26,9 +26,10 @@ In Kat, migrations follow these principles:
 
 1. **Versioned**: Each migration has a unique timestamp identifier
 2. **Directional**: Migrations can move forward (up) or backward (down)
-3. **Ordered**: Migrations are applied in chronological order based on their timestamp
-4. **Tracked**: Applied migrations are recorded in a database table
-5. **Idempotent**: Well-written migrations can be run multiple times safely
+3. **Dependency-Based**: Dependencies between migrations are automatically calculated
+4. **Graph-Based**: Migrations form a directed acyclic graph (DAG) for proper ordering
+5. **Tracked**: Applied migrations are recorded in a database table
+6. **Idempotent**: Well-written migrations can be run multiple times safely
 
 ## Migration Structure
 
@@ -125,16 +126,17 @@ kat up
 When you run `kat up`, the following process occurs:
 
 1. Kat scans your migrations directory for all migration folders
-2. Kat sorts migrations by timestamp (oldest first)
-3. Kat connects to your database using your configuration
-4. If needed, Kat creates a tracking table (specified by `tablename` in your config)
-5. Kat reads the tracking table to determine which migrations have already been applied
-6. For each pending migration:
+2. Kat builds a directed acyclic graph (DAG) based on migration dependencies
+3. Kat sorts migrations using topological ordering to respect dependencies
+4. Kat connects to your database using your configuration
+5. If needed, Kat creates a tracking table (specified by `tablename` in your config)
+6. Kat reads the tracking table to determine which migrations have already been applied
+7. For each pending migration:
    - Kat begins a transaction
    - Kat executes the SQL in the up.sql file
    - Kat records the migration in the tracking table
    - Kat commits the transaction
-7. Kat provides a summary of the applied migrations
+8. Kat provides a summary of the applied migrations
 
 ### Up Command Options
 
@@ -271,6 +273,45 @@ Validated migrations:
 Total: 2 migration(s) validated
 ```
 
+## Graph-Based Migration System
+
+Kat implements a sophisticated graph-based migration system that allows for more complex dependency management between migrations.
+
+### Understanding Migration Dependencies
+
+In Kat, dependencies between migrations are automatically calculated by the system using a directed acyclic graph (DAG). The system analyzes the timestamps of migrations to determine their relationships:
+
+```yaml
+name: add_user_profiles
+timestamp: 1679123456
+```
+
+The graph-based system offers several advantages:
+
+1. **Automatic Dependency Detection**: Dependencies are computed based on migration timestamps
+2. **Parallel Migrations**: Independent migrations can be applied in parallel when possible
+3. **Visualization**: Migration dependencies can be visualized as a graph
+4. **Topological Ordering**: Migrations are applied in an order that ensures proper sequencing
+5. **Graph-Based Execution**: The system identifies leaf nodes in the graph to determine execution order
+
+### How Dependencies Work
+
+Kat constructs a directed acyclic graph where:
+1. Each migration is a vertex in the graph
+2. Dependencies between migrations are automatically calculated based on timestamps
+3. The system determines the optimal order of execution by performing topological sorting
+4. Migrations are executed in a sequence that respects all dependencies
+
+### Visualizing the Migration Graph
+
+To visualize your migration dependency graph, you can use the `graph` command:
+
+```bash
+kat graph --format dot > migrations.dot
+```
+
+This generates a DOT file that can be visualized with tools like Graphviz or online services like [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline).
+
 ## Advanced Migration Patterns
 
 ### Schema Changes
@@ -347,9 +388,9 @@ DELETE FROM roles WHERE name IN ('admin', 'user', 'guest');
    - Ensure down.sql correctly reverses up.sql
    - Check for dependencies that prevent rollback
 
-3. **Migrations applied out of order**
-   - Migrations are sorted by timestamp
-   - If timestamps overlap, unexpected order may occur
+3. **Dependency conflicts**
+   - Ensure parent migrations exist in your migration directory
+   - Check for circular dependencies, which will cause graph build errors
 
 ### Recovering from Failed Migrations
 
