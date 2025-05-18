@@ -35,10 +35,7 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	}
 	defer db.Close()
 
-	if err := ApplyMigrations(c.Context, db, definitions, cfg, dryRun); err != nil {
-		return err
-	}
-	return nil
+	return ApplyMigrations(c.Context, db, definitions, cfg, dryRun)
 }
 
 func ApplyMigrations(ctx context.Context, db database.DB, definitions *graph.Graph, cfg types.Config, dryRun bool) error {

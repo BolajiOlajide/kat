@@ -41,13 +41,10 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 
 	count := c.Int("count")
 	if count < 1 {
-		return errors.New("count must be a positive number")
+		return errors.New("count must be a non-zero positive number")
 	}
 
-	if err := RollbackMigrations(c.Context, db, g, cfg, count, dryRun); err != nil {
-		return err
-	}
-	return nil
+	return RollbackMigrations(c.Context, db, g, cfg, count, dryRun)
 }
 
 // RollbackMigrations is the command that rolls back migrations.

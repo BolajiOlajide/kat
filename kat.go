@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"io/fs"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/migration"
@@ -62,6 +64,9 @@ func (m *Migration) Up(ctx context.Context) error {
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are rolled back in reverse order and removed from the migration table.
 func (m *Migration) Down(ctx context.Context, count int) error {
+	if count < 1 {
+		return errors.New("count must be a non-zero positive number")
+	}
 	return migration.RollbackMigrations(ctx, m.db, m.definitions, types.Config{
 		Migration: types.MigrationInfo{
 			TableName: m.migrationTableName,
