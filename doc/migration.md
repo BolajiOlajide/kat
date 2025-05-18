@@ -279,11 +279,12 @@ Kat implements a sophisticated graph-based migration system that allows for more
 
 ### Understanding Migration Dependencies
 
-In Kat, dependencies between migrations are automatically calculated by the system using a directed acyclic graph (DAG). The system analyzes the timestamps of migrations to determine their relationships:
+In Kat, dependencies between migrations are managed using a directed acyclic graph (DAG). Each migration can define its parent migrations in the metadata.yaml file:
 
 ```yaml
 name: add_user_profiles
 timestamp: 1679123456
+parents: [1679012345]  # References the timestamp of the parent migration
 ```
 
 The graph-based system offers several advantages:
@@ -298,9 +299,28 @@ The graph-based system offers several advantages:
 
 Kat constructs a directed acyclic graph where:
 1. Each migration is a vertex in the graph
-2. Dependencies between migrations are automatically calculated based on timestamps
+2. Dependencies between migrations are defined through parent-child relationships
 3. The system determines the optimal order of execution by performing topological sorting
 4. Migrations are executed in a sequence that respects all dependencies
+
+#### Parent-Child Relationships
+
+In Kat, migrations relate to each other through explicit parent references in the `metadata.yaml` file:
+
+```yaml
+name: add_user_profiles
+timestamp: 1679123456
+parents: [1679012345]  # References the timestamp of the parent migration
+```
+
+The `parents` field contains timestamps of migrations that must be applied before the current migration. This creates a clear dependency chain:
+
+1. **Execution Order Guarantee**: Kat ensures parent migrations are always applied before their children
+2. **Flexibility**: A migration can have multiple parents, allowing for complex dependency trees
+3. **DAG Construction**: These parent-child relationships form the edges in the directed acyclic graph
+4. **Topological Sorting**: Kat uses the graph to compute the correct execution sequence
+
+When running migrations, Kat performs a topological sort of the graph to determine the proper execution order. This ensures all dependencies are satisfied before a migration is applied.
 
 ### Visualizing the Migration Graph
 

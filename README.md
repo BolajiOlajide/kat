@@ -10,8 +10,8 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 ## Features
 
 - **Simple SQL Migrations**: Write raw SQL for both up and down migrations
-- **Graph-Based Migration System**: Automatically calculates and manages dependencies between migrations
-- **Timestamp-Based Ordering**: Migrations are automatically sorted by creation time
+- **Graph-Based Migration System**: Manages parent-child relationships between migrations using a directed acyclic graph
+- **Explicit Dependencies**: Migrations can declare parent dependencies to ensure proper execution order
 - **Transaction Support**: Migrations run within transactions for safety
 - **Migration Tracking**: Applied migrations are recorded in a database table
 - **Dry Run Mode**: Validate migrations without applying them
@@ -53,7 +53,7 @@ kat init
 # Create a new migration
 kat add create_users_table
 
-# Create another migration (dependencies automatically calculated)
+# Create another migration with a parent dependency
 kat add create_posts_table
 
 # Edit the generated migration files in migrations/TIMESTAMP_create_users_table/
