@@ -87,7 +87,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	var successfulMigrations []successfulMigration
 
 	// we use a topological sort to determine the correct sequence of execution
-	sortedDefs, err := options.Definitions.ExecutionOrder()
+	sortedDefs, err := options.Definitions.TopologicalSort()
 	if err != nil {
 		return errors.Wrap(err, "sorting definitions")
 	}

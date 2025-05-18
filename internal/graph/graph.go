@@ -78,7 +78,7 @@ func (g *Graph) GetDefinition(timestamp int64) (types.Definition, error) {
 	return g.graph.Vertex(timestamp)
 }
 
-func (g *Graph) ExecutionOrder() ([]int64, error) {
+func (g *Graph) TopologicalSort() ([]int64, error) {
 	return graphlib.TopologicalSort(g.graph)
 }
 func (g *Graph) Order() (int, error) {
