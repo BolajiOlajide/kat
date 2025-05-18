@@ -2,16 +2,20 @@ package kat
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 type Migration struct {
 	db                 database.DB
-	definitions        []types.Definition
+	definitions        *graph.Graph
 	migrationTableName string
 }
 
@@ -21,6 +25,18 @@ func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error)
 		return nil, err
 	}
 
+	return newMigration(db, f, migrationTableName)
+}
+
+func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, error) {
+	d, err := database.NewWithDB(db)
+	if err != nil {
+		return nil, err
+	}
+	return newMigration(d, f, migrationTableName)
+}
+
+func newMigration(db database.DB, f fs.FS, migrationTableName string) (*Migration, error) {
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
@@ -37,7 +53,7 @@ func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error)
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are executed in order and tracked in the specified migration table.
 func (m *Migration) Up(ctx context.Context) error {
-	return migration.UpWithFS(ctx, m.db, m.definitions, types.Config{
+	return migration.ApplyMigrations(ctx, m.db, m.definitions, types.Config{
 		Migration: types.MigrationInfo{
 			TableName: m.migrationTableName,
 		},
@@ -48,7 +64,10 @@ func (m *Migration) Up(ctx context.Context) error {
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are rolled back in reverse order and removed from the migration table.
 func (m *Migration) Down(ctx context.Context, count int) error {
-	return migration.DownWithFS(ctx, m.db, m.definitions, types.Config{
+	if count < 1 {
+		return errors.New("count must be a non-zero positive number")
+	}
+	return migration.RollbackMigrations(ctx, m.db, m.definitions, types.Config{
 		Migration: types.MigrationInfo{
 			TableName: m.migrationTableName,
 		},

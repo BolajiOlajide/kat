@@ -1,11 +1,14 @@
 package runner
 
-import "github.com/BolajiOlajide/kat/internal/types"
+import (
+	"github.com/BolajiOlajide/kat/internal/graph"
+	"github.com/BolajiOlajide/kat/internal/types"
+)
 
 // Options represents the options for the runner.
 type Options struct {
 	Operation     types.MigrationOperationType
-	Definitions   []types.Definition
+	Definitions   *graph.Graph
 	MigrationInfo types.MigrationInfo
 	DryRun        bool
 	Verbose       bool

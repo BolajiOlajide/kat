@@ -1,51 +1,45 @@
 package migration
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"sort"
 
-	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"gopkg.in/yaml.v3"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
-func ComputeDefinitions(fs fs.FS) ([]types.Definition, error) {
+// extractMigrationFiles reads the root directory of the provided filesystem and returns
+// a list of FileInfo objects for all entries. It serves as the first step in migration discovery,
+// returning all potential migration directories that will be later filtered and processed.
+//
+// The function uses http.FS for more robust filesystem operations and ensures the root
+// directory exists before attempting to read its contents.
+func extractMigrationFiles(f fs.FS) ([]fs.FileInfo, error) {
 	// Make sure the root directory exists. All migrations must be in a subdirectory.
 	// Also using `http.FS` here because it's API is more robust than `fs.FS`.
-	root, err := http.FS(fs).Open("/")
+	root, err := http.FS(f).Open("/")
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
 
-	migrations, err := root.Readdir(0)
+	fis, err := root.Readdir(0)
 	if err != nil {
 		return nil, err
 	}
-
-	definitions := make([]types.Definition, 0, len(migrations))
-	for _, file := range migrations {
-		if !file.IsDir() {
-			// if this is not a directory, skip it
-			continue
-		}
-
-		def, err := computeDefinition(fs, file.Name())
-		if err != nil {
-			return nil, errors.Wrap(err, "malformed migration definition")
-		}
-
-		definitions = append(definitions, def)
-	}
-
-	// We sort the definitions by their ID so that they are executed in the correct order.
-	sort.Slice(definitions, func(i, j int) bool { return definitions[i].Timestamp < definitions[j].Timestamp })
-	return definitions, nil
+	// Sort files alphabetically by name to ensure consistent, deterministic ordering
+	// across different operating systems and filesystems. This is necessary because
+	// the order returned by Readdir is filesystem-dependent and not guaranteed to be consistent.
+	sort.Slice(fis, func(i, j int) bool {
+		return fis[i].Name() < fis[j].Name()
+	})
+	return fis, nil
 }
 
 func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
@@ -58,49 +52,44 @@ func computeDefinition(fs fs.FS, filename string) (types.Definition, error) {
 	return populateDefinition(upQuery, downQuery, metadata)
 }
 
-func readMigrationFiles(fs fs.FS, dirname string) (*sqlf.Query, *sqlf.Query, []byte, error) {
+func readMigrationFiles(f fs.FS, dirname string) (*sqlf.Query, *sqlf.Query, []byte, error) {
 	upFilename := fmt.Sprintf("%s/up.sql", dirname)
 	downFilename := fmt.Sprintf("%s/down.sql", dirname)
 	metadataFilename := fmt.Sprintf("%s/metadata.yaml", dirname)
 
 	// Read up.sql file
-	upFile, err := fs.Open(upFilename)
+	upFile, err := f.Open(upFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open up.sql for migration %s", dirname)
 	}
 	defer upFile.Close()
 
 	// Read down.sql file
-	downFile, err := fs.Open(downFilename)
+	downFile, err := f.Open(downFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open down.sql for migration %s", dirname)
 	}
 	defer downFile.Close()
 
 	// Read metadata.yaml file
-	metadataFile, err := fs.Open(metadataFilename)
+	metadataFile, err := f.Open(metadataFilename)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to open metadata.yaml for migration %s", dirname)
 	}
 	defer metadataFile.Close()
 
-	// Use buffered readers for all files
-	upReader := bufio.NewReader(upFile)
-	downReader := bufio.NewReader(downFile)
-	metadataReader := bufio.NewReader(metadataFile)
-
 	// Read file contents
-	upContent, err := io.ReadAll(upReader)
+	upContent, err := readFile(upFile)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to read up.sql for migration %s", dirname)
 	}
 
-	downContent, err := io.ReadAll(downReader)
+	downContent, err := readFile(downFile)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to read down.sql for migration %s", dirname)
 	}
 
-	metadata, err := io.ReadAll(metadataReader)
+	metadata, err := readFile(metadataFile)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to read metadata.yaml for migration %s", dirname)
 	}
@@ -123,4 +112,19 @@ func populateDefinition(upQuery, downQuery *sqlf.Query, metadata []byte) (types.
 		DownQuery:         downQuery,
 		MigrationMetadata: payload,
 	}, nil
+}
+
+func readFile(fi fs.File) ([]byte, error) {
+	stat, err := fi.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	size := stat.Size()
+	buf := make([]byte, size)
+	if _, err := io.ReadFull(fi, buf); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
 }

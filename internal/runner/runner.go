@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/types"
-	"github.com/cockroachdb/errors"
-	"github.com/keegancsmith/sqlf"
 )
 
 // Runner is the interface that every runner must implement.
@@ -85,7 +86,18 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	var noOfMigrations int
 	var successfulMigrations []successfulMigration
 
-	for _, definition := range options.Definitions {
+	// we use a topological sort to determine the correct sequence of execution
+	sortedDefs, err := options.Definitions.TopologicalSort()
+	if err != nil {
+		return errors.Wrap(err, "sorting definitions")
+	}
+
+	for _, hash := range sortedDefs {
+		definition, err := options.Definitions.GetDefinition(hash)
+		if err != nil {
+			return err
+		}
+
 		// Use retry functionality for transaction if configured
 		var txFunc = func(tx database.Tx) (err error) {
 			if options.Operation == types.UpMigrationOperation {

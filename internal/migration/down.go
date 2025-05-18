@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"iter"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -21,7 +23,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
-	definitions, err := ComputeDefinitions(f)
+	g, err := ComputeDefinitions(f)
 	if err != nil {
 		return err
 	}
@@ -35,21 +37,20 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	count := c.Int("count")
 	if count < 1 {
-		return errors.New("count must be a positive number")
+		return errors.New("count must be a non-zero positive number")
 	}
 
-	return DownWithFS(c.Context, db, definitions, cfg, count, dryRun)
+	return RollbackMigrations(c.Context, db, g, cfg, count, dryRun)
 }
 
-// Down is the command that rolls back migrations.
+// RollbackMigrations is the command that rolls back migrations.
 // It rolls back the most recent migration by default,
 // or a specific number of migrations if specified.
-func DownWithFS(ctx context.Context, db database.DB, definitions []types.Definition, cfg types.Config, count int, dryRun bool) error {
-	defer db.Close()
-
+func RollbackMigrations(ctx context.Context, db database.DB, definitions *graph.Graph, cfg types.Config, count int, dryRun bool) error {
 	// Get applied migrations to determine which ones to roll back
 	// No retry logic for migrations
 	migrationsToRollback, err := getAppliedMigrationsToRollback(ctx, db, cfg.Migration.TableName, count)
@@ -57,13 +58,20 @@ func DownWithFS(ctx context.Context, db database.DB, definitions []types.Definit
 		return err
 	}
 
-	if len(migrationsToRollback) == 0 {
+	// Filter definitions to include only those that need to be rolled back
+	filteredDefinitions, err := filterDefinitionsForRollback(definitions, migrationsToRollback)
+	if err != nil {
+		return err
+	}
+
+	noOfVertices, err := filteredDefinitions.Order()
+	if err != nil {
+		return errors.Wrap(err, "ordering vertices")
+	}
+	if noOfVertices == 0 {
 		fmt.Printf("%sNo migrations to roll back%s\n", output.StyleInfo, output.StyleReset)
 		return nil
 	}
-
-	// Filter definitions to include only those that need to be rolled back
-	filteredDefinitions := filterDefinitionsForRollback(definitions, migrationsToRollback)
 
 	// No retry for migrations
 	r, err := runner.NewRunner(ctx, db)
@@ -81,7 +89,7 @@ func DownWithFS(ctx context.Context, db database.DB, definitions []types.Definit
 }
 
 // getAppliedMigrationsToRollback returns the names of migrations that should be rolled back
-func getAppliedMigrationsToRollback(ctx context.Context, db database.DB, tableName string, count int) ([]string, error) {
+func getAppliedMigrationsToRollback(ctx context.Context, db database.DB, tableName string, count int) (iter.Seq2[int64, error], error) {
 	// Check if the migrations table exists
 	var exists bool
 	if err := db.QueryRow(ctx, sqlf.Sprintf(
@@ -104,45 +112,57 @@ func getAppliedMigrationsToRollback(ctx context.Context, db database.DB, tableNa
 
 	rows, err := db.Query(ctx, query)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "querying migrations to roll back")
 	}
 	defer rows.Close()
 
-	var migrations []string
+	var migrations = make([]string, 0, count)
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			return nil, errors.Wrap(err, "scanning migration name")
 		}
+
 		migrations = append(migrations, name)
 	}
 
-	return migrations, nil
+	return func(yield func(int64, error) bool) {
+		for _, name := range migrations {
+			var ts int64
+			_, err := fmt.Sscanf(name, "%d_", &ts)
+			if !yield(ts, err) {
+				return
+			}
+		}
+	}, nil
 }
 
-// filterDefinitionsForRollback filters and sorts definitions to match migrations that should be rolled back
-func filterDefinitionsForRollback(definitions []types.Definition, migrationsToRollback []string) []types.Definition {
-	// Create a map for quick lookups
-	migrationMap := make(map[string]bool)
-	for _, name := range migrationsToRollback {
-		migrationMap[name] = true
-	}
+// filterDefinitionsForRollback filters definitions to match migrations that should be rolled back.
+// It creates a new graph containing only the migrations that need to be rolled back while
+// preserving their dependency relationships.
+func filterDefinitionsForRollback(definitions *graph.Graph, appliedMigrations iter.Seq2[int64, error]) (*graph.Graph, error) {
+	// Create a new graph with the same properties as the original
+	filteredGraph := graph.New()
 
-	// Filter definitions to only include those that need to be rolled back
-	var filteredDefinitions []types.Definition
-	for _, def := range definitions {
-		if migrationMap[def.Name] {
-			filteredDefinitions = append(filteredDefinitions, def)
+	// Add all vertices that need to be rolled back to the filtered graph
+	for tsToRollback, err := range appliedMigrations {
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid name for migration")
+		}
+
+		def, err := definitions.GetDefinition(tsToRollback)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get definition")
+		}
+
+		// Successfully found the vertex, add it to our filtered graph
+		if err := filteredGraph.AddDefinition(def); err != nil {
+			return nil, errors.Wrap(err, "unable to add filtered definition")
 		}
 	}
 
-	// Sort in reverse order of creation (newest first) to roll back in the correct order
-	for i, j := 0, len(filteredDefinitions)-1; i < j; i, j = i+1, j-1 {
-		filteredDefinitions[i], filteredDefinitions[j] = filteredDefinitions[j], filteredDefinitions[i]
-	}
-
-	return filteredDefinitions
+	return filteredGraph, nil
 }
