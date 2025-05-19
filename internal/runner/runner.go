@@ -25,8 +25,8 @@ type runner struct {
 	db database.DB
 }
 
-// successfulMigration tracks information about a successfully executed migration
-type successfulMigration struct {
+// executionDetails tracks information of a successful execution.
+type executionDetails struct {
 	Name      string
 	Operation string
 	Duration  time.Duration
@@ -134,8 +134,6 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		return err
 	}
 
-	var successfulMigrations []successfulMigration
-
 	// we use a topological sort to determine the correct sequence of execution
 	// The sort is stable but depending on whether it's a up or down migration, we need to reverse both
 	// the definitions and the sorting of elements with the same order.
@@ -148,13 +146,12 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		slices.Reverse(sortedDefs)
 	}
 
-	fmt.Println(sortedDefs, "<=====")
-	return nil
+	var execs []executionDetails
 
 	for _, hash := range sortedDefs {
 		// We want to respect the count flag when it's provided, so we don't exceed the number
 		// of migrations the user expects to be processed.
-		if options.Count > 0 && options.Count >= len(successfulMigrations) {
+		if options.Count > 0 && options.Count >= len(execs) {
 			break
 		}
 
@@ -186,7 +183,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 					output.StyleInfo, options.Operation, definition.FileName(), output.StyleReset)
 
 				// Add to successful migrations list for summary
-				successfulMigrations = append(successfulMigrations, successfulMigration{
+				execs = append(execs, executionDetails{
 					Name:      definition.FileName(),
 					Operation: options.Operation.String(),
 				})
@@ -206,7 +203,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 
 			// Add to successful migrations list for summary
-			successfulMigrations = append(successfulMigrations, successfulMigration{
+			execs = append(execs, executionDetails{
 				Name:      definition.FileName(),
 				Operation: options.Operation.String(),
 				Duration:  duration,
@@ -225,25 +222,25 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		}
 	}
 
-	printMigrationSummary(successfulMigrations, options.Operation, options.DryRun, options.Verbose)
+	printMigrationSummary(execs, options.Operation, options.DryRun, options.Verbose)
 	return nil
 }
 
 // printMigrationSummary prints a summary of successful migrations
-func printMigrationSummary(migrations []successfulMigration, operation types.MigrationOperationType, dryRun, verbose bool) {
+func printMigrationSummary(details []executionDetails, operation types.MigrationOperationType, dryRun, verbose bool) {
 	var executionVerb = "apply"
 	if operation.IsDownMigration() {
 		executionVerb = "roll back"
 	}
 
-	if len(migrations) == 0 {
+	if len(details) == 0 {
 		fmt.Printf("%sNo migration(s) to %s.%s\n", output.StyleInfo, executionVerb, output.StyleReset)
 		return
 	}
 
 	if verbose {
 		// Print summary header
-		fmt.Printf("\n%sMigration Summary%s\n\n", output.StyleHeading, output.StyleReset)
+		fmt.Printf("%sMigration Summary%s\n\n", output.StyleHeading, output.StyleReset)
 
 		// Print list of successful migrations with duration
 		if dryRun {
@@ -252,7 +249,7 @@ func printMigrationSummary(migrations []successfulMigration, operation types.Mig
 			fmt.Printf("%sSuccessful migrations:%s\n", output.StyleSuccess, output.StyleReset)
 		}
 
-		for _, migration := range migrations {
+		for _, migration := range details {
 			if dryRun {
 				fmt.Printf("  %s✓ %s (%s)%s\n",
 					output.StyleSuccess, migration.Name, migration.Operation, output.StyleReset)
@@ -272,8 +269,8 @@ func printMigrationSummary(migrations []successfulMigration, operation types.Mig
 		operationName = "validated"
 	}
 
-	fmt.Printf("\n%sTotal: %d migration(s) %s%s\n",
-		output.StyleInfo, len(migrations), operationName, output.StyleReset)
+	fmt.Printf("\n%sTotal: %d migration(s) %s.%s\n",
+		output.StyleInfo, len(details), operationName, output.StyleReset)
 }
 
 func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {
