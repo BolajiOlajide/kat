@@ -39,13 +39,6 @@ var configFlag = &cli.PathFlag{
 	Value:   constants.KatConfigurationFileName,
 }
 
-var countFlag = &cli.IntFlag{
-	Name:    "count",
-	Aliases: []string{"n"},
-	Usage:   "number of migrations to roll back (default: 1)",
-	Value:   1,
-}
-
 var dryRunFlag = &cli.BoolFlag{
 	Name:    "dry-run",
 	Usage:   "validate migrations without applying them",
@@ -201,7 +194,13 @@ var kat = &cli.App{
 			Description: "Apply migrations",
 			Action:      upExec,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{countFlag, configFlag, dryRunFlag},
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:    "count",
+					Aliases: []string{"n"},
+					Usage:   "number of migrations to apply (default: 0)",
+					Value:   0,
+				}, configFlag, dryRunFlag},
 		},
 		{
 			Name:        "down",
@@ -209,7 +208,13 @@ var kat = &cli.App{
 			Description: "Rollback the most recent migration or specify a count with --count flag",
 			Action:      downExec,
 			Before:      config.ParseConfig,
-			Flags:       []cli.Flag{countFlag, configFlag, dryRunFlag},
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:    "count",
+					Aliases: []string{"n"},
+					Usage:   "number of migrations to roll back (default: 1)",
+					Value:   1,
+				}, configFlag, dryRunFlag},
 		},
 		{
 			Name:        "ping",

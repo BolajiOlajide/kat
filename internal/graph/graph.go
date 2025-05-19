@@ -31,7 +31,7 @@ type Graph struct {
 }
 
 func (g *Graph) AddDefinition(def types.Definition) error {
-	if err := g.graph.AddVertex(def); err != nil {
+	if err := g.graph.AddVertex(def, graphlib.VertexAttribute("name", def.Name)); err != nil {
 		return errors.Wrap(err, "error adding vertex")
 	}
 
@@ -84,11 +84,8 @@ func (g *Graph) GetDefinition(timestamp int64) (types.Definition, error) {
 // It uses StableTopologicalSort from the graph library to ensure that elements with
 // valid topological ordering are consistently returned in order of their timestamps (i < j),
 // making the results deterministic and predictable.
-func (g *Graph) TopologicalSort(asc bool) ([]int64, error) {
+func (g *Graph) TopologicalSort() ([]int64, error) {
 	return graphlib.StableTopologicalSort(g.graph, func(i, j int64) bool {
-		if asc {
-			return i > j
-		}
 		return i < j
 	})
 }

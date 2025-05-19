@@ -139,7 +139,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	// we use a topological sort to determine the correct sequence of execution
 	// The sort is stable but depending on whether it's a up or down migration, we need to reverse both
 	// the definitions and the sorting of elements with the same order.
-	sortedDefs, err := options.Definitions.TopologicalSort(options.Operation.IsDownMigration())
+	sortedDefs, err := options.Definitions.TopologicalSort()
 	if err != nil {
 		return err
 	}
@@ -147,6 +147,9 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	if options.Operation.IsDownMigration() {
 		slices.Reverse(sortedDefs)
 	}
+
+	fmt.Println(sortedDefs, "<=====")
+	return nil
 
 	for _, hash := range sortedDefs {
 		// We want to respect the count flag when it's provided, so we don't exceed the number
