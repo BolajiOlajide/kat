@@ -139,7 +139,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	// we use a topological sort to determine the correct sequence of execution
 	// The sort is stable but depending on whether it's a up or down migration, we need to reverse both
 	// the definitions and the sorting of elements with the same order.
-	sortedDefs, err := options.Definitions.TopologicalSort(options.Operation.IsUpMigration())
+	sortedDefs, err := options.Definitions.TopologicalSort(options.Operation.IsDownMigration())
 	if err != nil {
 		return err
 	}
