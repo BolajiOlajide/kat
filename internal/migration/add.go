@@ -33,7 +33,7 @@ func Add(c *cli.Context, name string) error {
 	)
 	migrationDirName := fmt.Sprintf("%d_%s", timestamp, sanitizedName)
 
-	m := types.Migration{
+	m := types.TemporaryMigrationInfo{
 		Up:        filepath.Join(cfg.Migration.Directory, migrationDirName, "up.sql"),
 		Down:      filepath.Join(cfg.Migration.Directory, migrationDirName, "down.sql"),
 		Metadata:  filepath.Join(cfg.Migration.Directory, migrationDirName, "metadata.yaml"),

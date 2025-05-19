@@ -1,7 +1,26 @@
 package types
 
-// Migration represents a migration file definition.
-type Migration struct {
+import (
+	"fmt"
+
+	"github.com/keegancsmith/sqlf"
+)
+
+// Definition represents the definition of a single migration.
+// It contains what gets executed by the migration operation.
+type Definition struct {
+	MigrationMetadata
+
+	UpQuery   *sqlf.Query
+	DownQuery *sqlf.Query
+}
+
+func (d Definition) FileName() string {
+	return fmt.Sprintf("%d_%s", d.Timestamp, d.Name)
+}
+
+// TemporaryMigrationInfo represents a temporary migration file definition for creation.
+type TemporaryMigrationInfo struct {
 	Up        string
 	Down      string
 	Metadata  string
