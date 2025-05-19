@@ -29,7 +29,7 @@ func addExec(c *cli.Context) error {
 	return migration.Add(c, args[0])
 }
 
-func up(c *cli.Context) error {
+func upExec(c *cli.Context) error {
 	cfg, err := config.GetKatConfigFromCtx(c)
 	if err != nil {
 		return err
@@ -39,14 +39,14 @@ func up(c *cli.Context) error {
 	dryRun := c.Bool("dry-run")
 
 	if dryRun {
-		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will not be applied%s\n", output.StyleInfo, output.StyleReset)
+		fmt.Printf("%sDRY RUN: Migrations will not be applied%s\n", output.StyleInfo, output.StyleReset)
 	}
 
 	// Note: Retry is not used for migrations, only for the ping command
 	return migration.Up(c, cfg, dryRun)
 }
 
-func down(c *cli.Context) error {
+func downExec(c *cli.Context) error {
 	cfg, err := config.GetKatConfigFromCtx(c)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func down(c *cli.Context) error {
 	dryRun := c.Bool("dry-run")
 
 	if dryRun {
-		fmt.Fprintf(os.Stdout, "%sDRY RUN: Migrations will not be rolled back%s\n", output.StyleInfo, output.StyleReset)
+		fmt.Printf("%sDRY RUN: Migrations will not be rolled back%s\n", output.StyleInfo, output.StyleReset)
 	}
 
 	// Note: Retry is not used for migrations, only for the ping command
@@ -68,7 +68,7 @@ func initialize(c *cli.Context) error {
 }
 
 func getVersion(c *cli.Context) error {
-	fmt.Fprintf(os.Stdout, "%sVersion: %s%s\n", output.StyleInfo, version.Version(), output.StyleReset)
+	fmt.Printf("%sVersion: %s%s\n", output.StyleInfo, version.Version(), output.StyleReset)
 	return nil
 }
 
