@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -69,7 +70,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		sqlf.Join(mcols, ", "),
 	)
 	rows, err := r.db.Query(ctx, query)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return errors.Wrap(err, "scanning log")
 	}
 	defer rows.Close()
@@ -92,6 +93,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		return errors.Wrap(err, "sorting definitions")
 	}
 
+	if options.Operation.IsDownMigration() {
+		slices.Reverse(sortedDefs)
+	}
+
 	for _, hash := range sortedDefs {
 		definition, err := options.Definitions.GetDefinition(hash)
 		if err != nil {
@@ -100,12 +105,12 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 		// Use retry functionality for transaction if configured
 		var txFunc = func(tx database.Tx) (err error) {
-			if options.Operation == types.UpMigrationOperation {
+			if options.Operation.IsUpMigration() {
 				// Skip migrations that have already been executed
 				if logsMap[definition.Name] != nil {
 					return nil
 				}
-			} else if options.Operation == types.DownMigrationOperation {
+			} else {
 				// Skip migrations that haven't been executed
 				if logsMap[definition.Name] == nil {
 					return nil
@@ -113,27 +118,23 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 
 			noOfMigrations++
-			fmt.Printf("%s%s%s ", output.StyleInfo, definition.Name, output.StyleReset)
 
 			var q *sqlf.Query
-			var migrationKind string
-			if options.Operation == types.UpMigrationOperation {
+			if options.Operation.IsUpMigration() {
 				q = definition.UpQuery
-				migrationKind = "up"
 			} else {
 				q = definition.DownQuery
-				migrationKind = "down"
 			}
 
 			// In dry-run mode, don't execute the SQL
 			if options.DryRun {
 				fmt.Printf("%s[DRY RUN] Would execute %s migration for %s%s\n",
-					output.StyleInfo, migrationKind, definition.Name, output.StyleReset)
+					output.StyleInfo, options.Operation, definition.Name, output.StyleReset)
 
 				// Add to successful migrations list for summary
 				successfulMigrations = append(successfulMigrations, successfulMigration{
 					Name:      definition.Name,
-					Operation: migrationKind,
+					Operation: options.Operation.String(),
 				})
 
 				return nil
@@ -141,20 +142,22 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 			start := time.Now()
 			if err := tx.Exec(ctx, q); err != nil {
-				return errors.Wrapf(err, "executing %s query", migrationKind)
+				return errors.Wrapf(err, "executing %s query", options.Operation)
 			}
 			duration := time.Since(start)
 
+			fileName := fmt.Sprintf("%d_%s", hash, definition.Name)
+
 			// For UP operations, insert a log entry
 			// For DOWN operations, remove the log entry
-			if options.Operation == types.UpMigrationOperation {
+			if options.Operation.IsUpMigration() {
 				migrationTime := start.Format("2006-01-02 15:04:05.999-07")
 				insertQuery := sqlf.Sprintf(
 					insertLogQuery,
 					sqlf.Join(migrationLogInsertColumns, ", "),
 					sqlf.Join(
 						[]*sqlf.Query{
-							sqlf.Sprintf("%s", definition.Name),
+							sqlf.Sprintf("%s", fileName),
 							sqlf.Sprintf("%s", migrationTime),
 							sqlf.Sprintf("%d * interval '1 microsecond'", duration),
 						},
@@ -180,13 +183,10 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 			// Add to successful migrations list for summary
 			successfulMigrations = append(successfulMigrations, successfulMigration{
-				Name:      definition.Name,
-				Operation: migrationKind,
+				Name:      fileName,
+				Operation: options.Operation.String(),
 				Duration:  duration,
 			})
-
-			// add a new line incase there's an error
-			fmt.Print("\n")
 			return nil
 		}
 

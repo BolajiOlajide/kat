@@ -80,9 +80,16 @@ func (g *Graph) GetDefinition(timestamp int64) (types.Definition, error) {
 	return g.graph.Vertex(timestamp)
 }
 
+// TopologicalSort returns a valid topological ordering of all the vertices in the graph.
+// It uses StableTopologicalSort from the graph library to ensure that elements with
+// valid topological ordering are consistently returned in order of their timestamps (i < j),
+// making the results deterministic and predictable.
 func (g *Graph) TopologicalSort() ([]int64, error) {
-	return graphlib.TopologicalSort(g.graph)
+	return graphlib.StableTopologicalSort(g.graph, func(i, j int64) bool {
+		return i < j
+	})
 }
+
 func (g *Graph) Order() (int, error) {
 	return g.graph.Order()
 }

@@ -22,6 +22,25 @@ type MigrationMetadata struct {
 // MigrationOperationType represents the type of migration operation.
 type MigrationOperationType int
 
+func (m MigrationOperationType) IsUpMigration() bool {
+	return m == UpMigrationOperation
+}
+
+func (m MigrationOperationType) IsDownMigration() bool {
+	return m == DownMigrationOperation
+}
+
+func (m MigrationOperationType) String() string {
+	switch m {
+	case UpMigrationOperation:
+		return "up"
+	case DownMigrationOperation:
+		return "down"
+	default:
+		return ""
+	}
+}
+
 const (
 	// UpMigrationOperation represents an upgrade operation.
 	UpMigrationOperation MigrationOperationType = iota

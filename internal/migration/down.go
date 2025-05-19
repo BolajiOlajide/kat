@@ -155,12 +155,12 @@ func filterDefinitionsForRollback(definitions *graph.Graph, appliedMigrations it
 
 		def, err := definitions.GetDefinition(tsToRollback)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get definition")
+			return nil, err
 		}
 
 		// Successfully found the vertex, add it to our filtered graph
 		if err := filteredGraph.AddDefinition(def); err != nil {
-			return nil, errors.Wrap(err, "unable to add filtered definition")
+			return nil, err
 		}
 	}
 
