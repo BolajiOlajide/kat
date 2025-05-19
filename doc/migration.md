@@ -126,17 +126,18 @@ kat up
 When you run `kat up`, the following process occurs:
 
 1. Kat scans your migrations directory for all migration folders
-2. Kat builds a directed acyclic graph (DAG) based on migration dependencies
-3. Kat sorts migrations using topological ordering to respect dependencies
-4. Kat connects to your database using your configuration
-5. If needed, Kat creates a tracking table (specified by `tablename` in your config)
-6. Kat reads the tracking table to determine which migrations have already been applied
-7. For each pending migration:
+2. Kat computes migration definitions, converting files into executable SQL queries
+3. Kat builds a directed acyclic graph (DAG) based on migration dependencies
+4. Kat sorts migrations using topological ordering to respect dependencies
+5. Kat connects to your database using your configuration
+6. If needed, Kat creates a tracking table (specified by `tablename` in your config)
+7. Kat reads the tracking table to determine which migrations have already been applied
+8. For each pending migration:
    - Kat begins a transaction
-   - Kat executes the SQL in the up.sql file
+   - Kat executes the SQL queries from the migration Definition
    - Kat records the migration in the tracking table
    - Kat commits the transaction
-8. Kat provides a summary of the applied migrations
+9. Kat provides a summary of the applied migrations
 
 ### Up Command Options
 
@@ -180,14 +181,15 @@ kat down
 
 When you run `kat down`, the following process occurs:
 
-1. Kat connects to your database using your configuration
-2. Kat reads the tracking table to identify applied migrations
-3. By default, Kat selects the most recent migration for rollback
-4. Kat begins a transaction
-5. Kat executes the SQL in the down.sql file
-6. Kat removes the migration record from the tracking table
-7. Kat commits the transaction
-8. Kat provides a summary of the rolled back migrations
+1. Kat scans your migrations directory and computes migration definitions
+2. Kat connects to your database using your configuration
+3. Kat reads the tracking table to identify applied migrations
+4. By default, Kat selects the most recent migration for rollback
+5. Kat begins a transaction
+6. Kat executes the SQL queries from the migration Definition's DownQuery
+7. Kat removes the migration record from the tracking table
+8. Kat commits the transaction
+9. Kat provides a summary of the rolled back migrations
 
 ### Down Command Options
 
