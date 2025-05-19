@@ -14,6 +14,11 @@ import (
 
 // Up is the command that runs the up migration operation.
 func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
+	count := c.Int("count")
+	if count < 0 {
+		return errors.New("count cannot be a negative number")
+	}
+
 	f, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -35,15 +40,15 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	}
 	defer db.Close()
 
-	count := c.Int("count")
-	if count < 0 {
-		return errors.New("count cannot be a negative number")
-	}
-
 	return Execute(c.Context, db, definitions, cfg, count, types.UpMigrationOperation, dryRun)
 }
 
 func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
+	count := c.Int("count")
+	if count < 1 {
+		return errors.New("count must be a non-zero positive number")
+	}
+
 	f, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
 		return err
@@ -64,11 +69,6 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 	defer db.Close()
-
-	count := c.Int("count")
-	if count < 0 {
-		return errors.New("count cannot be a negative number")
-	}
 
 	return Execute(c.Context, db, g, cfg, count, types.DownMigrationOperation, dryRun)
 }

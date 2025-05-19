@@ -151,7 +151,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 	for _, hash := range sortedDefs {
 		// We want to respect the count flag when it's provided, so we don't exceed the number
 		// of migrations the user expects to be processed.
-		if options.Count > 0 && options.Count >= len(execs) {
+		if options.Count > 0 && len(execs) >= options.Count {
 			break
 		}
 
