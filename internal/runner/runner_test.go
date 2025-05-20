@@ -33,6 +33,44 @@ func createMigrationDef(t *testing.T, defs ...types.Definition) *graph.Graph {
 	return g
 }
 
+var allDefinitions = []types.Definition{
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:      "create_users",
+			Timestamp: 1747525262,
+		},
+		UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+		DownQuery: sqlf.Sprintf("DROP TABLE users;"),
+	},
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:      "create_transactions",
+			Timestamp: 1747525318,
+			Parents:   []int64{},
+		},
+		UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+		DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
+	},
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:      "create_products",
+			Timestamp: 1747527900,
+			Parents:   []int64{1747525262, 1747525318},
+		},
+		UpQuery:   sqlf.Sprintf("CREATE TABLE products (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+		DownQuery: sqlf.Sprintf("DROP TABLE products;"),
+	},
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:      "create_roles",
+			Timestamp: 1749554911,
+			Parents:   []int64{1747527900},
+		},
+		UpQuery:   sqlf.Sprintf("CREATE TABLE roles (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
+		DownQuery: sqlf.Sprintf("DROP TABLE roles;"),
+	},
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 
@@ -75,31 +113,37 @@ func TestRun(t *testing.T) {
 		{
 			name: "up migration",
 			options: Options{
-				Operation: types.UpMigrationOperation,
-				Definitions: createMigrationDef(t, types.Definition{
-					MigrationMetadata: types.MigrationMetadata{
-						Name: "create_users",
-					},
-					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
-				}),
-				MigrationInfo: types.MigrationInfo{
-					TableName: migrationTableName,
-				},
+				Operation:     types.UpMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+			},
+			expectedSchema: append(migrationLogsSchema, usersSchema, transactionsSchema, productsSchema, rolesSchema),
+		},
+		{
+			name: "up migration (with count=1)",
+			options: Options{
+				Operation:     types.UpMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+				Count:         1,
 			},
 			expectedSchema: append(migrationLogsSchema, usersSchema),
 		},
 		{
+			name: "up migration (with count=2)",
+			options: Options{
+				Operation:     types.UpMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+				Count:         2,
+			},
+			expectedSchema: append(migrationLogsSchema, usersSchema, transactionsSchema),
+		},
+		{
 			name: "DRYRUN: up migration",
 			options: Options{
-				Operation: types.UpMigrationOperation,
-				Definitions: createMigrationDef(t, types.Definition{
-					MigrationMetadata: types.MigrationMetadata{
-						Name: "create_users",
-					},
-					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
-				}),
+				Operation:   types.UpMigrationOperation,
+				Definitions: createMigrationDef(t, allDefinitions...),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
@@ -108,126 +152,96 @@ func TestRun(t *testing.T) {
 			expectedSchema: migrationLogsSchema,
 		},
 		{
-			name: "up migration (all migrations applied)",
+			name: "up migration (all migrations applied including existing ones)",
 			pre: createMigrationLogQuery + `
-        INSERT INTO "migration_logs"("name","migration_time","duration")
-          VALUES
-        ('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291');
+		INSERT INTO "migration_logs"("name","migration_time","duration")
+		 VALUES
+		('1747525262_create_users','2025-04-14 19:41:23.39-04','00:00:13.147291');
 
-        CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
+		CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
-				Operation: types.UpMigrationOperation,
-				Definitions: createMigrationDef(t, types.Definition{
-					MigrationMetadata: types.MigrationMetadata{
-						Name: "create_users",
-					},
-					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
-				}),
+				Operation:   types.UpMigrationOperation,
+				Definitions: createMigrationDef(t, allDefinitions...),
 				MigrationInfo: types.MigrationInfo{
 					TableName: migrationTableName,
 				},
 			},
-			expectedSchema: append(migrationLogsSchema, usersSchema),
+			expectedSchema: append(migrationLogsSchema, usersSchema, transactionsSchema, productsSchema, rolesSchema),
 		},
 		{
-			name: "down migration",
+			name: "down migration (all migrations applied including existing ones)",
 			pre: createMigrationLogQuery + `
 		INSERT INTO "migration_logs"("name","migration_time","duration")
-		 VALUES
-		('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
-		('create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291');
+		VALUES
+		('1747525262_create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747525318_create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747527900_create_products','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1749554911_create_roles','2025-04-14 19:41:23.39-04','00:00:13.147291');
 
 		CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
-		CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
+		CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE products (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE roles (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
-				Operation: types.DownMigrationOperation,
-				Definitions: createMigrationDef(t, types.Definition{
-					MigrationMetadata: types.MigrationMetadata{
-						Name:      "create_users",
-						Timestamp: 1747525262,
-					},
-					UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-					DownQuery: sqlf.Sprintf("DROP TABLE users;"),
-				},
-					types.Definition{
-						MigrationMetadata: types.MigrationMetadata{
-							Name:      "create_transactions",
-							Timestamp: 1747525318,
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
-					}),
-				MigrationInfo: types.MigrationInfo{
-					TableName: migrationTableName,
-				},
+				Operation:     types.DownMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
 			},
 			expectedSchema: migrationLogsSchema,
 		},
 		{
-			name: "DRYRUN: down migration",
+			name: "down migration (count=2)",
 			pre: createMigrationLogQuery + `
-		    INSERT INTO "migration_logs"("name","migration_time","duration")
-		      VALUES
-		    ('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
-		    ('create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291');
+		INSERT INTO "migration_logs"("name","migration_time","duration")
+		VALUES
+		('1747525262_create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747525318_create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747527900_create_products','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1749554911_create_roles','2025-04-14 19:41:23.39-04','00:00:13.147291');
 
-		    CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
-		    CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
+		CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE products (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE roles (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
-				Operation: types.DownMigrationOperation,
-				DryRun:    true,
-				Definitions: createMigrationDef(t, []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name:      "create_users",
-							Timestamp: 1747525262,
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE users;"),
-					},
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name:      "create_transactions",
-							Timestamp: 1747525318,
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
-					},
-				}...),
-				MigrationInfo: types.MigrationInfo{
-					TableName: migrationTableName,
-				},
+				Operation:     types.DownMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+				Count:         2,
 			},
 			expectedSchema: append(migrationLogsSchema, usersSchema, transactionsSchema),
 		},
 		{
-			name: "down migration (partial)",
+			name: "DRYRUN: down migration",
 			pre: createMigrationLogQuery + `
-        INSERT INTO "migration_logs"("name","migration_time","duration")
-          VALUES
-        ('create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
-        ('create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291');
+		INSERT INTO "migration_logs"("name","migration_time","duration")
+		VALUES
+		('1747525262_create_users','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747525318_create_transactions','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747527900_create_products','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1749554911_create_roles','2025-04-14 19:41:23.39-04','00:00:13.147291');
 
-        CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
-        CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
+		CREATE TABLE users (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE products (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);
+		CREATE TABLE roles (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);`,
 			options: Options{
-				Operation: types.DownMigrationOperation,
-				Definitions: createMigrationDef(t, []types.Definition{
-					{
-						MigrationMetadata: types.MigrationMetadata{
-							Name:      "create_transactions",
-							Timestamp: 1747525318,
-						},
-						UpQuery:   sqlf.Sprintf("CREATE TABLE transactions (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY);"),
-						DownQuery: sqlf.Sprintf("DROP TABLE transactions;"),
-					},
-				}...),
-				MigrationInfo: types.MigrationInfo{
-					TableName: migrationTableName,
-				},
+				Operation:     types.DownMigrationOperation,
+				DryRun:        true,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
 			},
-			expectedSchema: append(migrationLogsSchema, usersSchema),
+			expectedSchema: append(migrationLogsSchema, usersSchema, transactionsSchema, productsSchema, rolesSchema),
+		},
+		{
+			name: "down migration (no existing migrations applied)",
+			pre:  createMigrationLogQuery,
+			options: Options{
+				Operation:     types.DownMigrationOperation,
+				Definitions:   createMigrationDef(t, allDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+			},
+			expectedSchema: migrationLogsSchema,
 		},
 		{
 			name: "no migrations to apply (up)",
@@ -283,17 +297,13 @@ func TestRun(t *testing.T) {
 			require.NoError(t, err, "dropping and recreating public schema")
 
 			if tt.pre != "" {
-				err := db.Exec(ctx, sqlf.Sprintf(tt.pre))
-				require.NoError(t, err, "executing pre query")
+				require.NoError(
+					t, db.Exec(ctx, sqlf.Sprintf(tt.pre)),
+					"executing pre query",
+				)
 			}
 
-			err = r.Run(ctx, tt.options)
-
-			// if tt.wantErr {
-			// 	require.ErrorContains(t, err, tt.errMsg, "expected error from Run() method")
-			// } else {
-			require.NoError(t, err, "expected error to be nil from Run() method")
-			// }
+			require.NoError(t, r.Run(ctx, tt.options), "expected error to be nil from Run() method")
 
 			rows, err := db.Query(ctx, sqlf.Sprintf(dumpSchemaQuery))
 			require.NoError(t, err, "fetching schema from database")
@@ -332,7 +342,7 @@ type dbSchema struct {
 
 func scanDBSchema(sc database.Scanner) (*dbSchema, error) {
 	var schema dbSchema
-	err := sc.Scan(
+	return &schema, sc.Scan(
 		&schema.TableSchema,
 		&schema.TableName,
 		&schema.ColumnName,
@@ -340,5 +350,4 @@ func scanDBSchema(sc database.Scanner) (*dbSchema, error) {
 		&schema.IsNullable,
 		&schema.ColumnDefault,
 	)
-	return &schema, err
 }

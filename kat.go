@@ -52,12 +52,13 @@ func newMigration(db database.DB, f fs.FS, migrationTableName string) (*Migratio
 // Up runs all pending migrations in the database.
 // It takes a context, database connection string, and a slice of migration definitions.
 // The migrations are executed in order and tracked in the specified migration table.
-func (m *Migration) Up(ctx context.Context) error {
-	return migration.ApplyMigrations(ctx, m.db, m.definitions, types.Config{
-		Migration: types.MigrationInfo{
-			TableName: m.migrationTableName,
-		},
-	}, false)
+func (m *Migration) Up(ctx context.Context, count int) error {
+	if count < 0 {
+		return errors.New("count cannot be a negative number")
+	}
+
+	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
+	return migration.Execute(ctx, m.db, m.definitions, cfg, count, types.UpMigrationOperation, false)
 }
 
 // Down rolls back migrations in the database.
@@ -67,9 +68,7 @@ func (m *Migration) Down(ctx context.Context, count int) error {
 	if count < 1 {
 		return errors.New("count must be a non-zero positive number")
 	}
-	return migration.RollbackMigrations(ctx, m.db, m.definitions, types.Config{
-		Migration: types.MigrationInfo{
-			TableName: m.migrationTableName,
-		},
-	}, count, false)
+
+	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
+	return migration.Execute(ctx, m.db, m.definitions, cfg, count, types.DownMigrationOperation, false)
 }

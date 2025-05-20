@@ -12,4 +12,5 @@ type Options struct {
 	MigrationInfo types.MigrationInfo
 	DryRun        bool
 	Verbose       bool
+	Count         int
 }

@@ -5,15 +5,16 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v3"
+
+	"github.com/BolajiOlajide/kat/internal/types"
 )
 
 // FilePerm is the standard permission for migration files (readable by all, writable by owner)
 const FilePerm = 0644
 
-func saveMigration(m types.Migration, metadata types.MigrationMetadata) (err error) {
+func saveMigration(m types.TemporaryMigrationInfo, metadata types.MigrationMetadata) (err error) {
 	defer func() {
 		if err != nil {
 			// undo any changes to the fs on error. we don't care about the errors here.
