@@ -98,7 +98,7 @@ var kat = &cli.App{
 			Name:        "update",
 			Usage:       "Update kat to the latest version",
 			Description: "Check for and install the latest version of kat",
-			Action:      update,
+			Action:      updateExec,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:    "yes",

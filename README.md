@@ -70,7 +70,7 @@ kat down
 kat ping
 
 # Visualize your migration graph (requires Graphviz)
-kat export --format dot > migrations.dot
+kat export --file migrations.dot
 ```
 
 ## Usage

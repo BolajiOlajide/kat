@@ -18,3 +18,4 @@
 - Testing framework: Use github.com/stretchr/testify for assertions
 - Types: Use descriptive struct names and follow Go naming conventions
 - Queries: Use github.com/keegancsmith/sqlf for SQL queries
+- Errors: Make use of `errors.New` from `github.com/cockroachdb/errors` for creating errors.
