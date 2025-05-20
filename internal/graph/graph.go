@@ -31,7 +31,7 @@ type Graph struct {
 }
 
 func (g *Graph) AddDefinition(def types.Definition) error {
-	if err := g.graph.AddVertex(def, graphlib.VertexAttribute("name", def.Name)); err != nil {
+	if err := g.graph.AddVertex(def, graphlib.VertexAttribute("name", def.FileName())); err != nil {
 		return errors.Wrap(err, "error adding vertex")
 	}
 

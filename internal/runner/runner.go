@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"slices"
 	"time"
 
@@ -73,11 +72,7 @@ func (r *runner) getAppliedMigrations(ctx context.Context, tblName string) (map[
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			log.Printf("failed to close rows: %v", err)
-		}
-	}()
+	defer rows.Close()
 
 	var logsMap = make(map[string]*types.MigrationLog)
 	for rows.Next() {
@@ -108,7 +103,7 @@ func (r *runner) computePostExecutionQuery(fileName, tblName string, duration ti
 				[]*sqlf.Query{
 					sqlf.Sprintf("%s", fileName),
 					sqlf.Sprintf("%s", migrationTime),
-					sqlf.Sprintf("%d * interval '1 microsecond'", duration),
+					sqlf.Sprintf("%d * interval '1 millisecond'", duration.Milliseconds()),
 				},
 				", ",
 			),
