@@ -102,16 +102,16 @@ database:
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `kat init` | Initialize a new Kat project with configuration |
-| `kat add NAME` | Create a new migration with the given name |
-| `kat up` | Apply all pending migrations |
-| `kat down [--count N]` | Roll back the most recent migration(s) |
-| `kat ping` | Test database connectivity |
+| Command                        | Description |
+|--------------------------------|-------------|
+| `kat init`                     | Initialize a new Kat project with configuration |
+| `kat add NAME`                 | Create a new migration with the given name |
+| `kat up [--count / -n]`        | Apply all pending migrations |
+| `kat down [--count / -n]`      | Roll back the most recent migration(s) |
+| `kat ping`                     | Test database connectivity |
 | `kat export [--file FILENAME]` | Export the migration graph in DOT format for visualization |
-| `kat version` | Display the current version |
-| `kat --help` | Show help for all commands |
+| `kat version`                  | Display the current version |
+| `kat --help`                   | Show help for all commands |
 
 For detailed usage instructions, see the [documentation](https://kat.bolaji.de/).
 
