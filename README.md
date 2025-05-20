@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/BolajiOlajide/kat/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/BolajiOlajide/kat)](https://goreportcard.com/report/github.com/BolajiOlajide/kat)
+[![CI](https://github.com/BolajiOlajide/kat/actions/workflows/ci.yml/badge.svg)](https://github.com/BolajiOlajide/kat/actions/workflows/ci.yml)
+[![Release](https://github.com/BolajiOlajide/kat/actions/workflows/release.yml/badge.svg)](https://github.com/BolajiOlajide/kat/actions/workflows/release.yml)
 
 Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It allows you to manage your database schema using SQL files with a simple, intuitive workflow.
 
@@ -24,7 +26,7 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 ### Quick Install (macOS & Linux)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BolajiOlajide/kat/main/install.sh | bash
+curl -sSL https://kat.bolaji.de/install | bash
 ```
 
 ### From Pre-compiled Binaries
@@ -68,7 +70,7 @@ kat down
 kat ping
 
 # Visualize your migration graph (requires Graphviz)
-kat graph --format dot > migrations.dot
+kat export --format dot > migrations.dot
 ```
 
 ## Usage
@@ -88,20 +90,28 @@ migration:
   directory: migrations
 database:
   url: postgres://username:password@localhost:5432/mydatabase
+  # Alternatively, use environment variables for secure credential management:
+  # url: ${DATABASE_URL}
+  # Or specify individual connection parameters:
+  # host: ${DB_HOST}
+  # port: ${DB_PORT}
+  # user: ${DB_USER}
+  # password: ${DB_PASSWORD}
+  # dbname: ${DB_NAME}
 ```
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `kat init` | Initialize a new Kat project with configuration |
-| `kat add NAME` | Create a new migration with the given name |
-| `kat up` | Apply all pending migrations |
-| `kat down [--count N]` | Roll back the most recent migration(s) |
-| `kat ping` | Test database connectivity |
-| `kat export` | Export the migration graph |
-| `kat version` | Display the current version |
-| `kat --help` | Show help for all commands |
+| Command                        | Description |
+|--------------------------------|-------------|
+| `kat init`                     | Initialize a new Kat project with configuration |
+| `kat add NAME`                 | Create a new migration with the given name |
+| `kat up [--count / -n]`        | Apply all pending migrations |
+| `kat down [--count / -n]`      | Roll back the most recent migration(s) |
+| `kat ping`                     | Test database connectivity |
+| `kat export [--file FILENAME]` | Export the migration graph in DOT format for visualization |
+| `kat version`                  | Display the current version |
+| `kat --help`                   | Show help for all commands |
 
 For detailed usage instructions, see the [documentation](https://kat.bolaji.de/).
 
