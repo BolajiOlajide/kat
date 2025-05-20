@@ -6,14 +6,16 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/BolajiOlajide/kat/internal/output"
-	"github.com/BolajiOlajide/kat/internal/version"
 	"github.com/Masterminds/semver/v3"
 	"github.com/cockroachdb/errors"
+
+	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/version"
 )
 
 // GitHubReleaseURL is the URL for GitHub's latest release API
@@ -101,40 +103,59 @@ func CheckForUpdates() (bool, string, string, error) {
 
 // DownloadAndReplace downloads a new binary and replaces the current one
 func DownloadAndReplace(downloadURL, execPath string, progressWriter io.Writer) error {
-	// Create a temporary file to download to
-	tempFile, err := os.CreateTemp("", "kat-update-*")
+	// Create a temporary directory to work in
+	tempDir, err := os.MkdirTemp("", "kat-update-*")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary file: %w", err)
+		return errors.Wrap(err, "failed to create temporary directory")
 	}
-	tempFilePath := tempFile.Name()
-	defer os.Remove(tempFilePath) // Clean up temp file on exit
+	defer os.RemoveAll(tempDir) // Clean up temp directory on exit
+
+	// Create a temporary file for the archive
+	tempArchivePath := filepath.Join(tempDir, "kat.tar.gz")
+	tempArchive, err := os.Create(tempArchivePath)
+	if err != nil {
+		return errors.Wrap(err, "failed to create temporary file")
+	}
 
 	// Download the file
 	fmt.Fprintf(progressWriter, "%sDownloading update...%s\n", output.StyleInfo, output.StyleReset)
 	resp, err := http.Get(downloadURL)
 	if err != nil {
-		return fmt.Errorf("failed to download update: %w", err)
+		return errors.Wrap(err, "failed to download update")
 	}
 	defer resp.Body.Close()
 
 	// Check if download was successful
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download update: HTTP %d", resp.StatusCode)
+		return errors.Newf("failed to download update: HTTP %d", resp.StatusCode)
 	}
 
-	// Make the temporary file executable (important for Unix-like systems)
-	if err := tempFile.Chmod(0755); err != nil {
-		return fmt.Errorf("failed to make binary executable: %w", err)
-	}
-
-	// Copy the downloaded content to the temporary file
-	_, err = io.Copy(tempFile, resp.Body)
+	// Copy the downloaded content to the temporary archive file
+	_, err = io.Copy(tempArchive, resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to write downloaded file: %w", err)
+		return errors.Wrap(err, "failed to write downloaded file")
 	}
 
-	// Close the file before replacing
-	tempFile.Close()
+	// Close the archive file
+	if err := tempArchive.Close(); err != nil {
+		return errors.Wrap(err, "failed to close the temporary archive file")
+	}
+	// Extract the binary from the archive
+	fmt.Fprintf(progressWriter, "%sExtracting binary...%s\n", output.StyleInfo, output.StyleReset)
+
+	// Create path for the extracted binary
+	tempBinaryPath := filepath.Join(tempDir, "kat")
+
+	// Use tar to extract the file
+	cmd := exec.Command("tar", "xzf", tempArchivePath, "-C", tempDir)
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, "failed to extract archive")
+	}
+
+	// Make the extracted binary executable
+	if err := os.Chmod(tempBinaryPath, 0755); err != nil {
+		return errors.Wrap(err, "failed to make binary executable")
+	}
 
 	// On Unix-like systems, we can replace the binary directly
 	execDir := filepath.Dir(execPath)
@@ -142,13 +163,13 @@ func DownloadAndReplace(downloadURL, execPath string, progressWriter io.Writer) 
 
 	// Move the new executable to the same directory as the current one
 	newExecPath := filepath.Join(execDir, execName+".new")
-	if err := os.Rename(tempFilePath, newExecPath); err != nil {
-		return fmt.Errorf("failed to move new executable to destination directory: %w", err)
+	if err := os.Rename(tempBinaryPath, newExecPath); err != nil {
+		return errors.Wrap(err, "failed to move new executable to destination directory")
 	}
 
 	// Replace the current executable with the new one
 	if err := os.Rename(newExecPath, execPath); err != nil {
-		return fmt.Errorf("failed to replace current executable: %w", err)
+		return errors.Wrap(err, "failed to replace current executable")
 	}
 
 	fmt.Fprintf(progressWriter, "%sUpdate successfully installed%s\n", output.StyleSuccess, output.StyleReset)

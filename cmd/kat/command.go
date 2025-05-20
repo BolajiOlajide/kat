@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/BolajiOlajide/kat/internal/config"
@@ -72,50 +73,50 @@ func getVersion(c *cli.Context) error {
 	return nil
 }
 
-func update(c *cli.Context) error {
+func updateExec(c *cli.Context) error {
 	if version.IsDev() {
-		fmt.Fprintf(os.Stdout, "%sYou are running kat in dev mode. The update command is not available in dev mode.%s\n", output.StyleInfo, output.StyleReset)
+		fmt.Printf("%sYou are running kat in dev mode. The update command is not available in dev mode.%s\n", output.StyleInfo, output.StyleReset)
 		return nil
 	}
-
-	fmt.Fprintf(os.Stdout, "%sChecking for updates...%s\n", output.StyleInfo, output.StyleReset)
 
 	// Check if a newer version is available
 	hasUpdate, latestVersion, downloadURL, err := updatepkg.CheckForUpdates()
 	if err != nil {
-		return fmt.Errorf("failed to check for updates: %w", err)
+		return errors.Wrap(err, "failed to check for updates")
 	}
 
 	// No update available
 	if !hasUpdate {
-		fmt.Fprintf(os.Stdout, "%sKat is already at the latest version.%s\n", output.StyleSuccess, output.StyleReset)
+		fmt.Printf("%sKat is already at the latest version.%s\n", output.StyleSuccess, output.StyleReset)
 		return nil
 	}
 
 	// Update available - notify the user
-	fmt.Fprintf(os.Stdout, "%sA new version of Kat is available: %s%s\n",
+	fmt.Printf("%sA new version of Kat is available: %s%s\n",
 		output.StyleInfo, latestVersion, output.StyleReset)
 
 	// Get the path to the current executable
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return errors.Wrap(err, "failed to get executable path")
 	}
 
 	// In case the executable is a symlink, get the real path
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve executable path: %w", err)
+		return errors.Wrap(err, "failed to resolve executable path")
 	}
 
 	// Confirm the update with the user, unless -y flag is provided
 	if !c.Bool("yes") {
-		fmt.Fprintf(os.Stdout, "\nDo you want to update to version %s? [y/N]: ", latestVersion)
+		fmt.Printf("\nDo you want to update to version %s? [y/N]: ", latestVersion)
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			return err
+		}
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response != "y" && response != "yes" {
-			fmt.Fprintf(os.Stdout, "%sUpdate cancelled.%s\n", output.StyleInfo, output.StyleReset)
+			fmt.Printf("%sUpdate cancelled.%s\n", output.StyleInfo, output.StyleReset)
 			return nil
 		}
 	}
@@ -123,10 +124,10 @@ func update(c *cli.Context) error {
 	// Download and install the update
 	err = updatepkg.DownloadAndReplace(downloadURL, execPath, os.Stdout)
 	if err != nil {
-		return fmt.Errorf("failed to update: %w", err)
+		return errors.Wrap(err, "failed to update")
 	}
 
-	fmt.Fprintf(os.Stdout, "%sKat has been updated to version %s%s\n",
+	fmt.Printf("%sKat has been updated to version %s%s\n",
 		output.StyleSuccess, latestVersion, output.StyleReset)
 	return nil
 }

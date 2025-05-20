@@ -3,7 +3,6 @@ package graph
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -254,11 +253,11 @@ func TestGraph_Leaves(t *testing.T) {
 			require.NoError(t, err, "Got unexpected error: %v", err)
 
 			// Check that the number of leaves matches expected
-			assert.Len(t, leaves, len(tt.expectedLeaves),
+			require.Len(t, leaves, len(tt.expectedLeaves),
 				"Expected %d leaves but got %d", len(tt.expectedLeaves), len(leaves))
 
 			// Check that the leaves match expected values
-			assert.ElementsMatch(t, tt.expectedLeaves, leaves,
+			require.ElementsMatch(t, tt.expectedLeaves, leaves,
 				"Leaves don't match expected values")
 
 			// Verify each leaf is actually a leaf by checking adjacency map
@@ -267,8 +266,8 @@ func TestGraph_Leaves(t *testing.T) {
 
 			for _, leaf := range leaves {
 				outNeighbors, exists := adjMap[leaf]
-				assert.True(t, exists, "Leaf %d not found in graph", leaf)
-				assert.Empty(t, outNeighbors, "Vertex %d has outgoing edges, not a leaf", leaf)
+				require.True(t, exists, "Leaf %d not found in graph", leaf)
+				require.Empty(t, outNeighbors, "Vertex %d has outgoing edges, not a leaf", leaf)
 			}
 		})
 	}

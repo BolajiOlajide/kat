@@ -6,7 +6,6 @@ import (
 	"testing/fstest"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -105,13 +104,13 @@ func TestComputeDefinition(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check metadata fields
-			assert.Equal(t, tt.expectedDef.Name, result.Name)
-			assert.Equal(t, tt.expectedDef.Timestamp, result.Timestamp)
-			assert.ElementsMatch(t, tt.expectedDef.Parents, result.Parents)
+			require.Equal(t, tt.expectedDef.Name, result.Name)
+			require.Equal(t, tt.expectedDef.Timestamp, result.Timestamp)
+			require.ElementsMatch(t, tt.expectedDef.Parents, result.Parents)
 
 			// Check that queries are not nil
-			assert.NotNil(t, result.UpQuery)
-			assert.NotNil(t, result.DownQuery)
+			require.NotNil(t, result.UpQuery)
+			require.NotNil(t, result.DownQuery)
 
 			// Verify query content by converting to string and comparing
 			upSQL := result.UpQuery.Query(sqlf.PostgresBindVar)
@@ -122,8 +121,8 @@ func TestComputeDefinition(t *testing.T) {
 			expectedDownSQL := strings.TrimSpace(string(tt.files[tt.migrationDir+"/down.sql"].Data))
 
 			// Compare SQL strings
-			assert.Equal(t, expectedUpSQL, upSQL)
-			assert.Equal(t, expectedDownSQL, downSQL)
+			require.Equal(t, expectedUpSQL, upSQL)
+			require.Equal(t, expectedDownSQL, downSQL)
 		})
 	}
 }
