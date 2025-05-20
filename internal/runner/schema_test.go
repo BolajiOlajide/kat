@@ -49,6 +49,22 @@ var usersSchema = dbSchema{
 	IsNullable:  "NO",
 }
 
+var productsSchema = dbSchema{
+	TableSchema: "public",
+	TableName:   "products",
+	ColumnName:  "id",
+	DataType:    "bigint",
+	IsNullable:  "NO",
+}
+
+var rolesSchema = dbSchema{
+	TableSchema: "public",
+	TableName:   "roles",
+	ColumnName:  "id",
+	DataType:    "bigint",
+	IsNullable:  "NO",
+}
+
 var transactionsSchema = dbSchema{
 	TableSchema: "public",
 	TableName:   "transactions",
