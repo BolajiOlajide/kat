@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/BolajiOlajide/kat/internal/version"
+	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/BolajiOlajide/kat/internal/version"
 )
 
 func TestCheckForUpdates(t *testing.T) {
@@ -55,9 +56,9 @@ func TestCheckForUpdates(t *testing.T) {
 
 	// Test when update is available
 	hasUpdate, latestVersion, downloadURL, err := CheckForUpdates()
-	assert.NoError(t, err)
-	assert.True(t, hasUpdate)
-	assert.Equal(t, "1.0.1", latestVersion)
+	require.NoError(t, err)
+	require.True(t, hasUpdate)
+	require.Equal(t, "1.0.1", latestVersion)
 
 	// URL should match the platform
 	expectedURL := ""
@@ -69,20 +70,22 @@ func TestCheckForUpdates(t *testing.T) {
 	case "windows":
 		expectedURL = "https://example.com/download/windows"
 	}
-	assert.Equal(t, expectedURL, downloadURL)
+	require.Equal(t, expectedURL, downloadURL)
 
 	// Test when already up to date
 	version.MockVersion = func() string { return "v1.0.1" }
 	hasUpdate, _, _, err = CheckForUpdates()
-	assert.NoError(t, err)
-	assert.False(t, hasUpdate)
+	require.NoError(t, err)
+	require.False(t, hasUpdate)
 }
 
 func TestDownloadAndReplace(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir, err := os.MkdirTemp("", "kat-update-test")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	// Skip if not on a system where we can create tar archives
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test on Windows")
+	}
+
+	tempDir := t.TempDir()
 
 	// Create a fake binary for testing
 	origPath := filepath.Join(tempDir, "kat")
@@ -90,23 +93,36 @@ func TestDownloadAndReplace(t *testing.T) {
 		origPath += ".exe"
 	}
 
-	err = os.WriteFile(origPath, []byte("original"), 0755)
-	assert.NoError(t, err)
+	require.NoError(t, os.WriteFile(origPath, []byte("original"), 0755))
 
-	// Create a test server that returns a binary
+	// Create another temp directory to prepare a tar.gz file
+	tarDir := t.TempDir()
+
+	// Create the mock binary that will be inside the tar
+	mockBinaryPath := filepath.Join(tarDir, "kat")
+	require.NoError(t, os.WriteFile(mockBinaryPath, []byte("updated"), 0755))
+
+	// Create a tar.gz file
+	tarPath := filepath.Join(tarDir, "kat.tar.gz")
+	cmd := exec.Command("tar", "czf", tarPath, "-C", tarDir, "kat")
+	require.NoError(t, cmd.Run())
+
+	// Read the tar.gz content
+	tarContent, err := os.ReadFile(tarPath)
+	require.NoError(t, err)
+
+	// Create a test server that returns the tar.gz
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
-		io.WriteString(w, "updated")
+		w.Write(tarContent)
 	}))
 	defer server.Close()
 
 	// Test download and replacement
-	progressWriter := io.Discard // Discard progress output in tests
-	err = DownloadAndReplace(server.URL, origPath, progressWriter)
-	assert.NoError(t, err)
+	require.NoError(t, DownloadAndReplace(server.URL, origPath, io.Discard))
 
 	// Verify content was replaced
 	content, err := os.ReadFile(origPath)
-	assert.NoError(t, err)
-	assert.Equal(t, "updated", string(content))
+	require.NoError(t, err)
+	require.Equal(t, "updated", string(content))
 }

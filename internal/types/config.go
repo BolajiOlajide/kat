@@ -97,6 +97,6 @@ func validateScheme(scheme string) error {
 	case "postgresql+ssl", "postgresql", "postgres":
 		return nil
 	default:
-		return fmt.Errorf("invalid scheme: %s", scheme)
+		return errors.Newf("invalid scheme: %s", scheme)
 	}
 }

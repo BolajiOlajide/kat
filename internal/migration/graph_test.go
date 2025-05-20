@@ -4,7 +4,6 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,7 +73,7 @@ func TestComputeDefinitions(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check the number of vertices
-			assert.Equal(t, tt.expectedVertices, len(actualAdj), "Graph should have the expected number of vertices")
+			require.Equal(t, tt.expectedVertices, len(actualAdj), "Graph should have the expected number of vertices")
 
 			// Check that the edges match what we expect
 			for vertex, expectedTargets := range tt.expectedEdges {
@@ -82,7 +81,7 @@ func TestComputeDefinitions(t *testing.T) {
 
 				if tt.expectedVertices > 0 {
 					// If we expect this vertex to exist
-					assert.True(t, exists, "Vertex %d should exist in graph", vertex)
+					require.True(t, exists, "Vertex %d should exist in graph", vertex)
 
 					if exists {
 						// Compare the outgoing edges
@@ -92,7 +91,7 @@ func TestComputeDefinitions(t *testing.T) {
 						}
 
 						// Check that the expected targets match the actual ones
-						assert.ElementsMatch(t, expectedTargets, actualEdges,
+						require.ElementsMatch(t, expectedTargets, actualEdges,
 							"Outgoing edges from vertex %d should match expected", vertex)
 					}
 				}

@@ -74,15 +74,15 @@ func getVersion(c *cli.Context) error {
 }
 
 func updateExec(c *cli.Context) error {
-	//if version.IsDev() {
-	//	fmt.Printf("%sYou are running kat in dev mode. The update command is not available in dev mode.%s\n", output.StyleInfo, output.StyleReset)
-	//	return nil
-	//}
+	if version.IsDev() {
+		fmt.Printf("%sYou are running kat in dev mode. The update command is not available in dev mode.%s\n", output.StyleInfo, output.StyleReset)
+		return nil
+	}
 
 	// Check if a newer version is available
 	hasUpdate, latestVersion, downloadURL, err := updatepkg.CheckForUpdates()
 	if err != nil {
-		return fmt.Errorf("failed to check for updates: %w", err)
+		return errors.Wrap(err, "failed to check for updates")
 	}
 
 	// No update available
@@ -124,7 +124,7 @@ func updateExec(c *cli.Context) error {
 	// Download and install the update
 	err = updatepkg.DownloadAndReplace(downloadURL, execPath, os.Stdout)
 	if err != nil {
-		return fmt.Errorf("failed to update: %w", err)
+		return errors.Wrap(err, "failed to update")
 	}
 
 	fmt.Printf("%sKat has been updated to version %s%s\n",
