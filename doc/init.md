@@ -10,7 +10,7 @@ permalink: /init/
 page_nav:
     prev:
         content: Installation
-        url: '/install'
+        url: '/installation'
     next:
         content: Configuration
         url: '/config'
