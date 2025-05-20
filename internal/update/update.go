@@ -137,8 +137,9 @@ func DownloadAndReplace(downloadURL, execPath string, progressWriter io.Writer) 
 	}
 
 	// Close the archive file
-	tempArchive.Close()
-
+	if err := tempArchive.Close(); err != nil {
+		return errors.Wrap(err, "failed to close the temporary archive file")
+	}
 	// Extract the binary from the archive
 	fmt.Fprintf(progressWriter, "%sExtracting binary...%s\n", output.StyleInfo, output.StyleReset)
 
