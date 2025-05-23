@@ -132,7 +132,7 @@ func Init(c *cli.Context) (err error) {
 		return errors.Wrap(err, "writing configuration file")
 	}
 
-	fmt.Println(output.Success("Kat initialized successfully!"))
-	fmt.Println(output.Infof("Config file: %s", configFilePath))
+	output.Default.Success("Kat initialized successfully!")
+	output.Default.Infof("Config file: %s", configFilePath)
 	return nil
 }

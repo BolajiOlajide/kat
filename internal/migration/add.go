@@ -66,11 +66,11 @@ func Add(c *cli.Context, name string) error {
 		return err
 	}
 
-	fmt.Println(output.Success("Migration created successfully!"))
+	output.Default.Success("Migration created successfully!")
 	if cfg.Verbose {
-		fmt.Println(output.Infof("Up query file: %s", m.Up))
-		fmt.Println(output.Infof("Down query file: %s", m.Down))
-		fmt.Println(output.Infof("Metadata file: %s", m.Metadata))
+		output.Default.Infof("Up query file: %s", m.Up)
+		output.Default.Infof("Down query file: %s", m.Down)
+		output.Default.Infof("Metadata file: %s", m.Metadata)
 	}
 
 	return nil
