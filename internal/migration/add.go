@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -22,11 +23,6 @@ func Add(c *cli.Context, name string) error {
 		return err
 	}
 
-	_, err = getMigrationsFS(cfg.Migration.Directory)
-	if err != nil {
-		return errors.Wrap(err, "getting migrations")
-	}
-
 	timestamp := time.Now().UTC().Unix()
 	sanitizedName := nonAlphaNumericOrUnderscore.ReplaceAllString(
 		strings.ReplaceAll(strings.ToLower(name), " ", "_"), "",
@@ -42,7 +38,16 @@ func Add(c *cli.Context, name string) error {
 
 	f, err := getMigrationsFS(cfg.Migration.Directory)
 	if err != nil {
-		return err
+		if errors.Is(err, ErrMigrationsDirNotExist) {
+			// Create the migrations directory if it doesn't exist
+			if err := os.MkdirAll(cfg.Migration.Directory, 0755); err != nil {
+				return errors.Wrapf(err, "failed to create migrations directory: %s", cfg.Migration.Directory)
+			}
+			// Return the DirFS for the newly created directory
+			f = os.DirFS(cfg.Migration.Directory)
+		} else {
+			return err
+		}
 	}
 
 	defs, err := ComputeDefinitions(f)
