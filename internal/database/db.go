@@ -1,3 +1,10 @@
+// Package database provides database connectivity and operations for PostgreSQL.
+// It wraps the standard database/sql package with additional functionality
+// specific to migration management, including retry logic, transaction handling,
+// and migration table management.
+//
+// The package uses pgx driver for PostgreSQL connectivity and provides
+// abstractions for database operations that are safe for concurrent use.
 package database
 
 import (

@@ -1,3 +1,13 @@
+// Package migration provides functionality for creating, managing, and executing
+// database migrations. It handles the lifecycle of migrations including creation,
+// dependency resolution, and execution in both up and down directions.
+//
+// The package supports:
+//   - Creating new migration files with proper structure
+//   - Managing migration dependencies through parent-child relationships
+//   - Executing migrations in dependency order
+//   - Rolling back migrations safely
+//   - Tracking applied migrations in the database
 package migration
 
 import (
