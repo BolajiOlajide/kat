@@ -67,12 +67,20 @@ type Migration struct {
 // Returns a Migration instance or an error if connection fails or migration
 // definitions cannot be loaded.
 func New(connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
-	db, err := database.New(connStr)
+	// We pass a nil database DB instance because of a chicken and egg problem. We need the logger instance to create the database wrapper.
+	// We want to use whatever logger the user provides as this might not always be the default logger.
+	m, err := newMigration(nil, f, migrationTableName, options...)
 	if err != nil {
 		return nil, err
 	}
 
-	return newMigration(db, f, migrationTableName, options...)
+	db, err := database.New(connStr, m.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	m.db = db
+	return m, nil
 }
 
 // NewWithDB creates a new Migration instance using an existing database connection.
@@ -90,7 +98,8 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 // Deprecated: This function is deprecated and will be removed in a future release.
 // Use New(...) and pass in the WithSqlDB option instead.
 func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, error) {
-	d, err := database.NewWithDB(db)
+	l := loggr.NewDefault()
+	d, err := database.NewWithDB(db, l)
 	if err != nil {
 		return nil, err
 	}

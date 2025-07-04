@@ -18,7 +18,7 @@ func WithLogger(logger loggr.Logger) MigrationOption {
 
 func WithSqlDB(db *sql.DB) MigrationOption {
 	return func(m *Migration) error {
-		d, err := database.NewWithDB(db)
+		d, err := database.NewWithDB(db, m.logger)
 		if err != nil {
 			return err
 		}
