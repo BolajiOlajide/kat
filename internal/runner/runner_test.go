@@ -13,6 +13,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/graph"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
@@ -95,10 +96,12 @@ func TestRun(t *testing.T) {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err, "fetching connection string")
 
-	db, err := database.New(connStr)
+	logger := loggr.NewDefault()
+
+	db, err := database.New(connStr, logger)
 	require.NoError(t, err, "creating database service")
 
-	r, err := NewRunner(ctx, db)
+	r, err := NewRunner(ctx, db, logger)
 	require.NoError(t, err, "initializing runner")
 
 	createMigrationLogQuery, err := computeCreateMigrationLogQuery(migrationTableName)
