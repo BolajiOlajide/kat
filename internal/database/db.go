@@ -18,7 +18,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 )
 
 var _ DB = &database{}
@@ -26,6 +26,7 @@ var _ DB = &database{}
 type database struct {
 	db      *sql.DB
 	bindVar sqlf.BindVar
+	logger  loggr.Logger
 }
 
 // PingWithRetry pings the database with configurable retries and exponential backoff
@@ -49,7 +50,7 @@ func (d *database) PingWithRetry(ctx context.Context, retryCount int, retryDelay
 	}
 
 	// Otherwise, use retry logic
-	return withRetry(retryCount, retryDelay, func() error {
+	return withRetry(d.logger, retryCount, retryDelay, func() error {
 		return d.db.PingContext(ctx)
 	})
 }
@@ -129,7 +130,7 @@ func isTransientError(err error) bool {
 }
 
 // withRetry executes a function with retries for transient errors
-func withRetry(retryCount int, initialDelay int, f func() error) error {
+func withRetry(l loggr.Logger, retryCount int, initialDelay int, f func() error) error {
 	// Validate retry parameters
 	if retryCount < 1 {
 		retryCount = 1 // Minimum 1 retry
@@ -157,8 +158,7 @@ func withRetry(retryCount int, initialDelay int, f func() error) error {
 
 		// Don't sleep on the last attempt
 		if attempt < retryCount {
-			fmt.Printf("%sTransient error detected: %s. Retrying in %v (attempt %d/%d)...%s\n",
-				output.StyleWarning, err.Error(), delay, attempt+1, retryCount, output.StyleReset)
+			l.Error(fmt.Sprintf("Transient error detected: %s. Retrying in %v (attempt %d/%d)...", err.Error(), delay, attempt+1, retryCount))
 			time.Sleep(delay)
 
 			// Exponential backoff: double the delay for the next attempt
@@ -171,15 +171,15 @@ func withRetry(retryCount int, initialDelay int, f func() error) error {
 }
 
 // New returns a new instance of the database
-func New(url string) (DB, error) {
+func New(url string, logger loggr.Logger) (DB, error) {
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewWithDB(db)
+	return NewWithDB(db, logger)
 }
 
-func NewWithDB(db *sql.DB) (DB, error) {
-	return &database{db: db, bindVar: sqlf.PostgresBindVar}, nil
+func NewWithDB(db *sql.DB, logger loggr.Logger) (DB, error) {
+	return &database{db: db, bindVar: sqlf.PostgresBindVar, logger: logger}, nil
 }

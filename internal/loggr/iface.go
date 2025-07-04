@@ -1,13 +1,8 @@
 package loggr
 
-import "context"
-
 type Logger interface {
-	Debug(msg string, keyvals ...interface{})
-	Info(msg string, keyvals ...interface{})
-	Warn(msg string, keyvals ...interface{})
-	Error(msg string, keyvals ...interface{})
-	
-	With(keyvals ...interface{}) Logger
-	WithContext(ctx context.Context) Logger
+	Debug(msg string)
+	Info(msg string)
+	Warn(msg string)
+	Error(msg string)
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/BolajiOlajide/kat/internal/database"
-	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
@@ -21,7 +21,8 @@ type Runner interface {
 }
 
 type runner struct {
-	db database.DB
+	db     database.DB
+	logger loggr.Logger
 }
 
 // executionDetails tracks information of a successful execution.
@@ -34,11 +35,11 @@ type executionDetails struct {
 var _ Runner = (*runner)(nil)
 
 // NewRunner returns a new instance of the runner.
-func NewRunner(ctx context.Context, db database.DB) (Runner, error) {
+func NewRunner(ctx context.Context, db database.DB, logger loggr.Logger) (Runner, error) {
 	if err := db.Ping(ctx); err != nil {
 		return nil, err
 	}
-	return &runner{db: db}, nil
+	return &runner{db: db, logger: logger}, nil
 }
 
 func (r *runner) executeMigrationLogQuery(ctx context.Context, tblName string) error {
@@ -174,8 +175,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 			// In dry-run mode, don't execute the SQL
 			if options.DryRun {
-				fmt.Printf("%s[DRY RUN] Would execute %s migration for %q%s\n",
-					output.StyleInfo, options.Operation, definition.FileName(), output.StyleReset)
+				r.logger.Info(fmt.Sprintf("[DRY RUN] Would execute %s migration for %q", options.Operation, definition.FileName()))
 
 				// Add to successful migrations list for summary
 				execs = append(execs, executionDetails{
@@ -209,48 +209,46 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 		// Execute transaction without retry
 		if err := r.db.WithTransact(ctx, txFunc); err != nil {
 			// Print detailed error information
-			fmt.Printf("\n%sMigration failed: %s%s\n", output.StyleFailure, definition.Name, output.StyleReset)
-			fmt.Printf("%sError details: %s%s\n", output.StyleFailure, err.Error(), output.StyleReset)
-			fmt.Printf("%sMigration process stopped to preserve database integrity%s\n", output.StyleInfo, output.StyleReset)
+			r.logger.Error(fmt.Sprintf("Migration failed: %s", definition.Name))
+			r.logger.Error(fmt.Sprintf("Error: %s", err.Error()))
+			r.logger.Error("Migration process stopped to preserve database integrity")
 
 			return errors.Wrapf(err, "executing %s", definition.FileName())
 		}
 	}
 
-	printMigrationSummary(execs, options.Operation, options.DryRun, options.Verbose)
+	r.printMigrationSummary(execs, options.Operation, options.DryRun, options.Verbose)
 	return nil
 }
 
 // printMigrationSummary prints a summary of successful migrations
-func printMigrationSummary(details []executionDetails, operation types.MigrationOperationType, dryRun, verbose bool) {
+func (r *runner) printMigrationSummary(details []executionDetails, operation types.MigrationOperationType, dryRun, verbose bool) {
 	var executionVerb = "apply"
 	if operation.IsDownMigration() {
 		executionVerb = "roll back"
 	}
 
 	if len(details) == 0 {
-		fmt.Printf("%sNo migration(s) to %s.%s\n", output.StyleInfo, executionVerb, output.StyleReset)
+		r.logger.Info(fmt.Sprintf("No migration(s) to %s.", executionVerb))
 		return
 	}
 
 	if verbose {
 		// Print summary header
-		fmt.Printf("%sMigration Summary%s\n\n", output.StyleHeading, output.StyleReset)
+		r.logger.Info("Migration Summary")
 
 		// Print list of successful migrations with duration
 		if dryRun {
-			fmt.Printf("%sValidated migrations:%s\n", output.StyleSuccess, output.StyleReset)
+			r.logger.Info("Validated migrations: ")
 		} else {
-			fmt.Printf("%sSuccessful migrations:%s\n", output.StyleSuccess, output.StyleReset)
+			r.logger.Info("Successful migrations: ")
 		}
 
 		for _, migration := range details {
 			if dryRun {
-				fmt.Printf("  %s✓ %s (%s)%s\n",
-					output.StyleSuccess, migration.Name, migration.Operation, output.StyleReset)
+				r.logger.Info(fmt.Sprintf("  ✓ %s (%s)", migration.Name, migration.Operation))
 			} else {
-				fmt.Printf("  %s✓ %s (%s) - %s%s\n",
-					output.StyleSuccess, migration.Name, migration.Operation, migration.Duration, output.StyleReset)
+				r.logger.Info(fmt.Sprintf("  ✓ %s (%s) - %s", migration.Name, migration.Operation, migration.Duration))
 			}
 		}
 	}
@@ -264,8 +262,7 @@ func printMigrationSummary(details []executionDetails, operation types.Migration
 		operationName = "validated"
 	}
 
-	fmt.Printf("\n%sTotal: %d migration(s) %s.%s\n",
-		output.StyleInfo, len(details), operationName, output.StyleReset)
+	r.logger.Info(fmt.Sprintf("Total: %d migration(s) %s.", len(details), operationName))
 }
 
 func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {

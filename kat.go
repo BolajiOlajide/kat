@@ -40,6 +40,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/graph"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
@@ -51,6 +52,7 @@ type Migration struct {
 	db                 database.DB
 	definitions        *graph.Graph
 	migrationTableName string
+	logger             loggr.Logger
 }
 
 // New creates a new Migration instance with a database connection string.
@@ -64,13 +66,13 @@ type Migration struct {
 //
 // Returns a Migration instance or an error if connection fails or migration
 // definitions cannot be loaded.
-func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error) {
+func New(connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	db, err := database.New(connStr)
 	if err != nil {
 		return nil, err
 	}
 
-	return newMigration(db, f, migrationTableName)
+	return newMigration(db, f, migrationTableName, options...)
 }
 
 // NewWithDB creates a new Migration instance using an existing database connection.
@@ -84,6 +86,9 @@ func New(connStr string, f fs.FS, migrationTableName string) (*Migration, error)
 //
 // Returns a Migration instance or an error if the database wrapper cannot be
 // created or migration definitions cannot be loaded.
+//
+// Deprecated: This function is deprecated and will be removed in a future release.
+// Use New(...) and pass in the WithSqlDB option instead.
 func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, error) {
 	d, err := database.NewWithDB(db)
 	if err != nil {
@@ -92,17 +97,24 @@ func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, erro
 	return newMigration(d, f, migrationTableName)
 }
 
-func newMigration(db database.DB, f fs.FS, migrationTableName string) (*Migration, error) {
+func newMigration(db database.DB, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Migration{
+	m := &Migration{
 		db:                 db,
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
-	}, nil
+		logger:             loggr.NewDefault(),
+	}
+
+	for _, opt := range options {
+		opt(m)
+	}
+
+	return m, nil
 }
 
 // Up applies pending migrations to the database.
@@ -121,7 +133,7 @@ func (m *Migration) Up(ctx context.Context, count int) error {
 	}
 
 	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
-	return migration.Execute(ctx, m.db, m.definitions, cfg, count, types.UpMigrationOperation, false)
+	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.UpMigrationOperation, false)
 }
 
 // Down rolls back applied migrations from the database.
@@ -141,5 +153,5 @@ func (m *Migration) Down(ctx context.Context, count int) error {
 	}
 
 	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
-	return migration.Execute(ctx, m.db, m.definitions, cfg, count, types.DownMigrationOperation, false)
+	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.DownMigrationOperation, false)
 }
