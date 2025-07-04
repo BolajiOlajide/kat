@@ -8,6 +8,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/graph"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/runner"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
@@ -34,13 +35,15 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
-	db, err := database.New(dbConn)
+	logger := loggr.NewDefault()
+
+	db, err := database.New(dbConn, logger)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	return Execute(c.Context, db, definitions, cfg, count, types.UpMigrationOperation, dryRun)
+	return Execute(c.Context, db, logger, definitions, cfg, count, types.UpMigrationOperation, dryRun)
 }
 
 func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
@@ -64,17 +67,19 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
-	db, err := database.New(dbConn)
+	logger := loggr.NewDefault()
+
+	db, err := database.New(dbConn, logger)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	return Execute(c.Context, db, g, cfg, count, types.DownMigrationOperation, dryRun)
+	return Execute(c.Context, db, logger, g, cfg, count, types.DownMigrationOperation, dryRun)
 }
 
-func Execute(ctx context.Context, db database.DB, definitions *graph.Graph, cfg types.Config, count int, op types.MigrationOperationType, dryRun bool) error {
-	r, err := runner.NewRunner(ctx, db)
+func Execute(ctx context.Context, db database.DB, logger loggr.Logger, definitions *graph.Graph, cfg types.Config, count int, op types.MigrationOperationType, dryRun bool) error {
+	r, err := runner.NewRunner(ctx, db, logger)
 	if err != nil {
 		return errors.Wrap(err, "initializing runner")
 	}

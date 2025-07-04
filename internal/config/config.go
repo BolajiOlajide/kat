@@ -1,3 +1,12 @@
+// Package config handles loading and managing configuration for the kat migration tool.
+// It supports loading configuration from YAML files and provides utilities for
+// managing configuration context within CLI commands.
+//
+// The package supports:
+//   - Loading configuration from YAML files
+//   - Environment variable substitution in configuration
+//   - Context-based configuration management for CLI commands
+//   - Validation of configuration parameters
 package config
 
 import (

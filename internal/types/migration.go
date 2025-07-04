@@ -1,3 +1,12 @@
+// Package types defines the core data structures and types used throughout
+// the kat migration system. It provides type definitions for migrations,
+// configuration, and metadata structures.
+//
+// The package includes:
+//   - Migration definitions and metadata structures
+//   - Configuration types for database and migration settings
+//   - Operation types for different migration actions
+//   - Validation logic for migration data
 package types
 
 import (
