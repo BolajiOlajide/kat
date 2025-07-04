@@ -45,6 +45,8 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
+type Logger loggr.Logger
+
 // Migration manages database schema migrations using a graph-based approach.
 // It tracks applied migrations in a database table and ensures dependencies
 // are respected when applying or rolling back migrations.
@@ -52,7 +54,7 @@ type Migration struct {
 	db                 database.DB
 	definitions        *graph.Graph
 	migrationTableName string
-	logger             loggr.Logger
+	logger             Logger
 }
 
 // New creates a new Migration instance with a database connection string.
