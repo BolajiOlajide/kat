@@ -76,12 +76,11 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 		return nil, err
 	}
 
-	db, err := database.New(connStr, m.logger)
+	m.db, err = database.New(connStr, m.logger)
 	if err != nil {
 		return nil, err
 	}
 
-	m.db = db
 	return m, nil
 }
 
