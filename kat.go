@@ -18,6 +18,14 @@
 //		log.Fatal(err)
 //	}
 //
+//	// Create with custom logger
+//	m, err = kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations",
+//		kat.WithLogger(customLogger),
+//	)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
 //	// Apply all pending migrations
 //	err = m.Up(context.Background(), 0)
 //	if err != nil {
@@ -33,7 +41,6 @@ package kat
 
 import (
 	"context"
-	"database/sql"
 	"io/fs"
 
 	"github.com/cockroachdb/errors"
@@ -65,9 +72,14 @@ type Migration struct {
 //   - connStr: PostgreSQL connection string (e.g., "postgres://user:pass@host:port/db")
 //   - f: Filesystem containing migration directories
 //   - migrationTableName: Name of the table to track applied migrations
+//   - options: Optional configuration options (WithLogger, WithSqlDB)
 //
 // Returns a Migration instance or an error if connection fails or migration
 // definitions cannot be loaded.
+//
+// Available options:
+//   - WithLogger(logger): Provide a custom logger implementation
+//   - WithSqlDB(db): Use an existing *sql.DB connection (connStr will be ignored)
 func New(connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	// We pass a nil database DB instance because of a chicken and egg problem. We need the logger instance to create the database wrapper.
 	// We want to use whatever logger the user provides as this might not always be the default logger.
@@ -76,35 +88,16 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 		return nil, err
 	}
 
+	if m.logger == nil {
+		m.logger = loggr.NewDefault()
+	}
+
 	m.db, err = database.New(connStr, m.logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return m, nil
-}
-
-// NewWithDB creates a new Migration instance using an existing database connection.
-// This is useful when you already have a *sql.DB instance and want to reuse it
-// for migrations.
-//
-// Parameters:
-//   - db: Existing *sql.DB connection to PostgreSQL
-//   - f: Filesystem containing migration directories
-//   - migrationTableName: Name of the table to track applied migrations
-//
-// Returns a Migration instance or an error if the database wrapper cannot be
-// created or migration definitions cannot be loaded.
-//
-// Deprecated: This function is deprecated and will be removed in a future release.
-// Use New(...) and pass in the WithSqlDB option instead.
-func NewWithDB(db *sql.DB, f fs.FS, migrationTableName string) (*Migration, error) {
-	l := loggr.NewDefault()
-	d, err := database.NewWithDB(db, l)
-	if err != nil {
-		return nil, err
-	}
-	return newMigration(d, f, migrationTableName)
 }
 
 func newMigration(db database.DB, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
@@ -121,7 +114,9 @@ func newMigration(db database.DB, f fs.FS, migrationTableName string, options ..
 	}
 
 	for _, opt := range options {
-		opt(m)
+		if err := opt(m); err != nil {
+			return nil, err
+		}
 	}
 
 	return m, nil
