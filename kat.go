@@ -18,6 +18,14 @@
 //		log.Fatal(err)
 //	}
 //
+//	// Create with custom logger
+//	m, err = kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations",
+//		kat.WithLogger(customLogger),
+//	)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
 //	// Apply all pending migrations
 //	err = m.Up(context.Background(), 0)
 //	if err != nil {
@@ -64,9 +72,14 @@ type Migration struct {
 //   - connStr: PostgreSQL connection string (e.g., "postgres://user:pass@host:port/db")
 //   - f: Filesystem containing migration directories
 //   - migrationTableName: Name of the table to track applied migrations
+//   - options: Optional configuration options (WithLogger, WithSqlDB)
 //
 // Returns a Migration instance or an error if connection fails or migration
 // definitions cannot be loaded.
+//
+// Available options:
+//   - WithLogger(logger): Provide a custom logger implementation
+//   - WithSqlDB(db): Use an existing *sql.DB connection (connStr will be ignored)
 func New(connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	// We pass a nil database DB instance because of a chicken and egg problem. We need the logger instance to create the database wrapper.
 	// We want to use whatever logger the user provides as this might not always be the default logger.

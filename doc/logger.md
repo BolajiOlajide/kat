@@ -64,9 +64,8 @@ func main() {
     var logger kat.Logger
     logger = &MyLogger{}
 
-    m, err := kat.New(
+    m, err := kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations",
         kat.WithLogger(logger),
-        // other options...
     )
     if err != nil {
         // handle error
@@ -83,13 +82,10 @@ package main
 
 import (
     "github.com/BolajiOlajide/kat"
-    "github.com/BolajiOlajide/kat/internal/loggr"
 )
 
 func main() {
-    m, err := kat.New(
-        // other options...
-    )
+    m, err := kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations")
     if err != nil {
         // handle error
     }
@@ -124,6 +120,63 @@ func (l *LogrusAdapter) Error(msg string) {
     l.logger.Error(msg)
 }
 ```
+
+### With Existing Database Connection
+
+If you already have a `*sql.DB` instance, you can use the `WithSqlDB` option:
+
+```go
+package main
+
+import (
+    "database/sql"
+    "github.com/BolajiOlajide/kat"
+)
+
+func main() {
+    // Existing database connection
+    db, err := sql.Open("pgx", "postgres://user:pass@localhost:5432/db")
+    if err != nil {
+        // handle error
+    }
+    defer db.Close()
+
+    m, err := kat.New("", fsys, "migrations",
+        kat.WithSqlDB(db),
+    )
+    if err != nil {
+        // handle error
+    }
+
+    // Use migration instance
+}
+```
+
+## Migration Options
+
+Kat supports several configuration options through the `MigrationOption` type:
+
+### WithLogger
+
+Provides a custom logger implementation:
+
+```go
+m, err := kat.New(connStr, fsys, "migrations",
+    kat.WithLogger(customLogger),
+)
+```
+
+### WithSqlDB
+
+Uses an existing `*sql.DB` connection instead of creating a new one:
+
+```go
+m, err := kat.New("", fsys, "migrations",
+    kat.WithSqlDB(existingDB),
+)
+```
+
+**Note:** When using `WithSqlDB`, the connection string parameter is ignored.
 
 ## Log Messages
 

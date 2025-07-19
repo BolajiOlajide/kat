@@ -20,6 +20,8 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 - **Environment Variable Support**: Secure your database credentials
 - **Rollback Support**: Easily revert migrations
 - **Idempotent Migrations**: Well-written migrations can be run multiple times safely
+- **Custom Logger Support**: Configure custom logging for migrations
+- **Go Library**: Use Kat programmatically in your Go applications
 
 ## Installation
 
@@ -115,6 +117,49 @@ database:
 
 For detailed usage instructions, see the [documentation](https://kat.bolaji.de/).
 
+## Go Library Usage
+
+Kat can also be used as a Go library in your applications:
+
+```go
+package main
+
+import (
+    "context"
+    "embed"
+    "log"
+
+    "github.com/BolajiOlajide/kat"
+)
+
+//go:embed migrations
+var migrationsFS embed.FS
+
+func main() {
+    // Basic usage
+    m, err := kat.New("postgres://user:pass@localhost:5432/db", migrationsFS, "migrations")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Apply all pending migrations
+    err = m.Up(context.Background(), 0)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // With custom logger
+    m, err = kat.New("postgres://user:pass@localhost:5432/db", migrationsFS, "migrations",
+        kat.WithLogger(customLogger),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+For more details on custom logging, see the [logger documentation](https://kat.bolaji.de/logger/).
+
 ## Migration Structure
 
 Migrations are organized in a directory structure like this:
@@ -136,6 +181,7 @@ Visit the [Kat documentation site](https://kat.bolaji.de/) for detailed guides o
 - [Configuration](https://kat.bolaji.de/config/)
 - [Database Connectivity](https://kat.bolaji.de/ping/)
 - [Working with Migrations](https://kat.bolaji.de/migration/)
+- [Custom Logger Configuration](https://kat.bolaji.de/logger/)
 
 ## Contributing
 
