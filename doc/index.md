@@ -54,6 +54,11 @@ grid_navigation:
       cta: Learn more
       url: '/export'
 
+    - title: Logger
+      excerpt: Configure custom logging for migrations
+      cta: Learn more
+      url: '/logger'
+
     - title: Update
       excerpt: Update Kat to the latest version.
       cta: Learn more

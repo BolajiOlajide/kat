@@ -1,3 +1,12 @@
+// Package graph provides a directed acyclic graph (DAG) implementation for managing
+// migration dependencies. It uses the dominikbraun/graph library to create and
+// manipulate migration graphs, ensuring proper execution order and detecting cycles.
+//
+// The graph representation allows for:
+//   - Computing topological ordering of migrations
+//   - Detecting circular dependencies
+//   - Exporting migration graphs for visualization
+//   - Efficient dependency resolution
 package graph
 
 import (

@@ -12,6 +12,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/database"
+	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/output"
 	updatepkg "github.com/BolajiOlajide/kat/internal/update"
@@ -149,8 +150,10 @@ func ping(c *cli.Context) error {
 	retryCount := c.Int("retry-count")
 	retryDelay := c.Int("retry-delay")
 
+	logger := loggr.NewDefault()
+
 	// Create DB connection
-	db, err := database.New(dbConn)
+	db, err := database.New(dbConn, logger)
 	if err != nil {
 		return err
 	}
