@@ -28,7 +28,7 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 ### Quick Install (macOS & Linux)
 
 ```bash
-curl -sSL https://kat.bolaji.de/install | bash
+curl -sSL https://kat.bolaji.de/install | sudo bash
 ```
 
 ### From Pre-compiled Binaries
