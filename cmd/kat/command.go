@@ -160,21 +160,21 @@ func ping(c *cli.Context) error {
 	defer db.Close()
 
 	// Use PingWithRetry with the provided parameters
-	fmt.Fprintf(os.Stdout, "%sAttempting to ping database%s\n", output.StyleInfo, output.StyleReset)
+	fmt.Printf("%sAttempting to ping database%s\n", output.StyleInfo, output.StyleReset)
 	if retryCount > 0 {
-		fmt.Fprintf(os.Stdout, "%sUsing retry count: %d, initial delay: %dms%s\n",
+		fmt.Printf("%sUsing retry count: %d, initial delay: %dms%s\n",
 			output.StyleInfo, retryCount, retryDelay, output.StyleReset)
 	}
 
 	err = db.PingWithRetry(c.Context, retryCount, retryDelay)
 
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "%sFailed to connect to database: %s%s\n",
+		fmt.Printf("%sFailed to connect to database: %s%s\n",
 			output.StyleFailure, err.Error(), output.StyleReset)
 		return err
 	}
 
-	fmt.Fprintf(os.Stdout, "%sSuccessfully connected to database!%s\n",
+	fmt.Printf("%sSuccessfully connected to database!%s\n",
 		output.StyleSuccess, output.StyleReset)
 	return nil
 }

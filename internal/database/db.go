@@ -86,10 +86,10 @@ func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			err = tx.Rollback()
 			panic(p)
 		} else if err != nil {
-			tx.Rollback()
+			err = tx.Rollback()
 		} else {
 			err = tx.Commit()
 		}

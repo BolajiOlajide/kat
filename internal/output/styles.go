@@ -1,58 +1,135 @@
 /*
-This file was referenced from https://github.com/sourcegraph/sourcegraph-public-snapshot/blob/0aa8310ca4d924c084a7a3f836d7a4cbc45c3338/lib/output/style.go#L12
+Styling using lipgloss library for better terminal styling
 */
 package output
 
 import (
 	"fmt"
-	"strings"
+	"github.com/charmbracelet/lipgloss"
+	"strconv"
 )
 
 type Style interface {
-	fmt.Stringer
+	String() string
+	Render(content string) string
+}
+
+// StyleText wraps a string with a style
+func StyleText(s Style, text string) string {
+	return s.Render(text)
+}
+
+// Info styles text with the info style
+func Info(text string) string {
+	return StyleText(StyleInfo, text)
+}
+
+// Infof formats and styles text with the info style
+func Infof(format string, args ...interface{}) string {
+	return StyleText(StyleInfo, fmt.Sprintf(format, args...))
+}
+
+// Success styles text with the success style
+func Success(text string) string {
+	return StyleText(StyleSuccess, text)
+}
+
+// Successf formats and styles text with the success style
+func Successf(format string, args ...interface{}) string {
+	return StyleText(StyleSuccess, fmt.Sprintf(format, args...))
+}
+
+// Warning styles text with the warning style
+func Warning(text string) string {
+	return StyleText(StyleWarning, text)
+}
+
+// Warningf formats and styles text with the warning style
+func Warningf(format string, args ...interface{}) string {
+	return StyleText(StyleWarning, fmt.Sprintf(format, args...))
+}
+
+// Failure styles text with the failure style
+func Failure(text string) string {
+	return StyleText(StyleFailure, text)
+}
+
+// Failuref formats and styles text with the failure style
+func Failuref(format string, args ...interface{}) string {
+	return StyleText(StyleFailure, fmt.Sprintf(format, args...))
+}
+
+// Heading styles text with the heading style
+func Heading(text string) string {
+	return StyleText(StyleHeading, text)
+}
+
+// Headingf formats and styles text with the heading style
+func Headingf(format string, args ...interface{}) string {
+	return StyleText(StyleHeading, fmt.Sprintf(format, args...))
+}
+
+// LipglossStyle wraps lipgloss.Style to implement our Style interface
+type LipglossStyle struct {
+	style lipgloss.Style
+}
+
+func (s *LipglossStyle) String() string {
+	return s.style.String()
+}
+
+func (s *LipglossStyle) Render(content string) string {
+	return s.style.Render(content)
+}
+
+// NewStyle creates a new style with lipgloss
+func NewStyle(style lipgloss.Style) Style {
+	return &LipglossStyle{style: style}
 }
 
 // CombineStyles combines multiple styles into a single style.
 func CombineStyles(styles ...Style) Style {
-	sb := strings.Builder{}
+	base := lipgloss.NewStyle()
 	for _, s := range styles {
-		fmt.Fprint(&sb, s)
+		if lipStyle, ok := s.(*LipglossStyle); ok {
+			base = base.Inherit(lipStyle.style)
+		}
 	}
-	return &style{sb.String()}
+	return &LipglossStyle{style: base}
 }
 
 // Fg256Color returns a style that sets the foreground color to the given 256-color code.
-func Fg256Color(code int) Style { return &style{fmt.Sprintf("\033[38;5;%dm", code)} }
+func Fg256Color(code int) Style {
+	return &LipglossStyle{style: lipgloss.NewStyle().Foreground(lipgloss.Color(strconv.Itoa(code)))}
+}
 
 // Bg256Color returns a style that sets the background color to the given 256-color code.
-func Bg256Color(code int) Style { return &style{fmt.Sprintf("\033[48;5;%dm", code)} }
-
-type style struct{ code string }
-
-func (s *style) String() string { return s.code }
+func Bg256Color(code int) Style {
+	return &LipglossStyle{style: lipgloss.NewStyle().Background(lipgloss.Color(strconv.Itoa(code)))}
+}
 
 var (
 	// General styles.
 
 	// StyleReset is a style that resets all styles.
 	// It should be used at the end of every styled string.
-	StyleReset = &style{"\033[0m"}
+	StyleReset = &LipglossStyle{style: lipgloss.NewStyle()}
 
 	StylePending = Fg256Color(4)
 	// StyleInfo is a style that is used for informational messages.
 	StyleInfo       = StylePending
 	StyleWarning    = Fg256Color(124)
-	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
+	StyleFailure    = NewStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true))
 	StyleSuccess    = Fg256Color(2)
 	StyleSuggestion = Fg256Color(244)
-	StyleHeading    = CombineStyles(StyleBold, Fg256Color(6))
+	StyleHeading    = NewStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true))
 
-	StyleBold      = &style{"\033[1m"}
-	StyleItalic    = &style{"\033[3m"}
-	StyleUnderline = &style{"\033[4m"}
+	StyleBold      = NewStyle(lipgloss.NewStyle().Bold(true))
+	StyleItalic    = NewStyle(lipgloss.NewStyle().Italic(true))
+	StyleUnderline = NewStyle(lipgloss.NewStyle().Underline(true))
 
-	StyleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
-	StyleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
+	StyleWhiteOnPurple  = NewStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("255")).Background(lipgloss.Color("55")))
+	StyleGreyBackground = NewStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("242")))
 
 	StyleLinesDeleted = Fg256Color(196)
 	StyleLinesAdded   = Fg256Color(2)
