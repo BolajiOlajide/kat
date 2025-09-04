@@ -143,13 +143,13 @@ kat add create_users_table
 
 # Feature branch
 git checkout -b feature/profiles
-kat add create_profiles_table --parent create_users_table
+kat add create_profiles_table  # Kat determines create_users_table as parent
 
 # Another feature branch  
 git checkout -b feature/posts
-kat add create_posts_table --parent create_users_table
+kat add create_posts_table  # Creates parallel branch from users table
 
-# Merge both - Kat handles the dependency resolution
+# Merge both - Kat handles the dependency resolution automatically
 ```
 
 ### Complex Dependencies
@@ -158,8 +158,10 @@ kat add create_posts_table --parent create_users_table
 kat add create_users_table
 kat add create_products_table
 
-# Dependent table that needs both
-kat add create_orders_table --parent create_users_table --parent create_products_table
+# For complex dependencies, edit metadata.yaml manually:
+kat add create_orders_table
+# Then edit migrations/TIMESTAMP_create_orders_table/metadata.yaml:
+# parents: [1679012345, 1679012350]  # users and products timestamps
 ```
 
 ## Understanding Error Messages

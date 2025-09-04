@@ -96,18 +96,22 @@ migrations/
 
 The timestamp ensures uniqueness. The name is sanitized (lowercase, spaces replaced with underscores, non-alphanumeric characters removed).
 
-### Creating Migrations with Dependencies
+### Creating Dependent Migrations
 
-To create a migration that depends on another:
+Kat automatically determines dependencies based on the order migrations are created and the existing migration graph:
 
 ```bash
-kat add add_email_column --parent 1679012345
+# This will depend on the last applied migration automatically
+kat add add_email_column
 ```
 
-You can specify multiple parents:
+You can edit the generated `metadata.yaml` to specify custom parent relationships:
 
-```bash  
-kat add create_orders_table --parent create_users_table --parent create_products_table
+```yaml
+id: 1679012398
+name: add_email_column
+parents:
+  - 1679012345  # Manually specify parent migration ID
 ```
 
 ### Writing Migration SQL

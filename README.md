@@ -100,14 +100,14 @@ kat init
 # Create foundation migration
 kat add create_users_table
 
-# Developer A: Add email feature
-kat add add_email_column --parent create_users_table
+# Developer A: Add email feature (Kat determines create_users_table as parent)
+kat add add_email_column
 
-# Developer B: Add posts feature (can work in parallel)
-kat add create_posts_table --parent create_users_table
+# Developer B: Add posts feature (creates parallel branch from users table)  
+kat add create_posts_table
 
-# Developer C: Add full-text search (depends on both email and posts)
-kat add add_full_text_search --parent add_email_column --parent create_posts_table
+# Developer C: Add full-text search (Kat resolves dependencies automatically)
+kat add add_full_text_search
 
 # Visualize the dependency graph
 kat export --file graph.dot
@@ -295,7 +295,7 @@ DROP TABLE IF EXISTS users;
 
 ### Branch Workflow
 1. Create feature branch: `git checkout -b feature/user-profiles`
-2. Add migrations with proper parents: `kat add add_profile_table --parent create_users_table`
+2. Add dependent migrations: `kat add add_profile_table` (Kat determines dependencies)
 3. Test locally: `kat up --dry-run`
 4. Merge: Kat automatically handles dependency ordering
 
@@ -308,20 +308,13 @@ DROP TABLE IF EXISTS users;
     kat up --dry-run
 ```
 
-## Limitations
-
-- **PostgreSQL only**: Requires PostgreSQL ≥9.5 for transactional DDL support
-- **Acyclic constraint**: Migration graph must remain cycle-free
-- **No concurrent execution protection**: Multiple Kat instances can race (advisory locks [planned](https://github.com/BolajiOlajide/kat/issues))
-- **No content verification**: Applied migrations aren't checksummed for drift detection ([planned](https://github.com/BolajiOlajide/kat/issues))
-
 **Compatibility**: Tested with Go 1.20+ (tested on 1.23), PostgreSQL 12-16. Supported OS: Linux, macOS, Windows (amd64/arm64)
 
 ## Quick Reference
 
 | Command | Purpose | Common Flags |
 |---------|---------|--------------|
-| `kat add NAME --parent <id>` | Create migration with dependency | `--parent, -p` |
+| `kat add NAME` | Create migration (Kat determines dependencies) | `--config, -c` |
 | `kat up --count 3` | Apply next 3 migrations | `--dry-run, --verbose` |
 | `kat down --count 2` | Roll back 2 migrations | `--force` |
 | `kat export --file graph.dot` | Export dependency graph | `--format json` |

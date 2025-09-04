@@ -142,7 +142,7 @@ Total: 1 migration(s) applied
 Now create a migration that depends on the users table:
 
 ```bash
-kat add add_user_profiles --parent 1747834567
+kat add add_user_profiles
 ```
 
 Edit the new migration files:
