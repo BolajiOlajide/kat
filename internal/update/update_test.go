@@ -1,6 +1,8 @@
 package update
 
 import (
+	"archive/zip"
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -80,41 +83,48 @@ func TestCheckForUpdates(t *testing.T) {
 }
 
 func TestDownloadAndReplace(t *testing.T) {
-	// Skip if not on a system where we can create tar archives
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping test on Windows")
-	}
-
 	tempDir := t.TempDir()
 
-	// Create a fake binary for testing
-	origPath := filepath.Join(tempDir, "kat")
+	// Determine binary name and archive format based on platform
+	binaryName := "kat"
+	archiveExt := ".tar.gz"
 	if runtime.GOOS == "windows" {
-		origPath += ".exe"
+		binaryName = "kat.exe"
+		archiveExt = ".zip"
 	}
 
+	// Create a fake binary for testing
+	origPath := filepath.Join(tempDir, binaryName)
 	require.NoError(t, os.WriteFile(origPath, []byte("original"), 0755))
 
-	// Create another temp directory to prepare a tar.gz file
-	tarDir := t.TempDir()
+	// Create another temp directory to prepare the archive
+	archiveDir := t.TempDir()
 
-	// Create the mock binary that will be inside the tar
-	mockBinaryPath := filepath.Join(tarDir, "kat")
+	// Create the mock binary that will be inside the archive
+	mockBinaryPath := filepath.Join(archiveDir, binaryName)
 	require.NoError(t, os.WriteFile(mockBinaryPath, []byte("updated"), 0755))
 
-	// Create a tar.gz file
-	tarPath := filepath.Join(tarDir, "kat.tar.gz")
-	cmd := exec.Command("tar", "czf", tarPath, "-C", tarDir, "kat")
-	require.NoError(t, cmd.Run())
+	// Create the appropriate archive based on platform
+	archivePath := filepath.Join(archiveDir, "kat"+archiveExt)
+	var archiveContent []byte
 
-	// Read the tar.gz content
-	tarContent, err := os.ReadFile(tarPath)
-	require.NoError(t, err)
+	var err error
+	if runtime.GOOS == "windows" {
+		// Create ZIP archive
+		archiveContent, err = createZipArchive(mockBinaryPath, binaryName)
+		require.NoError(t, err)
+	} else {
+		// Create tar.gz archive using external tar command
+		cmd := exec.Command("tar", "czf", archivePath, "-C", archiveDir, binaryName)
+		require.NoError(t, cmd.Run())
+		archiveContent, err = os.ReadFile(archivePath)
+		require.NoError(t, err)
+	}
 
-	// Create a test server that returns the tar.gz
+	// Create a test server that returns the archive
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Write(tarContent)
+		w.Write(archiveContent)
 	}))
 	defer server.Close()
 
@@ -125,4 +135,37 @@ func TestDownloadAndReplace(t *testing.T) {
 	content, err := os.ReadFile(origPath)
 	require.NoError(t, err)
 	require.Equal(t, "updated", string(content))
+}
+
+// createZipArchive creates a ZIP archive containing the specified file
+func createZipArchive(filePath, fileName string) ([]byte, error) {
+	// Create a buffer to hold the ZIP archive
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	// Add the file to the ZIP
+	fileWriter, err := zipWriter.Create(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the source file
+	fileContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Write the content to the ZIP
+	_, err = fileWriter.Write(fileContent)
+	if err != nil {
+		return nil, err
+	}
+
+	// Close the ZIP writer
+	err = zipWriter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

@@ -16,9 +16,7 @@ builds:
     goos:
       - linux
       - darwin
-
-      # need help with testing on windows to ensure this works
-      # - windows
+      - windows
     goarch:
       - amd64
       - arm64
@@ -26,7 +24,10 @@ builds:
       - -s -w -X github.com/BolajiOlajide/kat/internal/version.version={{.Version}}
 
 archives:
-  - formats: [tar.gz]
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     wrap_in_directory: false
     name_template: >-
       kat_{{ .Os }}_{{ .Arch }}

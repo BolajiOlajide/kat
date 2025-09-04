@@ -1,0 +1,24 @@
+{
+    "version": "{{VERSION}}",
+    "description": "Graph-based PostgreSQL database migration tool",
+    "homepage": "https://github.com/BolajiOlajide/kat",
+    "license": "Apache-2.0",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/BolajiOlajide/kat/releases/download/{{VERSION}}/kat_windows_amd64.zip",
+            "hash": "{{SHA256}}",
+            "extract_dir": "",
+            "bin": "kat.exe"
+        }
+    },
+    "checkver": {
+        "github": "https://github.com/BolajiOlajide/kat"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/BolajiOlajide/kat/releases/download/$version/kat_windows_amd64.zip"
+            }
+        }
+    }
+}

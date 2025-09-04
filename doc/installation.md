@@ -74,12 +74,15 @@ You can also download and install the binary manually:
 
 ### Windows Installation
 
-For Windows users, download the binary manually or use package managers:
+For Windows users, use the PowerShell script or package managers:
 
-**Using Chocolatey:**
+**Using PowerShell Script (Recommended):**
 ```powershell
-# Install Chocolatey first if needed: https://chocolatey.org/
-choco install kat
+# Install from PowerShell script
+iex (iwr https://kat.bolaji.de/install.ps1).Content
+
+# Install specific version
+$env:VERSION="v1.0.0"; iex (iwr https://kat.bolaji.de/install.ps1).Content
 ```
 
 **Using Scoop:**
@@ -87,6 +90,12 @@ choco install kat
 # Install Scoop first if needed: https://scoop.sh/
 scoop bucket add bolaji https://github.com/BolajiOlajide/scoop-bucket
 scoop install bolaji/kat
+```
+
+**Using Chocolatey:**
+```powershell
+# Install Chocolatey first if needed: https://chocolatey.org/
+choco install kat
 ```
 
 **Manual Download:**

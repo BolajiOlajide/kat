@@ -36,7 +36,10 @@ run = "go vet ./..."
 
 [tasks.clean]
 description = "Clean build artifacts"
-run = "rm -f kat"
+run = [
+  "sh", "-c", 
+  "rm -f kat kat.exe"
+]
 
 [tasks.fmt]
 description = "Format Go code"

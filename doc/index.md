@@ -69,6 +69,11 @@ grid_navigation:
       cta: Learn more
       url: '/logger'
 
+    - title: Windows Guide
+      excerpt: Complete Windows setup and troubleshooting
+      cta: Learn more
+      url: '/windows'
+
     - title: Contributing
       excerpt: Contribute to the development of Kat
       cta: Learn more
