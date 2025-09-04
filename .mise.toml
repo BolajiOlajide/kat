@@ -1,0 +1,43 @@
+[env]
+VERSION = "dev"
+
+[tools]
+go = "1.23.0"
+
+[tasks.install]
+description = "Install Kat CLI tool"
+run = "go install ./..."
+
+[tasks.run]
+description = "Run Kat CLI with custom arguments"
+run = "go run ./cmd/kat $ARGS"
+env = { ARGS = "${ARGS:-}" }
+
+[tasks."start-doc"]
+description = "Start Jekyll documentation server"
+run = "bundle exec jekyll serve"
+dir = "doc"
+
+[tasks.build]
+description = "Build Kat binary with version information"
+run = "go build -ldflags \"-X github.com/BolajiOlajide/kat/internal/version.version=$VERSION\" ./cmd/kat"
+
+[tasks.test]
+description = "Run all tests"
+run = "go test ./..."
+
+[tasks."test-verbose"]
+description = "Run all tests with verbose output"
+run = "go test -v ./..."
+
+[tasks.check]
+description = "Run type checking and linting"
+run = "go vet ./..."
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "rm -f kat"
+
+[tasks.fmt]
+description = "Format Go code"
+run = "go fmt ./..."
