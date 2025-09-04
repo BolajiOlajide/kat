@@ -23,7 +23,7 @@
 
 </details>
 
-Kat is the first open-source PostgreSQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering.
+Kat is (probably?) the first open-source PostgreSQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering.
 
 ![Kat Banner](doc/assets/images/layout/logo.png)
 

@@ -7,9 +7,11 @@ description: How to configure custom logging for Kat migrations
 permalink: /logger
 ---
 
-# Logger
+# Custom Logging
 
-Kat provides a customizable logger interface that allows you to control how migration messages are displayed or captured.
+**You don't have to do this** - Kat already prints colorized logs by default.
+
+Kat provides a customizable logger interface that allows you to control how migration messages are displayed or captured. This is useful for integrating with existing logging systems or customizing output format.
 
 ## Default Logger
 

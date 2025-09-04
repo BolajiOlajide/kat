@@ -1,54 +1,102 @@
 ---
 # Page settings
 layout: default
-keywords: kat,postgres,database,cli,migrations,sql,update
-title: Update
+keywords: kat,postgres,database,cli,migrations,sql,update,upgrade
+title: Updating Kat
 description: |
-    Learn how to update Kat to the latest version.
+    How to update Kat to the latest version safely.
 comments: false
 permalink: /update/
 page_nav:
     prev:
-        content: Exporting Migrations
+        content: Graph Visualization
         url: '/export'
     next:
-        content: Contributing
-        url: '/contributing'
+        content: Custom Logging
+        url: '/logger'
 ---
 
-# Update
+# Updating Kat
 
-The `kat update` command checks for and installs updates to the Kat CLI tool.
+Keep your Kat installation up to date to get the latest features, bug fixes, and security updates.
 
-## Usage
+## Check Current Version
 
-```bash
-kat update
-```
-
-## Description
-
-The update command performs the following actions:
-
-1. Checks GitHub for newer versions of Kat
-2. Compares the current version with the latest available version
-3. If an update is available, downloads the appropriate binary for your platform
-4. Replaces the current binary with the new version
-
-## Options
-
-Currently, the update command does not accept any additional options.
-
-## Examples
+First, check which version you currently have:
 
 ```bash
-# Check for and install updates
-kat update
+kat version
 ```
 
-## Notes
+## Update Methods
 
-- The command requires internet connectivity to check for updates
-- The update process will replace your current Kat binary with the newer version
-- If no update is available, the command will inform you that you're already using the latest version
-- The command automatically detects your operating system and architecture to download the correct binary
+### Using the Install Script (Recommended)
+
+The easiest way to update Kat is to re-run the install script:
+
+```bash
+curl -sSL https://kat.bolaji.de/install | sudo bash
+```
+
+This will download and install the latest version, replacing your current installation.
+
+### Manual Update
+
+1. Visit the [GitHub Releases page](https://github.com/BolajiOlajide/kat/releases)
+2. Download the latest release for your platform
+3. Replace your existing `kat` binary with the new one
+
+### Update from Source
+
+If you installed from source:
+
+```bash
+cd /path/to/kat-source
+git pull origin main
+make install
+```
+
+## Version Compatibility
+
+Kat follows [Semantic Versioning](https://semver.org/):
+
+- **Patch releases** (1.0.1 → 1.0.2): Bug fixes, fully backward compatible
+- **Minor releases** (1.0.x → 1.1.0): New features, backward compatible
+- **Major releases** (1.x.x → 2.0.0): Breaking changes, migration guide provided
+
+## Migration Compatibility
+
+Your existing migrations will continue to work across all Kat updates. The migration file format and database schema are stable APIs that won't change without a major version bump.
+
+## Backup Recommendations
+
+Before updating in production environments:
+
+1. **Test the update** in a non-production environment first
+2. **Backup your migration tracking table**: 
+   ```sql
+   pg_dump -t migrations your_database > migrations_backup.sql
+   ```
+3. **Dry run your migrations** after updating:
+   ```bash
+   kat up --dry-run
+   ```
+
+## Troubleshooting Updates
+
+If you encounter issues after updating:
+
+1. **Check the changelog** for breaking changes
+2. **Verify your configuration** is still valid
+3. **Test database connectivity**: `kat ping`
+4. **Revert to previous version** if needed and report the issue
+
+## Getting Help
+
+- 📋 [Changelog](https://github.com/BolajiOlajide/kat/releases) - See what's new
+- 💬 [GitHub Discussions](https://github.com/BolajiOlajide/kat/discussions) - Ask questions  
+- 🐛 [GitHub Issues](https://github.com/BolajiOlajide/kat/issues) - Report problems
+
+---
+
+> 💡 **Tip**: Pin Kat to a specific version in CI/CD environments to ensure reproducible builds.

@@ -3,11 +3,11 @@
 layout: homepage
 keywords: kat,postgres,database,cli,migrations,sql
 title: Kat
-description: Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
+description: Kat is **Git-style migrations** for PostgreSQL; think `git graph`, but for schema. Graph-based migration tool with explicit dependencies and parallel development workflows.
 permalink: /
 buttons:
-    - content: Get Started
-      url: '/installation'
+    - content: Quick Start
+      url: '/quickstart'
       external_url: false
     - icon: github
       content: View on GitHub
@@ -24,48 +24,53 @@ author:
 
 # Grid navigation
 grid_navigation:
+    - title: Quick Start
+      excerpt: Get up and running in 5 minutes
+      cta: Start here
+      url: '/quickstart'
+
+    - title: Core Concepts
+      excerpt: Understand graph-based migrations
+      cta: Learn more
+      url: '/concepts'
+
     - title: Installation
-      excerpt: How to install
+      excerpt: How to install Kat
       cta: Learn more
       url: '/installation'
 
-    - title: Configuration
-      excerpt: Configure Kat in a new project.
-      cta: Learn more
-      url: '/config'
-
     - title: Initialization
-      excerpt: Set up a new project with kat init.
+      excerpt: Set up a new project with kat init
       cta: Learn more
       url: '/init'
 
-    - title: Database Connectivity
-      excerpt: Test database connectivity with kat ping.
+    - title: Configuration
+      excerpt: Configure database and migration settings
       cta: Learn more
-      url: '/ping'
+      url: '/config'
 
-    - title: Migration
-      excerpt: Performing a migration (up or down)
+    - title: Migration Commands
+      excerpt: Create and run migrations (up/down)
       cta: Learn more
       url: '/migration'
 
-    - title: Export
-      excerpt: Exporting Migration Graph
+    - title: Database Connectivity
+      excerpt: Test database connectivity with kat ping
+      cta: Learn more
+      url: '/ping'
+
+    - title: Graph Visualization
+      excerpt: Export and visualize migration dependencies
       cta: Learn more
       url: '/export'
 
-    - title: Logger
+    - title: Custom Logging
       excerpt: Configure custom logging for migrations
       cta: Learn more
       url: '/logger'
 
-    - title: Update
-      excerpt: Update Kat to the latest version.
-      cta: Learn more
-      url: '/update'
-
     - title: Contributing
-      excerpt: Contribute to the development of Kat.
+      excerpt: Contribute to the development of Kat
       cta: Learn more
       url: '/contributing'
 ---

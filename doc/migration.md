@@ -20,6 +20,19 @@ page_nav:
 
 Migrations are the core functionality of Kat, allowing you to version control your database schema and make changes in a controlled, repeatable manner. This guide covers everything you need to know about creating, applying, and rolling back migrations.
 
+## Migration Workflow
+
+```text
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  kat add    │ -> │ Edit SQL    │ -> │   kat up    │ -> │  kat down   │
+│ (create)    │    │ (up/down)   │    │  (apply)    │    │ (rollback)  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       │                    │                    │                    │
+       v                    v                    v                    v
+Generate dirs        Write migration     Execute in DAG       Reverse changes
++ metadata.yaml      SQL + parents       order               + remove tracking
+```
+
 ## Migration Concepts
 
 In Kat, migrations follow these principles:
@@ -54,11 +67,16 @@ migrations/
 - **down.sql**: Contains SQL statements to reverse the migration (drop tables, remove columns, etc.)
 - **metadata.yaml**: Contains metadata about the migration:
   ```yaml
-  name: 1679012345_create_users
-  timestamp: 1679012345
+  id: 1679012345
+  name: create_users
+  description: Create the main users table with authentication fields
+  parents:
+    - 1679012340  # Optional: parent migration timestamps
   ```
 
 ## Creating Migrations
+
+### Basic Migration Creation
 
 To create a new migration, use the `add` command:
 
@@ -76,7 +94,21 @@ migrations/
       └─ metadata.yaml
 ```
 
-The timestamp ensures migrations are applied in the correct order. The name is sanitized (lowercase, spaces replaced with underscores, non-alphanumeric characters removed).
+The timestamp ensures uniqueness. The name is sanitized (lowercase, spaces replaced with underscores, non-alphanumeric characters removed).
+
+### Creating Migrations with Dependencies
+
+To create a migration that depends on another:
+
+```bash
+kat add add_email_column --parent 1679012345
+```
+
+You can specify multiple parents:
+
+```bash  
+kat add create_orders_table --parent create_users_table --parent create_products_table
+```
 
 ### Writing Migration SQL
 

@@ -1,7 +1,7 @@
 ---
 layout: default
-title: Export Migration Graph
-keywords: kat,postgres,database,cli,migrations,sql
+title: Graph Visualization
+keywords: kat,postgres,database,cli,migrations,sql,graph,visualization
 comments: false
 permalink: /export/
 page_nav:
@@ -13,9 +13,9 @@ page_nav:
         url: '/update'
 ---
 
-# Migration Graph Export
+# Migration Graph Visualization
 
-The `export` command allows you to visualize the directed acyclic graph (DAG) of your migrations. This is useful for understanding the dependency structure between migrations.
+The `export` command allows you to visualize the directed acyclic graph (DAG) of your migrations. This is useful for understanding the dependency structure between migrations and sharing migration architecture with your team.
 
 ## Usage
 
