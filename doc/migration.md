@@ -20,6 +20,19 @@ page_nav:
 
 Migrations are the core functionality of Kat, allowing you to version control your database schema and make changes in a controlled, repeatable manner. This guide covers everything you need to know about creating, applying, and rolling back migrations.
 
+## Migration Workflow
+
+```text
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  kat add    │ -> │ Edit SQL    │ -> │   kat up    │ -> │  kat down   │
+│ (create)    │    │ (up/down)   │    │  (apply)    │    │ (rollback)  │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       │                    │                    │                    │
+       v                    v                    v                    v
+Generate dirs        Write migration     Execute in DAG       Reverse changes
++ metadata.yaml      SQL + parents       order               + remove tracking
+```
+
 ## Migration Concepts
 
 In Kat, migrations follow these principles:
@@ -54,11 +67,16 @@ migrations/
 - **down.sql**: Contains SQL statements to reverse the migration (drop tables, remove columns, etc.)
 - **metadata.yaml**: Contains metadata about the migration:
   ```yaml
-  name: 1679012345_create_users
-  timestamp: 1679012345
+  id: 1679012345
+  name: create_users
+  description: Create the main users table with authentication fields
+  parents:
+    - 1679012340  # Optional: parent migration timestamps
   ```
 
 ## Creating Migrations
+
+### Basic Migration Creation
 
 To create a new migration, use the `add` command:
 
@@ -76,7 +94,25 @@ migrations/
       └─ metadata.yaml
 ```
 
-The timestamp ensures migrations are applied in the correct order. The name is sanitized (lowercase, spaces replaced with underscores, non-alphanumeric characters removed).
+The timestamp ensures uniqueness. The name is sanitized (lowercase, spaces replaced with underscores, non-alphanumeric characters removed).
+
+### Creating Dependent Migrations
+
+Kat automatically determines dependencies based on the order migrations are created and the existing migration graph:
+
+```bash
+# This will depend on the last applied migration automatically
+kat add add_email_column
+```
+
+You can edit the generated `metadata.yaml` to specify custom parent relationships:
+
+```yaml
+id: 1679012398
+name: add_email_column
+parents:
+  - 1679012345  # Manually specify parent migration ID
+```
 
 ### Writing Migration SQL
 

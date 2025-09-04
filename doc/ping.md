@@ -18,6 +18,8 @@ page_nav:
 
 # Testing Database Connectivity
 
+**TL;DR**: `kat ping` verifies credentials and waits for database readiness.
+
 Before running migrations, it's important to verify that Kat can connect to your PostgreSQL database. The `ping` command provides a simple way to test your database connection with optional retry capabilities for unstable connections.
 
 ## Basic Usage
@@ -96,12 +98,26 @@ Example:
 KAT_RETRY_COUNT=5 KAT_RETRY_DELAY=1000 kat ping
 ```
 
-## Understanding Connection Errors
+## Docker Compose Wait-for-Database
+
+Common pattern for waiting for PostgreSQL to be ready in Docker environments:
+
+```bash
+# docker-compose.yml service
+healthcheck:
+  test: ["CMD-SHELL", "kat ping --retry-count 5 --retry-delay 1000"]
+  interval: 10s
+  timeout: 5s
+  retries: 3
+```
+
+<details>
+<summary>📋 PostgreSQL Error Codes (Click to expand)</summary>
 
 When a connection fails, Kat identifies and handles common PostgreSQL connection errors. The following error types are recognized as transient and will be retried:
 
 - Connection exceptions (code 08003)
-- Connection failures (code 08006)
+- Connection failures (code 08006)  
 - Client unable to establish connection (code 08001)
 - Server rejected connection (code 08004)
 - Connection failures during transaction (code 08007)
@@ -109,6 +125,8 @@ When a connection fails, Kat identifies and handles common PostgreSQL connection
 - Too many connections (codes 53300, 53301)
 
 For non-transient errors (like authentication failures or invalid hostnames), Kat will immediately report the error without retrying.
+
+</details>
 
 ## Usage in Scripts and CI/CD
 

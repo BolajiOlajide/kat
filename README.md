@@ -2,10 +2,28 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/BolajiOlajide/kat/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/BolajiOlajide/kat)](https://goreportcard.com/report/github.com/BolajiOlajide/kat)
+[![Go Reference](https://pkg.go.dev/badge/github.com/BolajiOlajide/kat.svg)](https://pkg.go.dev/github.com/BolajiOlajide/kat)
 [![CI](https://github.com/BolajiOlajide/kat/actions/workflows/ci.yml/badge.svg)](https://github.com/BolajiOlajide/kat/actions/workflows/ci.yml)
 [![Release](https://github.com/BolajiOlajide/kat/actions/workflows/release.yml/badge.svg)](https://github.com/BolajiOlajide/kat/actions/workflows/release.yml)
+[![Docs](https://img.shields.io/badge/docs-kat.bolaji.de-blue)](https://kat.bolaji.de/)
 
-Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It allows you to manage your database schema using SQL files with a simple, intuitive workflow.
+<details>
+<summary>📑 Table of Contents</summary>
+
+- [Why Graph-Based Migrations?](#why-graph-based-migrations)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Comparison with Other Tools](#comparison-with-other-tools)
+- [Architecture Overview](#architecture-overview)
+- [Go Library Usage](#go-library-usage)
+- [Best Practices](#best-practices)
+- [Limitations](#limitations)
+- [Quick Reference](#quick-reference)
+- [Documentation](#documentation)
+
+</details>
+
+Kat is (probably?) the first open-source PostgreSQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering.
 
 ![Kat Banner](doc/assets/images/layout/logo.png)
 
@@ -22,6 +40,29 @@ Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations. It a
 - **Idempotent Migrations**: Well-written migrations can be run multiple times safely
 - **Custom Logger Support**: Configure custom logging for migrations
 - **Go Library**: Use Kat programmatically in your Go applications
+
+## Why Graph-Based Migrations?
+
+Traditional migration tools force you into a linear sequence where every developer must coordinate their schema changes. Kat's graph-based approach solves this by allowing migrations to declare explicit parent dependencies, creating a Directed Acyclic Graph (DAG) that determines execution order.
+
+**Benefits of the DAG approach:**
+- **Parallel Development**: Multiple developers can create feature migrations simultaneously without conflicts
+- **Deterministic Ordering**: Kat computes the optimal execution order based on dependencies, not timestamps
+- **Safe Branching**: Feature branches can include their own migrations that merge cleanly
+- **Complex Dependencies**: A migration can depend on multiple parents, enabling sophisticated schema evolution
+
+```text
+Linear (traditional):     Graph-based (Kat):
+
+001_users                 001_users ──┬─→ 003_posts
+002_posts                             │
+003_add_email             002_add_email ──┘
+
+Order: 1→2→3              Order: 1→2→3 OR 1→3→2
+(rigid)                   (flexible, dependency-aware)
+```
+
+This means you can create migrations for different features in parallel, and Kat will figure out the correct order when you run `kat up`.
 
 ## Installation
 
@@ -50,29 +91,65 @@ For more installation options, see the [installation documentation](https://kat.
 
 ## Quick Start
 
+Here's a realistic example showing how Kat's graph-based system handles parallel development:
+
 ```bash
 # Initialize a new Kat project
 kat init
 
-# Create a new migration
+# Create foundation migration
 kat add create_users_table
 
-# Create another migration with a parent dependency
+# Developer A: Add email feature (Kat determines create_users_table as parent)
+kat add add_email_column
+
+# Developer B: Add posts feature (creates parallel branch from users table)  
 kat add create_posts_table
 
-# Edit the generated migration files in migrations/TIMESTAMP_create_users_table/
+# Developer C: Add full-text search (Kat resolves dependencies automatically)
+kat add add_full_text_search
 
-# Apply all pending migrations (ordered based on dependencies)
+# Visualize the dependency graph
+kat export --file graph.dot
+dot -Tpng graph.dot -o migrations.png  # Requires Graphviz
+
+# Apply all migrations - Kat determines the correct order automatically
 kat up
-
-# Roll back the most recent migration
-kat down
 
 # Test database connection
 kat ping
 
-# Visualize your migration graph (requires Graphviz)
-kat export --file migrations.dot
+# Roll back specific number of migrations
+kat down --count 2
+```
+
+### Example Migration Structure
+
+Each migration is a directory containing SQL files and metadata:
+
+```
+migrations/
+├── 1679012345_create_users_table/
+│   ├── up.sql
+│   ├── down.sql
+│   └── metadata.yaml
+├── 1679012398_add_email_column/
+│   ├── up.sql
+│   ├── down.sql
+│   └── metadata.yaml      # parents: [1679012345]
+└── 1679012401_create_posts_table/
+    ├── up.sql
+    ├── down.sql
+    └── metadata.yaml          # parents: [1679012345]
+```
+
+**metadata.yaml example:**
+```yaml
+id: 1679012398
+name: add_email_column
+description: Add email column to users table
+parents:
+  - 1679012345  # create_users_table
 ```
 
 ## Usage
@@ -117,6 +194,35 @@ database:
 
 For detailed usage instructions, see the [documentation](https://kat.bolaji.de/).
 
+## Comparison with Other Tools
+
+| Feature | Kat | Flyway | Goose | Atlas |
+|---------|-----|---------|-------|-------|
+| Graph-based dependencies | ✅ | ❌ | ❌ | ⚠️ |
+| Parallel development friendly | ✅ | ❌ | ❌ | ⚠️ |
+| Raw SQL migrations | ✅ | ✅ | ✅ | ⚠️ |
+| Go library + CLI | ✅ | ❌ | ✅ | ✅ |
+| Transaction per migration | ✅ | ✅ | ✅ | ✅ |
+| Rollback support | ✅ | ✅ | ✅ | ✅ |
+| Migration visualization | ✅ | ❌ | ❌ | ✅ |
+
+## Architecture Overview
+
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
+│ CLI Command │ -> │   Migration  │ -> │    Graph    │ -> │   Runner     │
+│   (cmd/)    │    │ (discovery)  │    │  (DAG ops)  │    │ (execution)  │
+└─────────────┘    └──────────────┘    └─────────────┘    └──────────────┘
+                           │                    │                 │
+                           v                    v                 v
+                   ┌──────────────┐    ┌─────────────┐    ┌──────────────┐
+                   │  File System │    │ Topological │    │   Database   │
+                   │   Scanner    │    │    Sort     │    │  Operations  │
+                   └──────────────┘    └─────────────┘    └──────────────┘
+```
+
+**Flow**: Discovery → Graph Construction → Topological Ordering → Transactional Execution
+
 ## Go Library Usage
 
 Kat can also be used as a Go library in your applications:
@@ -128,6 +234,7 @@ import (
     "context"
     "embed"
     "log"
+    "time"
 
     "github.com/BolajiOlajide/kat"
 )
@@ -136,21 +243,33 @@ import (
 var migrationsFS embed.FS
 
 func main() {
-    // Basic usage
+    // Basic usage with embedded migrations
     m, err := kat.New("postgres://user:pass@localhost:5432/db", migrationsFS, "migrations")
     if err != nil {
         log.Fatal(err)
     }
 
-    // Apply all pending migrations
-    err = m.Up(context.Background(), 0)
+    // Apply all pending migrations with cancellation
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+    err = m.Up(ctx, 0) // 0 = apply all pending
     if err != nil {
         log.Fatal(err)
     }
 
-    // With custom logger
-    m, err = kat.New("postgres://user:pass@localhost:5432/db", migrationsFS, "migrations",
+    // Roll back the most recent migration
+    err = m.Down(context.Background(), 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Advanced usage with custom logger and existing DB connection
+    connStr := "postgres://user:pass@localhost:5432/db"
+    db, _ := sql.Open("postgres", connStr)
+    m, err = kat.New("", migrationsFS, "schema_migrations",
         kat.WithLogger(customLogger),
+        kat.WithSqlDB(db), // Reuse existing connection
     )
     if err != nil {
         log.Fatal(err)
@@ -160,21 +279,52 @@ func main() {
 
 For more details on custom logging, see the [logger documentation](https://kat.bolaji.de/logger/).
 
-## Migration Structure
+## Best Practices
 
-Migrations are organized in a directory structure like this:
+### Writing Idempotent Migrations
+```sql
+-- up.sql
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE
+);
 
+-- down.sql
+DROP TABLE IF EXISTS users;
 ```
-migrations/
-  └─ 1679012345_create_users_table/
-      ├─ up.sql      # SQL to apply the migration
-      ├─ down.sql    # SQL to reverse the migration
-      └─ metadata.yaml  # Migration metadata including dependencies
+
+### Branch Workflow
+1. Create feature branch: `git checkout -b feature/user-profiles`
+2. Add dependent migrations: `kat add add_profile_table` (Kat determines dependencies)
+3. Test locally: `kat up --dry-run`
+4. Merge: Kat automatically handles dependency ordering
+
+### CI/CD Integration
+```yaml
+# .github/workflows/migrations.yml
+- name: Validate migrations
+  run: |
+    kat ping
+    kat up --dry-run
 ```
+
+**Compatibility**: Tested with Go 1.20+ (tested on 1.23), PostgreSQL 12-16. Supported OS: Linux, macOS, Windows (amd64/arm64)
+
+## Quick Reference
+
+| Command | Purpose | Common Flags |
+|---------|---------|--------------|
+| `kat add NAME` | Create migration (Kat determines dependencies) | `--config, -c` |
+| `kat up --count 3` | Apply next 3 migrations | `--dry-run, --verbose` |
+| `kat down --count 2` | Roll back 2 migrations | `--force` |
+| `kat export --file graph.dot` | Export dependency graph | `--format json` |
+| `kat ping` | Test database connectivity | |
+
+➡️ *Need help?* Visit [GitHub Discussions](https://github.com/BolajiOlajide/kat/discussions) for questions and [GitHub Issues](https://github.com/BolajiOlajide/kat/issues) for bug reports.
 
 ## Documentation
 
-Visit the [Kat documentation site](https://kat.bolaji.de/) for detailed guides on:
+Visit the [Kat documentation site](https://kat.bolaji.de/) for detailed guides:
 
 - [Installation](https://kat.bolaji.de/installation/)
 - [Initialization](https://kat.bolaji.de/init/)

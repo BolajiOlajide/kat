@@ -41,7 +41,9 @@ curl -sSL https://kat.bolaji.de/install | VERSION=v1.0.0 sudo bash
 curl -sSL https://kat.bolaji.de/install | KAT_INSTALL_DIR=$HOME/bin bash
 ```
 
-> **Note:** `sudo` is required because the script installs Kat to `/usr/local/bin`, which typically requires administrator privileges. If you want to install without sudo, you can modify the installation directory by setting the `KAT_INSTALL_DIR` environment variable to a location you have write permissions for (e.g., `KAT_INSTALL_DIR=$HOME/bin`).
+> **What this script does:** Downloads the latest Kat binary from GitHub Releases and installs it to `/usr/local/bin/kat`. The script only requires write permissions to the installation directory.
+
+> **Security Note:** Always review scripts before running them. You can inspect the install script at [kat.bolaji.de/install](https://kat.bolaji.de/install)
 
 This will:
 1. Detect your operating system (macOS or Linux)
@@ -69,6 +71,28 @@ You can also download and install the binary manually:
    ```bash
    sudo chmod +x /usr/local/bin/kat
    ```
+
+### Windows Installation
+
+For Windows users, download the binary manually or use package managers:
+
+**Using Chocolatey:**
+```powershell
+# Install Chocolatey first if needed: https://chocolatey.org/
+choco install kat
+```
+
+**Using Scoop:**
+```powershell
+# Install Scoop first if needed: https://scoop.sh/
+scoop bucket add bolaji https://github.com/BolajiOlajide/scoop-bucket
+scoop install bolaji/kat
+```
+
+**Manual Download:**
+1. Visit [GitHub Releases](https://github.com/BolajiOlajide/kat/releases)
+2. Download `kat_[VERSION]_windows_amd64.zip`
+3. Extract and move `kat.exe` to a directory in your PATH
 
 ### Installing from Source
 
@@ -103,6 +127,30 @@ kat version
 ```
 
 You should see output showing the version of Kat that you installed.
+
+To see all available commands:
+
+```bash
+kat --help
+```
+
+Expected output:
+```
+NAME:
+   kat - Database migration tool for PostgreSQL
+
+USAGE:
+   kat [global options] command [command options] [arguments...]
+
+COMMANDS:
+   init     Initialize a new Kat project
+   add      Create a new migration
+   up       Apply pending migrations
+   down     Roll back migrations
+   ping     Test database connectivity
+   export   Export migration graph
+   ...
+```
 
 ## Troubleshooting
 
