@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>kat</id>
+    <version>{{VERSION}}</version>
+    <packageSourceUrl>https://github.com/BolajiOlajide/kat</packageSourceUrl>
+    <owners>BolajiOlajide</owners>
+    <title>Kat</title>
+    <authors>Bolaji Olajide</authors>
+    <projectUrl>https://github.com/BolajiOlajide/kat</projectUrl>
+    <iconUrl>https://kat.bolaji.de/assets/images/layout/logo.png</iconUrl>
+    <copyright>2024 Bolaji Olajide</copyright>
+    <licenseUrl>https://github.com/BolajiOlajide/kat/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/BolajiOlajide/kat</projectSourceUrl>
+    <docsUrl>https://kat.bolaji.de/</docsUrl>
+    <bugTrackerUrl>https://github.com/BolajiOlajide/kat/issues</bugTrackerUrl>
+    <tags>database postgresql migrations cli sql schema</tags>
+    <summary>Graph-based PostgreSQL database migration tool</summary>
+    <description>
+Kat is the first open-source PostgreSQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering.
+
+Features:
+- Graph-based migration dependencies  
+- Parallel development workflows
+- Raw SQL migrations
+- Transaction safety
+- Rollback support
+- CLI and Go library
+    </description>
+    <releaseNotes>https://github.com/BolajiOlajide/kat/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
