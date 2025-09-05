@@ -77,7 +77,7 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
+	db, err := database.NewWithConfig(cfg.Database.Driver, dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
+	db, err := database.NewWithConfig(cfg.Database.Driver, dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}

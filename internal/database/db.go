@@ -1,10 +1,10 @@
-// Package database provides database connectivity and operations for PostgreSQL.
+// Package database provides database connectivity and operations for PostgreSQL and SQLite.
 // It wraps the standard database/sql package with additional functionality
 // specific to migration management, including retry logic, transaction handling,
 // and migration table management.
 //
-// The package uses pgx driver for PostgreSQL connectivity and provides
-// abstractions for database operations that are safe for concurrent use.
+// The package supports both pgx driver for PostgreSQL and modernc.org/sqlite for SQLite,
+// providing abstractions for database operations that are safe for concurrent use.
 package database
 
 import (
@@ -14,12 +14,14 @@ import (
 	"math/rand/v2"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
+	_ "modernc.org/sqlite"
 
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
@@ -177,27 +179,47 @@ func isTransientError(err error) bool {
 
 	// Try to get the pgconn error, handling wrapped errors
 	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) {
+	if errors.As(err, &pgErr) {
+		// Check PostgreSQL error codes for transient errors
+		switch pgErr.Code {
+		case
+			"08003", // connection_exception
+			"08006", // connection_failure
+			"08001", // sqlclient_unable_to_establish_sqlconnection
+			"08004", // sqlserver_rejected_establishment_of_sqlconnection
+			"08007", // connection_failure_during_transaction
+			"57P01", // admin_shutdown
+			"57P02", // crash_shutdown
+			"57P03", // cannot_connect_now
+			"53300", // too_many_connections
+			"53301": // too_many_connections_for_role
+			return true
+		}
 		return false
 	}
 
-	// Check PostgreSQL error codes for transient errors
-	switch pgErr.Code {
-	case
-		"08003", // connection_exception
-		"08006", // connection_failure
-		"08001", // sqlclient_unable_to_establish_sqlconnection
-		"08004", // sqlserver_rejected_establishment_of_sqlconnection
-		"08007", // connection_failure_during_transaction
-		"57P01", // admin_shutdown
-		"57P02", // crash_shutdown
-		"57P03", // cannot_connect_now
-		"53300", // too_many_connections
-		"53301": // too_many_connections_for_role
+	// For SQLite and other databases, check error messages for common transient conditions
+	errMsg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(errMsg, "database is locked"):
 		return true
+	case strings.Contains(errMsg, "database is busy"):
+		return true
+	case strings.Contains(errMsg, "locked:"):
+		return true
+	case strings.Contains(errMsg, "resource deadlock avoided"):
+		return true
+	case strings.Contains(errMsg, "database schema has changed"):
+		return true
+	case strings.Contains(errMsg, "connection refused"):
+		return true
+	case strings.Contains(errMsg, "connection reset"):
+		return true
+	case strings.Contains(errMsg, "broken pipe"):
+		return true
+	default:
+		return false
 	}
-
-	return false
 }
 
 // withRetry executes a function with retries for transient errors
@@ -257,7 +279,8 @@ func withRetry(ctx context.Context, l loggr.Logger, retryCount int, initialDelay
 	return errors.Wrapf(err, "failed after %d retries", retryCount)
 }
 
-// ensureTimeoutsInDSN adds timeout parameters to the connection URL if not present
+// ensureTimeoutsInDSN adds timeout parameters to the connection URL if not present.
+// Only applies to PostgreSQL connection strings.
 func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.Duration) (string, error) {
 	u, err := url.Parse(connURL)
 	if err != nil {
@@ -284,23 +307,48 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 	return u.String(), nil
 }
 
+// driverInfo resolves the sql driver name and bind variable style for a given driver.
+func driverInfo(driver string) (string, sqlf.BindVar, error) {
+	switch driver {
+	case "postgres":
+		return "pgx", sqlf.PostgresBindVar, nil
+	case "sqlite3", "sqlite":
+		return "sqlite", sqlf.SimpleBindVar, nil
+	default:
+		return "", nil, errors.Newf("unsupported database driver: %s", driver)
+	}
+}
+
 // NewWithConfig returns a new database instance with custom configuration
-func NewWithConfig(url string, logger loggr.Logger, config DBConfig) (DB, error) {
-	// Ensure timeouts are set in the DSN
-	finalURL, err := ensureTimeoutsInDSN(url, config.ConnectTimeout, config.StatementTimeout)
+func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
+	sqlDriverName, bindVar, err := driverInfo(driver)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := sql.Open("pgx", finalURL)
+	finalURL := url
+	// Only apply DSN timeout enrichment for PostgreSQL
+	if driver == "postgres" {
+		finalURL, err = ensureTimeoutsInDSN(url, config.ConnectTimeout, config.StatementTimeout)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	db, err := sql.Open(sqlDriverName, finalURL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Configure connection pool
-	db.SetMaxOpenConns(config.MaxOpenConns)
-	db.SetMaxIdleConns(config.MaxIdleConns)
-	db.SetConnMaxLifetime(config.ConnMaxLifetime)
+	// SQLite allows only one writer at a time
+	if driver == "sqlite3" || driver == "sqlite" {
+		db.SetMaxOpenConns(1)
+	} else {
+		// Configure connection pool for non-SQLite drivers
+		db.SetMaxOpenConns(config.MaxOpenConns)
+		db.SetMaxIdleConns(config.MaxIdleConns)
+		db.SetConnMaxLifetime(config.ConnMaxLifetime)
+	}
 
 	// Test the connection with timeout if configured
 	var ctx context.Context
@@ -326,13 +374,11 @@ func NewWithConfig(url string, logger loggr.Logger, config DBConfig) (DB, error)
 
 	d := &database{
 		db:      db,
-		bindVar: sqlf.PostgresBindVar,
+		bindVar: bindVar,
 		logger:  logger,
 		config:  config,
 	}
 
-	// Set session-level statement timeout if configured
-	// We'll add it to the DSN instead of running SET, for reliability
 	if config.StatementTimeout > 0 {
 		logger.Info(fmt.Sprintf("Session statement timeout configured for %v", config.StatementTimeout))
 	}
@@ -341,14 +387,14 @@ func NewWithConfig(url string, logger loggr.Logger, config DBConfig) (DB, error)
 }
 
 // New returns a new instance of the database with default configuration
-func New(url string, logger loggr.Logger) (DB, error) {
-	return NewWithConfig(url, logger, DefaultDBConfig())
+func New(driver, url string, logger loggr.Logger) (DB, error) {
+	return NewWithConfig(driver, url, logger, DefaultDBConfig())
 }
 
-func NewWithDB(db *sql.DB, logger loggr.Logger) (DB, error) {
+func NewWithDB(db *sql.DB, bindVar sqlf.BindVar, logger loggr.Logger) (DB, error) {
 	return &database{
 		db:      db,
-		bindVar: sqlf.PostgresBindVar,
+		bindVar: bindVar,
 		logger:  logger,
 		config:  DefaultDBConfig(),
 	}, nil

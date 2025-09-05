@@ -159,7 +159,7 @@ func ping(c *cli.Context) error {
 	}
 
 	// Create DB connection
-	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
+	db, err := database.NewWithConfig(cfg.Database.Driver, dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}
