@@ -42,6 +42,8 @@ package kat
 import (
 	"context"
 	"io/fs"
+	"net/url"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 
@@ -53,6 +55,41 @@ import (
 )
 
 type Logger loggr.Logger
+
+// detectDriverFromURL attempts to detect the database driver from a connection string URL
+func detectDriverFromURL(connStr string) string {
+	if connStr == "" {
+		return "postgres" // default
+	}
+	
+	// Try to parse as URL
+	parsedURL, err := url.Parse(connStr)
+	if err != nil {
+		// If URL parsing fails, check for SQLite file patterns
+		if strings.HasSuffix(connStr, ".sqlite") || 
+		   strings.HasSuffix(connStr, ".db") || 
+		   connStr == ":memory:" {
+			return "sqlite3"
+		}
+		return "postgres" // default on parse error
+	}
+	
+	scheme := strings.ToLower(parsedURL.Scheme)
+	switch scheme {
+	case "sqlite", "file":
+		return "sqlite3"
+	case "postgresql", "postgres", "postgresql+ssl":
+		return "postgres"
+	default:
+		// Check for SQLite file patterns when no recognizable scheme
+		if strings.HasSuffix(connStr, ".sqlite") || 
+		   strings.HasSuffix(connStr, ".db") || 
+		   connStr == ":memory:" {
+			return "sqlite3"
+		}
+		return "postgres" // default for unknown schemes
+	}
+}
 
 // Migration manages database schema migrations using a graph-based approach.
 // It tracks applied migrations in a database table and ensures dependencies
@@ -92,7 +129,8 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 		m.logger = loggr.NewDefault()
 	}
 
-	m.db, err = database.New(connStr, m.logger)
+	driver := detectDriverFromURL(connStr)
+	m.db, err = database.New(driver, connStr, m.logger)
 	if err != nil {
 		return nil, err
 	}

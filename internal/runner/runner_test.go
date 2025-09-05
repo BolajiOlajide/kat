@@ -98,7 +98,7 @@ func TestRun(t *testing.T) {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.New(connStr, logger)
+	db, err := database.New("postgres", connStr, logger)
 	require.NoError(t, err, "creating database service")
 
 	r, err := NewRunner(ctx, db, logger)
