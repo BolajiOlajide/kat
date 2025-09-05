@@ -3,6 +3,8 @@ package kat
 import (
 	"database/sql"
 
+	"github.com/keegancsmith/sqlf"
+
 	"github.com/BolajiOlajide/kat/internal/database"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
@@ -30,6 +32,8 @@ func WithLogger(logger loggr.Logger) MigrationOption {
 // WithSqlDB configures the migration to use an existing *sql.DB connection
 // instead of creating a new one from the connection string.
 // When this option is used, the connection string parameter in New() is ignored.
+// By default, this assumes a PostgreSQL database (uses sqlf.PostgresBindVar).
+// For SQLite databases, use WithSqlDBAndDriver instead.
 //
 // Example:
 //
@@ -41,8 +45,37 @@ func WithLogger(logger loggr.Logger) MigrationOption {
 //		kat.WithSqlDB(db),
 //	)
 func WithSqlDB(db *sql.DB) MigrationOption {
+	return WithSqlDBAndDriver(db, "postgres")
+}
+
+// WithSqlDBAndDriver configures the migration to use an existing *sql.DB connection
+// with the specified driver type. This allows proper handling of different database
+// bind variable formats (PostgreSQL uses $1,$2 while SQLite uses ?).
+//
+// Example for SQLite:
+//
+//	db, err := sql.Open("sqlite", "database.db")
+//	if err != nil {
+//		return err
+//	}
+//	m, err := kat.New("", fsys, "migrations",
+//		kat.WithSqlDBAndDriver(db, "sqlite3"),
+//	)
+func WithSqlDBAndDriver(db *sql.DB, driver string) MigrationOption {
 	return func(m *Migration) error {
-		d, err := database.NewWithDB(db, m.logger)
+		var bindVar sqlf.BindVar
+		switch driver {
+		case "postgres":
+			bindVar = sqlf.PostgresBindVar
+		case "sqlite3", "sqlite":
+			bindVar = sqlf.SimpleBindVar
+			// SQLite allows only one writer at a time, so limit connections to avoid "database is locked" errors
+			db.SetMaxOpenConns(1)
+		default:
+			bindVar = sqlf.PostgresBindVar // default to postgres for backward compatibility
+		}
+		
+		d, err := database.NewWithDB(db, bindVar, m.logger)
 		if err != nil {
 			return err
 		}

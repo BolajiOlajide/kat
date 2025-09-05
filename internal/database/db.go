@@ -1,22 +1,24 @@
-// Package database provides database connectivity and operations for PostgreSQL.
+// Package database provides database connectivity and operations for PostgreSQL and SQLite.
 // It wraps the standard database/sql package with additional functionality
 // specific to migration management, including retry logic, transaction handling,
 // and migration table management.
 //
-// The package uses pgx driver for PostgreSQL connectivity and provides
-// abstractions for database operations that are safe for concurrent use.
+// The package supports both pgx driver for PostgreSQL and modernc.org/sqlite for SQLite,
+// providing abstractions for database operations that are safe for concurrent use.
 package database
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
+	_ "modernc.org/sqlite"
 
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
@@ -84,18 +86,12 @@ func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
 		return err
 	}
 
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback()
-			panic(p)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	return f(&databaseTx{tx: tx, bindVar: d.bindVar})
+	err = f(&databaseTx{tx: tx, bindVar: d.bindVar})
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 // isTransientError determines if an error is likely transient and can be retried
@@ -104,29 +100,49 @@ func isTransientError(err error) bool {
 		return false
 	}
 
-	// Try to get the pgconn error
+	// Try to get the pgconn error for PostgreSQL
 	pgErr, ok := err.(*pgconn.PgError)
-	if !ok {
+	if ok {
+		// Check PostgreSQL error codes for transient errors
+		switch pgErr.Code {
+		case
+			"08003", // connection_exception
+			"08006", // connection_failure
+			"08001", // sqlclient_unable_to_establish_sqlconnection
+			"08004", // sqlserver_rejected_establishment_of_sqlconnection
+			"08007", // connection_failure_during_transaction
+			"57P01", // admin_shutdown
+			"57P02", // crash_shutdown
+			"57P03", // cannot_connect_now
+			"53300", // too_many_connections
+			"53301": // too_many_connections_for_role
+			return true
+		}
 		return false
 	}
 
-	// Check PostgreSQL error codes for transient errors
-	switch pgErr.Code {
-	case
-		"08003", // connection_exception
-		"08006", // connection_failure
-		"08001", // sqlclient_unable_to_establish_sqlconnection
-		"08004", // sqlserver_rejected_establishment_of_sqlconnection
-		"08007", // connection_failure_during_transaction
-		"57P01", // admin_shutdown
-		"57P02", // crash_shutdown
-		"57P03", // cannot_connect_now
-		"53300", // too_many_connections
-		"53301": // too_many_connections_for_role
+	// For SQLite and other databases, check error messages for common transient conditions
+	errMsg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(errMsg, "database is locked"):
 		return true
+	case strings.Contains(errMsg, "database is busy"):
+		return true
+	case strings.Contains(errMsg, "locked:"):
+		return true
+	case strings.Contains(errMsg, "resource deadlock avoided"):
+		return true
+	case strings.Contains(errMsg, "database schema has changed"):
+		return true
+	case strings.Contains(errMsg, "connection refused"):
+		return true
+	case strings.Contains(errMsg, "connection reset"):
+		return true
+	case strings.Contains(errMsg, "broken pipe"):
+		return true
+	default:
+		return false
 	}
-
-	return false
 }
 
 // withRetry executes a function with retries for transient errors
@@ -171,15 +187,34 @@ func withRetry(l loggr.Logger, retryCount int, initialDelay int, f func() error)
 }
 
 // New returns a new instance of the database
-func New(url string, logger loggr.Logger) (DB, error) {
-	db, err := sql.Open("pgx", url)
+func New(driver, url string, logger loggr.Logger) (DB, error) {
+	var sqlDriverName string
+	var bindVar sqlf.BindVar
+
+	switch driver {
+	case "postgres":
+		sqlDriverName = "pgx"
+		bindVar = sqlf.PostgresBindVar
+	case "sqlite3", "sqlite":
+		sqlDriverName = "sqlite"
+		bindVar = sqlf.SimpleBindVar
+	default:
+		return nil, errors.Newf("unsupported database driver: %s", driver)
+	}
+
+	db, err := sql.Open(sqlDriverName, url)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewWithDB(db, logger)
+	// SQLite allows only one writer at a time, so limit connections to avoid "database is locked" errors
+	if driver == "sqlite3" {
+		db.SetMaxOpenConns(1)
+	}
+
+	return NewWithDB(db, bindVar, logger)
 }
 
-func NewWithDB(db *sql.DB, logger loggr.Logger) (DB, error) {
-	return &database{db: db, bindVar: sqlf.PostgresBindVar, logger: logger}, nil
+func NewWithDB(db *sql.DB, bindVar sqlf.BindVar, logger loggr.Logger) (DB, error) {
+	return &database{db: db, bindVar: bindVar, logger: logger}, nil
 }
