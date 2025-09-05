@@ -307,10 +307,11 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 	return u.String(), nil
 }
 
-// driverInfo resolves the sql driver name and bind variable style for a given driver.
-func driverInfo(driver string) (string, sqlf.BindVar, error) {
+func getDriverAndBindVar(driver string) (string, sqlf.BindVar, error) {
 	switch driver {
-	case "postgres":
+	// we want to always default to postgres when the driver is not specified
+	// this is to enforce backward compatibility
+	case "postgres", "":
 		return "pgx", sqlf.PostgresBindVar, nil
 	case "sqlite3", "sqlite":
 		return "sqlite", sqlf.SimpleBindVar, nil
@@ -321,7 +322,7 @@ func driverInfo(driver string) (string, sqlf.BindVar, error) {
 
 // NewWithConfig returns a new database instance with custom configuration
 func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
-	sqlDriverName, bindVar, err := driverInfo(driver)
+	sqlDriverName, bindVar, err := getDriverAndBindVar(driver)
 	if err != nil {
 		return nil, err
 	}
