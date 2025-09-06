@@ -19,26 +19,6 @@ type MigrationInfo struct {
 	Directory string `yaml:"directory"`
 }
 
-func (c *Config) SetDefault() {
-	if c.Migration.Directory == "" {
-		c.Migration.Directory = "migrations"
-	}
-
-	if c.Migration.TableName == "" {
-		c.Migration.TableName = "migrations"
-	}
-
-	// We assume when the URL isn't provided, the user has specified database credentials manually
-	// so we set SSL mode to `disable` if the user doesn't have it defined.
-	if c.Database.URL == "" && c.Database.SSLMode == "" {
-		c.Database.SSLMode = "disable"
-	}
-
-	if c.Database.Driver.IsEmpty() {
-		c.Database.Driver = DriverPostgres
-	}
-}
-
 type DatabaseInfo struct {
 	Driver   Driver `yaml:"driver"`
 	User     string `yaml:"user,omitempty"`

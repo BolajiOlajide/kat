@@ -7,9 +7,7 @@ const (
 	DriverSQLite   Driver = "sqlite"
 )
 
-func (d Driver) IsEmpty() bool {
-	return d == ""
-}
+func (d Driver) IsEmpty() bool { return d == "" }
 
 func (d Driver) Valid() bool {
 	switch d {

@@ -22,12 +22,12 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
-var errConfigNotFound = errors.Newf("config file not provided. Provide one via the `-c` flag or have the %s in the current working directory.", constants.KatConfigurationFileName)
+var errConfigNotFound = errors.Newf("config file not provided. Provide one via the `-c` flag or have the `%s` file in the current working directory.", constants.KatConfigurationFileName)
 
 func GetKatConfigFromCtx(c *cli.Context) (types.Config, error) {
 	cfg, ok := c.Context.Value(constants.KatConfigKey).(types.Config)
 	if !ok {
-		return types.Config{}, errors.New("invalid configuration")
+		return types.Config{}, errors.New("invalid kat configuration")
 	}
 	return cfg, nil
 }
@@ -64,7 +64,11 @@ func ParseConfig(c *cli.Context) error {
 		return errors.Wrap(err, "marshalling config")
 	}
 
-	cfg.SetDefault()
+	// This is to ensure backward compatibility with older versions of Kat. An empty
+	// driver is treated as Postgres, since that was what Kat was initially designed for.
+	if cfg.Database.Driver.IsEmpty() {
+		cfg.Database.Driver = types.DriverPostgres
+	}
 	c.Context = context.WithValue(c.Context, constants.KatConfigKey, *cfg)
 	return nil
 }
