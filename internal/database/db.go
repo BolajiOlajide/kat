@@ -79,23 +79,35 @@ func (d *database) Close() error {
 }
 
 func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
-	tx, err := d.db.Begin()
+	if f == nil {
+		return errors.New("WithTransact: nil callback")
+	}
+
+	tx, err := d.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			panic(p)
-		} else if err != nil {
-			tx.Rollback()
-		} else {
-			err = tx.Commit()
 		}
 	}()
 
-	return f(&databaseTx{tx: tx, bindVar: d.bindVar})
+	if err = f(&databaseTx{tx: tx, bindVar: d.bindVar}); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return errors.Wrapf(err, "transaction failed; rollback also failed: %v", rbErr)
+		}
+		return errors.Wrap(err, "transaction failed")
+	}
+
+	if commitErr := tx.Commit(); commitErr != nil {
+		_ = tx.Rollback() // ensure connection cleanup
+		return errors.Wrap(commitErr, "failed to commit transaction")
+	}
+
+	return nil
 }
 
 // isTransientError determines if an error is likely transient and can be retried
