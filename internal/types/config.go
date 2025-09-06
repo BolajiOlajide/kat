@@ -33,9 +33,14 @@ func (c *Config) SetDefault() {
 	if c.Database.URL == "" && c.Database.SSLMode == "" {
 		c.Database.SSLMode = "disable"
 	}
+
+	if c.Database.Driver.IsEmpty() {
+		c.Database.Driver = DriverPostgres
+	}
 }
 
 type DatabaseInfo struct {
+	Driver   Driver `yaml:"driver"`
 	User     string `yaml:"user,omitempty"`
 	Password string `yaml:"password,omitempty"`
 	Name     string `yaml:"name,omitempty"`

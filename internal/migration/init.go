@@ -8,13 +8,14 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/constants"
 	"github.com/BolajiOlajide/kat/internal/output"
+	"github.com/BolajiOlajide/kat/internal/types"
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
 )
 
 // GenerateConfigFile creates a configuration file from the init.tmpl template
 // using the provided parameters
-func GenerateConfigFile(tableName, directory string, driver constants.Driver) ([]byte, error) {
+func GenerateConfigFile(tableName, directory string, driver types.Driver) ([]byte, error) {
 	// Load the embedded template
 	tmpl, err := template.ParseFS(templatesFS, "templates/init.tmpl")
 	if err != nil {
@@ -26,7 +27,7 @@ func GenerateConfigFile(tableName, directory string, driver constants.Driver) ([
 	if err := tmpl.Execute(&buf, struct {
 		TableName string
 		Directory string
-		Driver    constants.Driver
+		Driver    types.Driver
 	}{
 		TableName: tableName,
 		Directory: directory,
@@ -68,7 +69,7 @@ func Init(c *cli.Context) (err error) {
 		unformattedDriver = "postgres"
 	}
 
-	drv := constants.Driver(unformattedDriver)
+	drv := types.Driver(unformattedDriver)
 	if !drv.Valid() {
 		return errors.New("invalid driver: (postgres/sqlite)")
 	}
