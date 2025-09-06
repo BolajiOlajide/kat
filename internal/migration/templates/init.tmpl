@@ -3,55 +3,30 @@
 
 # Migration configuration
 migration:
-  # The table name where migration records will be stored in your database
-  tablename: {{ .TableName }}
-  # The directory where migration files will be stored relative to the location of the `kat.conf.yaml`
-  directory: {{ .Directory }}
+    # The table name where migration records will be stored in your database
+    tablename: {{ .TableName }}
+    # The directory where migration files will be stored relative to the location of the `kat.conf.yaml`
+    directory: {{ .Directory }}
 
 # Show detailed migration summary and file information (true/false). Default: false (detailed output is disabled by default).
 verbose: false
 
 # Database connection configuration
-# You can use either individual connection parameters OR a connection URL
-
-{{- if .UseConnString }}
-# Option 1: Connection URL
 database:
-  # Complete PostgreSQL connection string
-  url: {{ .DatabaseURL }}
+    driver: {{ .Driver }}
+{{ if eq .Driver "sqlite" }}
+    # Replace this with your SQLite connection string
+    path: sqlite://path/to/database.db
+{{ else }}
+    # Option 1: Connection URL
+    # <Replace this with your PostgreSQL connection string>
+    url: postgres://postgres:password@localhost:5432/dbname?sslmode=disable
 
-# Option 2: Individual connection parameters (commented out)
-# database:
-#   # Database username
-#   user: {{ .DBUser }}
-#   # Database password
-#   password: {{ .DBPassword }}
-#   # Database name
-#   name: {{ .DBName }}
-#   # Database port
-#   port: {{ .DBPort }}
-#   # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-#   sslmode: {{ .DBSSLMode }}
-#   # Database host
-#   host: {{ .DBHost }}
-{{- else }}
-# Option 1: Individual connection parameters
-database:
-  # Database username
-  user: {{ .DBUser }}
-  # Database password
-  password: {{ .DBPassword }}
-  # Database name
-  name: {{ .DBName }}
-  # Database port
-  port: {{ .DBPort }}
-  # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-  sslmode: {{ .DBSSLMode }}
-  # Database host
-  host: {{ .DBHost }}
-
-# Option 2: Connection URL (uncomment to use)
-# database:
-#   # Complete PostgreSQL connection string
-#   url: postgres://user:password@localhost/dbname?sslmode=disable
-{{- end }}
+    # Option 2: Individual connection parameters (commented out)
+    # user: ${DB_USER}
+    # password: ${DB_PASSWORD}
+    # name: ${DB_NAME}
+    # port: ${DB_PORT}
+    # sslmode: ${DB_SSLMODE}
+    # host: ${DB_HOST}
+{{ end }}
