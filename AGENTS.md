@@ -1,13 +1,16 @@
 # Kat Project Agent Configuration
 
 ## Build & Test Commands
-- Build: `go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=$(VERSION)" ./cmd/kat`
-- Install: `go install ./...`
-- Run: `go run ./cmd/kat $(ARGS)`
-- Run with custom args: `make run ARGS="your args here"`
-- Run tests: `go test ./...`
+- Build: `mise run build` or `go build -ldflags "-X github.com/BolajiOlajide/kat/internal/version.version=$(VERSION)" ./cmd/kat`
+- Build for Windows: `GOOS=windows GOARCH=amd64 go build -o kat.exe ./cmd/kat`
+- Install: `mise run install` or `go install ./...`
+- Run: `mise run run` or `go run ./cmd/kat $(ARGS)`
+- Run with custom args: `ARGS="your args here" mise run run`
+- Run tests: `mise run test` or `go test ./...`
 - Run single test: `go test -v ./path/to/package -run TestName`
-- Start documentation: `bundle exec jekyll serve`
+- Start documentation: `mise run start-doc` or `bundle exec jekyll serve`
+- Format code: `mise run fmt`
+- Type check: `mise run check`
 
 ## Code Style Guidelines
 - Indentation: 2 spaces

@@ -30,11 +30,17 @@ Get up and running with Kat in 5 minutes. This guide walks you through your firs
 Create a PostgreSQL database for this tutorial:
 
 ```bash
-# Create the database (requires PostgreSQL installed locally)
+# Unix/macOS - Create the database (requires PostgreSQL installed locally)
 createdb myapp
 
-# Or using SQL:
+# Or using SQL (works on all platforms):
 psql -c "CREATE DATABASE myapp;"
+
+# Windows (if PostgreSQL is in PATH):
+createdb myapp
+
+# Windows (if using PostgreSQL installer):
+"C:\Program Files\PostgreSQL\16\bin\createdb.exe" myapp
 ```
 
 ## Step 2: Initialize Your Project
