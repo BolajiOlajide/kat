@@ -149,6 +149,21 @@ DROP TABLE IF EXISTS users;
 - **Keep migrations focused**: Each migration should have a single purpose
 - **Test migrations**: Verify both up and down migrations work as expected
 
+### Non-Transactional Migrations
+
+Some PostgreSQL operations, such as `CREATE INDEX CONCURRENTLY`, cannot run inside a transaction block. For these cases, you can set `no_transaction: true` in the migration's `metadata.yaml`:
+
+```yaml
+name: add_orders_status_index
+timestamp: 1679012345
+no_transaction: true
+parents: [1679012340]
+```
+
+When `no_transaction` is set, Kat executes the migration's SQL statements directly against the database without wrapping them in a `BEGIN`/`COMMIT` block.
+
+> ⚠️ **Warning**: Non-transactional migrations cannot be automatically rolled back on failure. If a non-transactional migration fails partway through, the database may be left in a partially-migrated state. Keep these migrations small and focused on a single operation.
+
 ## Applying Migrations
 
 To apply pending migrations, use the `up` command:
