@@ -206,14 +206,22 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			return nil
 		}
 
-		// Execute transaction without retry
-		if err := r.db.WithTransact(ctx, txFunc); err != nil {
+		var execErr error
+		if definition.NoTransaction {
+			// Execute without a transaction for operations like CREATE INDEX CONCURRENTLY
+			execErr = txFunc(&noTransactTx{db: r.db})
+		} else {
+			// Execute within a transaction
+			execErr = r.db.WithTransact(ctx, txFunc)
+		}
+
+		if execErr != nil {
 			// Print detailed error information
 			r.logger.Error(fmt.Sprintf("Migration failed: %s", definition.Name))
-			r.logger.Error(fmt.Sprintf("Error: %s", err.Error()))
+			r.logger.Error(fmt.Sprintf("Error: %s", execErr.Error()))
 			r.logger.Error("Migration process stopped to preserve database integrity")
 
-			return errors.Wrapf(err, "executing %s", definition.FileName())
+			return errors.Wrapf(execErr, "executing %s", definition.FileName())
 		}
 	}
 

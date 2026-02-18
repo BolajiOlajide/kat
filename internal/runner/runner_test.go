@@ -34,6 +34,27 @@ func createMigrationDef(t *testing.T, defs ...types.Definition) *graph.Graph {
 	return g
 }
 
+var noTransactionDefinitions = []types.Definition{
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:      "create_orders",
+			Timestamp: 1747525100,
+		},
+		UpQuery:   sqlf.Sprintf("CREATE TABLE orders (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, status TEXT NOT NULL DEFAULT 'pending');"),
+		DownQuery: sqlf.Sprintf("DROP TABLE orders;"),
+	},
+	{
+		MigrationMetadata: types.MigrationMetadata{
+			Name:          "add_orders_status_index",
+			Timestamp:     1747525200,
+			Parents:       []int64{1747525100},
+			NoTransaction: true,
+		},
+		UpQuery:   sqlf.Sprintf("CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_status ON orders (status);"),
+		DownQuery: sqlf.Sprintf("DROP INDEX CONCURRENTLY IF EXISTS idx_orders_status;"),
+	},
+}
+
 var allDefinitions = []types.Definition{
 	{
 		MigrationMetadata: types.MigrationMetadata{
@@ -289,6 +310,32 @@ func TestRun(t *testing.T) {
 					TableName: migrationTableName,
 				},
 				DryRun: true,
+			},
+			expectedSchema: migrationLogsSchema,
+		},
+		{
+			name: "up migration with no_transaction (CREATE INDEX CONCURRENTLY)",
+			options: Options{
+				Operation:     types.UpMigrationOperation,
+				Definitions:   createMigrationDef(t, noTransactionDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
+			},
+			expectedSchema: append(migrationLogsSchema, ordersSchema...),
+		},
+		{
+			name: "down migration with no_transaction (DROP INDEX CONCURRENTLY)",
+			pre: createMigrationLogQuery + `
+		INSERT INTO "migration_logs"("name","migration_time","duration")
+		VALUES
+		('1747525100_create_orders','2025-04-14 19:41:23.39-04','00:00:13.147291'),
+		('1747525200_add_orders_status_index','2025-04-14 19:41:23.39-04','00:00:13.147291');
+
+		CREATE TABLE orders (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, status TEXT NOT NULL DEFAULT 'pending');
+		CREATE INDEX idx_orders_status ON orders (status);`,
+			options: Options{
+				Operation:     types.DownMigrationOperation,
+				Definitions:   createMigrationDef(t, noTransactionDefinitions...),
+				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
 			},
 			expectedSchema: migrationLogsSchema,
 		},

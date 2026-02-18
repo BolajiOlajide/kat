@@ -45,6 +45,11 @@ type MigrationMetadata struct {
 	// Parents represents the timestamps of parent migrations in the dependency graph.
 	// This field is used to define dependencies between migrations.
 	Parents []int64 `yaml:"parents,omitempty,flow"`
+
+	// NoTransaction indicates that this migration should not be wrapped in a transaction.
+	// This is required for operations like CREATE INDEX CONCURRENTLY which cannot run
+	// inside a transaction block.
+	NoTransaction bool `yaml:"no_transaction,omitempty"`
 }
 
 // MigrationOperationType represents the type of migration operation.
