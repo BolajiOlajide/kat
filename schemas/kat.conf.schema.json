@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BolajiOlajide/kat/schemas/kat.conf.schema.json",
+  "title": "Kat Configuration",
+  "description": "Configuration file for the Kat database migration tool (kat.conf.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "migration": {
+      "type": "object",
+      "description": "Settings for migration file discovery and tracking",
+      "additionalProperties": false,
+      "properties": {
+        "tablename": {
+          "type": "string",
+          "description": "Name of the database table used to track applied migrations",
+          "default": "migrations"
+        },
+        "directory": {
+          "type": "string",
+          "description": "Path to the directory containing migration subdirectories",
+          "default": "migrations"
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "description": "Database connection settings. Provide either a connection URL or individual credentials.",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "PostgreSQL connection URL. Supported schemes: postgres://, postgresql://, postgresql+ssl://",
+          "pattern": "^(postgres|postgresql|postgresql\\+ssl)://"
+        },
+        "host": {
+          "type": "string",
+          "description": "Database server hostname or IP address",
+          "default": "localhost"
+        },
+        "port": {
+          "type": "string",
+          "description": "Database server port",
+          "default": "5432",
+          "pattern": "^[0-9]+$"
+        },
+        "user": {
+          "type": "string",
+          "description": "Database username"
+        },
+        "password": {
+          "type": "string",
+          "description": "Database password"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the database to connect to"
+        },
+        "sslmode": {
+          "type": "string",
+          "description": "SSL connection mode",
+          "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"],
+          "default": "disable"
+        }
+      },
+      "oneOf": [
+        {
+          "description": "Connect using a PostgreSQL connection URL",
+          "required": ["url"],
+          "not": {
+            "anyOf": [
+              { "required": ["host"] },
+              { "required": ["port"] },
+              { "required": ["user"] },
+              { "required": ["password"] },
+              { "required": ["name"] },
+              { "required": ["sslmode"] }
+            ]
+          }
+        },
+        {
+          "description": "Connect using individual database credentials",
+          "not": { "required": ["url"] }
+        }
+      ]
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Enable verbose logging output",
+      "default": false
+    }
+  }
+}
