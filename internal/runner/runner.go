@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -208,8 +209,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 		var execErr error
 		if definition.NoTransaction {
-			// Execute without a transaction for operations like CREATE INDEX CONCURRENTLY
-			execErr = txFunc(&noTransactTx{db: r.db})
+			execErr = r.runNoTransaction(ctx, definition, options, logsMap, &execs)
 		} else {
 			// Execute within a transaction
 			execErr = r.db.WithTransact(ctx, txFunc)
@@ -227,6 +227,78 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 
 	r.printMigrationSummary(execs, options.Operation, options.DryRun, options.Verbose)
 	return nil
+}
+
+// runNoTransaction executes a migration without wrapping it in a transaction.
+// The migration SQL runs in autocommit mode (required for operations like CREATE INDEX
+// CONCURRENTLY), while the bookkeeping log update is wrapped in its own transaction
+// to reduce the chance of "applied but not recorded" drift.
+func (r *runner) runNoTransaction(ctx context.Context, definition types.Definition, options Options, logsMap map[string]*types.MigrationLog, execs *[]executionDetails) error {
+	var q *sqlf.Query
+	if options.Operation.IsUpMigration() {
+		// Skip migrations that have already been executed
+		if _, exists := logsMap[definition.FileName()]; exists {
+			return nil
+		}
+		q = definition.UpQuery
+	} else {
+		// Skip migrations that haven't been executed
+		if _, exists := logsMap[definition.FileName()]; !exists {
+			return nil
+		}
+		q = definition.DownQuery
+	}
+
+	// In dry-run mode, don't execute the SQL
+	if options.DryRun {
+		r.logger.Info(fmt.Sprintf("[DRY RUN] Would execute %s migration for %q (no transaction)", options.Operation, definition.FileName()))
+		*execs = append(*execs, executionDetails{
+			Name:      definition.FileName(),
+			Operation: options.Operation.String(),
+		})
+		return nil
+	}
+
+	r.logger.Warn(fmt.Sprintf("Executing %q without a transaction; partial application is possible on failure", definition.FileName()))
+
+	// Warn if the migration contains multiple statements
+	if hasMultipleStatements(q) {
+		r.logger.Warn(fmt.Sprintf("Migration %q contains multiple SQL statements; each will commit independently outside a transaction", definition.FileName()))
+	}
+
+	// Execute the migration SQL directly (autocommit mode)
+	start := time.Now()
+	if err := r.db.Exec(ctx, q); err != nil {
+		return errors.Wrapf(err, "executing %s query", options.Operation)
+	}
+	duration := time.Since(start)
+
+	// Record the migration log in a transaction for bookkeeping integrity
+	if err := r.db.WithTransact(ctx, func(tx database.Tx) error {
+		query, err := r.computePostExecutionQuery(definition.FileName(), options.MigrationInfo.TableName, duration, start, options.Operation)
+		if err != nil {
+			return err
+		}
+		return tx.Exec(ctx, query)
+	}); err != nil {
+		r.logger.Error(fmt.Sprintf("Migration SQL for %q executed successfully but failed to update migration log; you may need to update the record manually", definition.FileName()))
+		return errors.Wrap(err, "updating migration log")
+	}
+
+	*execs = append(*execs, executionDetails{
+		Name:      definition.FileName(),
+		Operation: options.Operation.String(),
+		Duration:  duration,
+	})
+	return nil
+}
+
+// hasMultipleStatements checks if a SQL query contains multiple semicolon-terminated statements.
+func hasMultipleStatements(q *sqlf.Query) bool {
+	rendered := strings.TrimSpace(q.Query(sqlf.PostgresBindVar))
+	// Remove trailing semicolon so a single statement ending with ";" doesn't count
+	rendered = strings.TrimRight(rendered, "; \t\n")
+	return strings.Contains(rendered, ";")
 }
 
 // printMigrationSummary prints a summary of successful migrations

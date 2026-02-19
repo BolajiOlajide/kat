@@ -129,10 +129,12 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err, "create migration log query")
 
 	tests := []struct {
-		name           string
-		options        Options
-		expectedSchema []dbSchema
-		pre            string
+		name            string
+		options         Options
+		expectedSchema  []dbSchema
+		expectedIndexes []string // index names that should exist after migration
+		unexpectedIndexes []string // index names that should NOT exist after migration
+		pre             string
 	}{
 		{
 			name: "up migration",
@@ -320,7 +322,8 @@ func TestRun(t *testing.T) {
 				Definitions:   createMigrationDef(t, noTransactionDefinitions...),
 				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
 			},
-			expectedSchema: append(migrationLogsSchema, ordersSchema...),
+			expectedSchema:  append(migrationLogsSchema, ordersSchema...),
+			expectedIndexes: []string{"idx_orders_status"},
 		},
 		{
 			name: "down migration with no_transaction (DROP INDEX CONCURRENTLY)",
@@ -337,7 +340,8 @@ func TestRun(t *testing.T) {
 				Definitions:   createMigrationDef(t, noTransactionDefinitions...),
 				MigrationInfo: types.MigrationInfo{TableName: migrationTableName},
 			},
-			expectedSchema: migrationLogsSchema,
+			expectedSchema:    migrationLogsSchema,
+			unexpectedIndexes: []string{"idx_orders_status"},
 		},
 	}
 
@@ -366,6 +370,22 @@ func TestRun(t *testing.T) {
 			}
 
 			require.ElementsMatch(t, schemas, tt.expectedSchema)
+
+			// Assert expected indexes exist
+			for _, idxName := range tt.expectedIndexes {
+				var exists bool
+				row := db.QueryRow(ctx, sqlf.Sprintf("SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = %s)", idxName))
+				require.NoError(t, row.Scan(&exists), "checking index %s existence", idxName)
+				require.True(t, exists, "expected index %s to exist", idxName)
+			}
+
+			// Assert unexpected indexes do not exist
+			for _, idxName := range tt.unexpectedIndexes {
+				var exists bool
+				row := db.QueryRow(ctx, sqlf.Sprintf("SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = %s)", idxName))
+				require.NoError(t, row.Scan(&exists), "checking index %s absence", idxName)
+				require.False(t, exists, "expected index %s to not exist", idxName)
+			}
 		})
 	}
 }

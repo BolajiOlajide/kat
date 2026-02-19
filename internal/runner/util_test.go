@@ -59,6 +59,49 @@ func TestComputeSQLQueryFromTemplate(t *testing.T) {
 	}
 }
 
+func TestHasMultipleStatements(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    *sqlf.Query
+		expected bool
+	}{
+		{
+			name:     "single statement without trailing semicolon",
+			query:    sqlf.Sprintf("CREATE INDEX CONCURRENTLY idx_foo ON bar (baz)"),
+			expected: false,
+		},
+		{
+			name:     "single statement with trailing semicolon",
+			query:    sqlf.Sprintf("CREATE INDEX CONCURRENTLY idx_foo ON bar (baz);"),
+			expected: false,
+		},
+		{
+			name:     "multiple statements",
+			query:    sqlf.Sprintf("CREATE INDEX CONCURRENTLY idx_foo ON bar (baz); CREATE INDEX CONCURRENTLY idx_qux ON bar (qux);"),
+			expected: true,
+		},
+		{
+			name:     "multiple statements without trailing semicolon",
+			query:    sqlf.Sprintf("CREATE INDEX idx_foo ON bar (baz); CREATE INDEX idx_qux ON bar (qux)"),
+			expected: true,
+		},
+		{
+			name:     "empty query",
+			query:    sqlf.Sprintf(""),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasMultipleStatements(tt.query)
+			if got != tt.expected {
+				t.Errorf("hasMultipleStatements() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestComputeMigrationLogColumns(t *testing.T) {
 	tests := []struct {
 		name      string

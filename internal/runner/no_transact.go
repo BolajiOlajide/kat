@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/BolajiOlajide/kat/internal/database"
@@ -19,12 +20,13 @@ type noTransactTx struct {
 
 var _ database.Tx = &noTransactTx{}
 
-func (n *noTransactTx) Close() error                                        { return n.db.Close() }
-func (n *noTransactTx) Ping(ctx context.Context) error                      { return n.db.Ping(ctx) }
-func (n *noTransactTx) PingWithRetry(ctx context.Context, c, d int) error   { return n.db.PingWithRetry(ctx, c, d) }
-func (n *noTransactTx) Exec(ctx context.Context, q *sqlf.Query) error       { return n.db.Exec(ctx, q) }
-func (n *noTransactTx) QueryRow(ctx context.Context, q *sqlf.Query) *sql.Row { return n.db.QueryRow(ctx, q) }
+func (n *noTransactTx) Exec(ctx context.Context, q *sqlf.Query) error         { return n.db.Exec(ctx, q) }
+func (n *noTransactTx) QueryRow(ctx context.Context, q *sqlf.Query) *sql.Row   { return n.db.QueryRow(ctx, q) }
 func (n *noTransactTx) Query(ctx context.Context, q *sqlf.Query) (*sql.Rows, error) { return n.db.Query(ctx, q) }
-func (n *noTransactTx) WithTransact(ctx context.Context, f func(database.Tx) error) error { return n.db.WithTransact(ctx, f) }
-func (n *noTransactTx) Commit() error                                       { return nil }
-func (n *noTransactTx) Rollback() error                                     { return nil }
+func (n *noTransactTx) Ping(ctx context.Context) error                         { return n.db.Ping(ctx) }
+func (n *noTransactTx) PingWithRetry(ctx context.Context, c, d int) error      { return n.db.PingWithRetry(ctx, c, d) }
+func (n *noTransactTx) WithTransact(_ context.Context, _ func(database.Tx) error) error { return errors.New("transactions not supported for no-transaction execution") }
+
+func (n *noTransactTx) Close() error    { return errors.New("close not supported for no-transaction execution") }
+func (n *noTransactTx) Commit() error   { return errors.New("commit not supported for no-transaction execution") }
+func (n *noTransactTx) Rollback() error { return errors.New("rollback not supported for no-transaction execution") }
