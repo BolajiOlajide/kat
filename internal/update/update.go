@@ -103,6 +103,20 @@ func CheckForUpdates() (bool, string, string, error) {
 
 // DownloadAndReplace downloads a new binary and replaces the current one
 func DownloadAndReplace(downloadURL, execPath string, progressWriter io.Writer) error {
+	execDir := filepath.Dir(execPath)
+	execName := filepath.Base(execPath)
+
+	// Preflight: verify we can write to the destination directory before downloading.
+	probe, err := os.CreateTemp(execDir, execName+".probe-*")
+	if err != nil {
+		if os.IsPermission(err) {
+			return errors.Newf("permission denied: cannot write to %s — try running with sudo", execDir)
+		}
+		return errors.Wrap(err, "cannot write to destination directory")
+	}
+	_ = probe.Close()
+	_ = os.Remove(probe.Name())
+
 	// Create a temporary directory to work in
 	tempDir, err := os.MkdirTemp("", "kat-update-*")
 	if err != nil {
@@ -157,21 +171,45 @@ func DownloadAndReplace(downloadURL, execPath string, progressWriter io.Writer) 
 		return errors.Wrap(err, "failed to make binary executable")
 	}
 
-	// On Unix-like systems, we can replace the binary directly
-	execDir := filepath.Dir(execPath)
-	execName := filepath.Base(execPath)
-
-	// Move the new executable to the same directory as the current one
+	// Copy the new binary into the destination directory first.
+	// os.Rename cannot cross filesystem boundaries (e.g. from /var/folders to
+	// /usr/local/bin on macOS), so we copy into the same directory and then
+	// do an atomic same-directory rename.
 	newExecPath := filepath.Join(execDir, execName+".new")
-	if err := os.Rename(tempBinaryPath, newExecPath); err != nil {
-		return errors.Wrap(err, "failed to move new executable to destination directory")
+	if err := copyFile(tempBinaryPath, newExecPath, 0755); err != nil {
+		if os.IsPermission(err) {
+			return errors.Newf("permission denied: cannot write to %s — try running with sudo", execDir)
+		}
+		return errors.Wrap(err, "failed to copy new executable to destination directory")
 	}
 
-	// Replace the current executable with the new one
+	// Replace the current executable with the new one (atomic within same directory)
 	if err := os.Rename(newExecPath, execPath); err != nil {
+		_ = os.Remove(newExecPath)
+		if os.IsPermission(err) {
+			return errors.Newf("permission denied: cannot replace %s — try running with sudo", execPath)
+		}
 		return errors.Wrap(err, "failed to replace current executable")
 	}
 
 	fmt.Fprintf(progressWriter, "%sUpdate successfully installed%s\n", output.StyleSuccess, output.StyleReset)
 	return nil
+}
+
+// copyFile copies src to dst with the given permission bits.
+func copyFile(src, dst string, mode os.FileMode) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	return err
 }
