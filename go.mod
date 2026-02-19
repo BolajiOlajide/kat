@@ -1,8 +1,6 @@
 module github.com/BolajiOlajide/kat
 
-go 1.23.0
-
-toolchain go1.23.2
+go 1.24.3
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1

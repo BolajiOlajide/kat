@@ -112,10 +112,22 @@ When creating migrations with dependencies:
 
 ## Transaction Behavior
 
-- Each migration runs in its **own transaction**
+- Each migration runs in its **own transaction** by default
 - If a migration fails, the transaction **automatically rolls back**
 - The database remains in its **previous state**
 - **No partial applications** - migrations are all-or-nothing
+
+### Non-Transactional Migrations
+
+Some operations like `CREATE INDEX CONCURRENTLY` cannot run inside a transaction. Set `no_transaction: true` in `metadata.yaml` to opt out:
+
+```yaml
+name: add_index_concurrently
+timestamp: 1679012345
+no_transaction: true
+```
+
+> ⚠️ Non-transactional migrations have no automatic rollback on failure. See [Migration docs](/migration/#non-transactional-migrations) for details.
 
 ## Migration Tracking
 

@@ -72,3 +72,21 @@ var transactionsSchema = dbSchema{
 	DataType:    "bigint",
 	IsNullable:  "NO",
 }
+
+var ordersSchema = []dbSchema{
+	{
+		TableSchema: "public",
+		TableName:   "orders",
+		ColumnName:  "id",
+		DataType:    "bigint",
+		IsNullable:  "NO",
+	},
+	{
+		TableSchema:   "public",
+		TableName:     "orders",
+		ColumnName:    "status",
+		DataType:      "text",
+		IsNullable:    "NO",
+		ColumnDefault: NonZeroPtr("'pending'::text"),
+	},
+}
