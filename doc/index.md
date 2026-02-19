@@ -49,6 +49,11 @@ grid_navigation:
       cta: Learn more
       url: '/config'
 
+    - title: Editor Support
+      excerpt: Autocompletion and validation for VS Code and Zed
+      cta: Learn more
+      url: '/editor-support'
+
     - title: Migration Commands
       excerpt: Create and run migrations (up/down)
       cta: Learn more

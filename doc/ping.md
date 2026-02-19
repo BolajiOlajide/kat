@@ -9,8 +9,8 @@ comments: false
 permalink: /ping/
 page_nav:
     prev:
-        content: Configuration
-        url: '/config'
+        content: Editor Support
+        url: '/editor-support'
     next: 
         content: Migration
         url: '/migration'
