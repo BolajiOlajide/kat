@@ -1,5 +1,6 @@
+# yaml-language-server: $schema=../../schemas/kat.conf.schema.json
 migration:
-  - tablename: migrations
+  tablename: migrations
 
 database:
-  - url: postgres://bolaji:andela@localhost/kat?sslmode=true
+  url: postgres://bolaji:andela@localhost/kat?sslmode=true

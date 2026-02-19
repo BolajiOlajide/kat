@@ -1,11 +1,12 @@
+# yaml-language-server: $schema=../../schemas/kat.conf.schema.json
 migration:
-  - tablename: migrations
-  - directory: migrations
+  tablename: migrations
+  directory: migrations
 
 database:
-  - user: bolaji
-  - password: andela
-  - name: kat
-  - port: 5432
-  - sslmode: disable
-  - host: localhost
+  user: bolaji
+  password: [REDACTED:password]
+  name: kat
+  port: "5432"
+  sslmode: disable
+  host: localhost

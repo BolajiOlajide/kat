@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BolajiOlajide/kat/schemas/metadata.schema.json",
+  "title": "Kat Migration Metadata",
+  "description": "Metadata file for a single Kat database migration (metadata.yaml)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "timestamp"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the migration (e.g. 'create_users_table')"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Unix timestamp (seconds) when this migration was created. Used as the unique identifier for the migration."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of what this migration does"
+    },
+    "parents": {
+      "type": "array",
+      "description": "Unix timestamps of parent migrations that must be applied before this one. Defines the dependency graph.",
+      "items": {
+        "type": "integer",
+        "description": "Unix timestamp of a parent migration"
+      }
+    },
+    "no_transaction": {
+      "type": "boolean",
+      "description": "When true, this migration runs outside of a database transaction. Required for operations that cannot run inside a transaction, such as CREATE INDEX CONCURRENTLY.",
+      "default": false
+    }
+  }
+}

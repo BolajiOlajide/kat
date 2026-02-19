@@ -11,9 +11,9 @@ page_nav:
     prev:
         content: Initialization
         url: '/init'
-    next: 
-        content: Database Connectivity
-        url: '/ping'
+    next:
+        content: Editor Support
+        url: '/editor-support'
 ---
 
 # Understanding Kat Configuration
