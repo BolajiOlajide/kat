@@ -1,5 +1,7 @@
 # Kat
 
+<a href="https://www.producthunt.com/products/kat-3?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-kat-3" target="_blank" rel="noopener noreferrer"><img alt="Kat - Database migrations for the top 1% | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1081944&amp;theme=neutral&amp;t=1771554914075"></a>
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/BolajiOlajide/kat/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/BolajiOlajide/kat)](https://goreportcard.com/report/github.com/BolajiOlajide/kat)
 [![Go Reference](https://pkg.go.dev/badge/github.com/BolajiOlajide/kat.svg)](https://pkg.go.dev/github.com/BolajiOlajide/kat)
@@ -103,7 +105,7 @@ kat add create_users_table
 # Developer A: Add email feature (Kat determines create_users_table as parent)
 kat add add_email_column
 
-# Developer B: Add posts feature (creates parallel branch from users table)  
+# Developer B: Add posts feature (creates parallel branch from users table)
 kat add create_posts_table
 
 # Developer C: Add full-text search (Kat resolves dependencies automatically)
