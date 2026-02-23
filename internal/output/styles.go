@@ -41,7 +41,7 @@ var (
 	StylePending = Fg256Color(4)
 	// StyleInfo is a style that is used for informational messages.
 	StyleInfo       = StylePending
-	StyleWarning    = Fg256Color(124)
+	StyleWarning    = Fg256Color(220)
 	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
 	StyleSuccess    = Fg256Color(2)
 	StyleSuggestion = Fg256Color(244)
