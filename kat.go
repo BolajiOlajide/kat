@@ -92,9 +92,11 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 		m.logger = loggr.NewDefault()
 	}
 
-	m.db, err = database.New(connStr, m.logger)
-	if err != nil {
-		return nil, err
+	if m.db == nil {
+		m.db, err = database.New(connStr, m.logger)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return m, nil

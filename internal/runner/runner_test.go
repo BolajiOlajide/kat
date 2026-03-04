@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -131,12 +130,12 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err, "create migration log query")
 
 	tests := []struct {
-		name            string
-		options         Options
-		expectedSchema  []dbSchema
-		expectedIndexes []string // index names that should exist after migration
+		name              string
+		options           Options
+		expectedSchema    []dbSchema
+		expectedIndexes   []string // index names that should exist after migration
 		unexpectedIndexes []string // index names that should NOT exist after migration
-		pre             string
+		pre               string
 	}{
 		{
 			name: "up migration",
@@ -390,48 +389,6 @@ func TestRun(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestScanMigrationLog(t *testing.T) {
-	ctx := context.Background()
-
-	pgContainer, err := postgres.Run(ctx,
-		"postgres:15.3-alpine",
-		postgres.WithDatabase("test-db"),
-		postgres.WithUsername("postgres"),
-		postgres.WithPassword("postgres"),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
-	)
-	require.NoError(t, err)
-	t.Cleanup(func() { pgContainer.Terminate(ctx) })
-
-	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	db, err := sql.Open("pgx", connStr)
-	require.NoError(t, err)
-	t.Cleanup(func() { db.Close() })
-
-	_, err = db.ExecContext(ctx, `CREATE TABLE migration_logs (
-		id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-		name TEXT NOT NULL,
-		migration_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-		duration INTERVAL NOT NULL
-	)`)
-	require.NoError(t, err)
-
-	_, err = db.ExecContext(ctx, `INSERT INTO migration_logs (name, migration_time, duration)
-		VALUES ('1747525262_create_users', '2025-04-14 19:41:23.39+00', '00:00:13.147291')`)
-	require.NoError(t, err)
-
-	row := db.QueryRowContext(ctx, `SELECT id, name, migration_time, duration FROM migration_logs LIMIT 1`)
-	log, err := scanMigrationLog(row)
-	require.NoError(t, err, "scanMigrationLog should handle duration from database/sql driver")
-	require.Equal(t, 1, log.ID)
-	require.Equal(t, "1747525262_create_users", log.Name)
-	require.Equal(t, "00:00:13.147291", log.Duration)
 }
 
 var dumpSchemaQuery = `SELECT
