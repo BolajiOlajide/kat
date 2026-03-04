@@ -9,6 +9,7 @@ require (
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.5.4
 	github.com/keegancsmith/sqlf v1.1.1
+	github.com/lib/pq v1.11.2
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0

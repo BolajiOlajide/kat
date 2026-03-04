@@ -129,12 +129,12 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err, "create migration log query")
 
 	tests := []struct {
-		name            string
-		options         Options
-		expectedSchema  []dbSchema
-		expectedIndexes []string // index names that should exist after migration
+		name              string
+		options           Options
+		expectedSchema    []dbSchema
+		expectedIndexes   []string // index names that should exist after migration
 		unexpectedIndexes []string // index names that should NOT exist after migration
-		pre             string
+		pre               string
 	}{
 		{
 			name: "up migration",
