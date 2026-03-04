@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
