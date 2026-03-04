@@ -11,7 +11,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net/url"
 	"strconv"
 	"time"
@@ -23,11 +23,6 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
-
-func init() {
-	// Seed random number generator for jitter in retry logic
-	rand.Seed(time.Now().UnixNano())
-}
 
 var _ DB = &database{}
 
@@ -122,9 +117,8 @@ func (d *database) Exec(ctx context.Context, query *sqlf.Query) error {
 }
 
 func (d *database) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
-	ctx, cancel := d.withDefaultTimeout(ctx, d.config.DefaultTimeout)
-	defer cancel()
-	
+	// Don't apply default timeout here — the context must remain valid
+	// until the caller calls Row.Scan()
 	return d.db.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
 
@@ -159,7 +153,6 @@ func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
 			panic(p)
 		}
 	}()
-
 
 
 	if err = f(&databaseTx{tx: tx, bindVar: d.bindVar, config: d.config}); err != nil {
@@ -245,7 +238,7 @@ func withRetry(ctx context.Context, l loggr.Logger, retryCount int, initialDelay
 			l.Error(fmt.Sprintf("Transient error detected: %s. Retrying in %v (attempt %d/%d)...", err.Error(), delay, attempt+1, retryCount))
 			
 			// Add jitter to prevent thundering herd
-			jitter := time.Duration(rand.Int63n(int64(delay / 4)))
+			jitter := time.Duration(rand.Int64N(int64(delay / 4)))
 			actualDelay := delay + jitter
 			
 			// Sleep with context cancellation awareness
@@ -355,16 +348,10 @@ func New(url string, logger loggr.Logger) (DB, error) {
 }
 
 func NewWithDB(db *sql.DB, logger loggr.Logger) (DB, error) {
-	// Apply default pool configuration to provided db
-	config := DefaultDBConfig()
-	db.SetMaxOpenConns(config.MaxOpenConns)
-	db.SetMaxIdleConns(config.MaxIdleConns)
-	db.SetConnMaxLifetime(config.ConnMaxLifetime)
-	
 	return &database{
-		db:      db, 
-		bindVar: sqlf.PostgresBindVar, 
+		db:      db,
+		bindVar: sqlf.PostgresBindVar,
 		logger:  logger,
-		config:  config,
+		config:  DefaultDBConfig(),
 	}, nil
 }

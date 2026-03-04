@@ -41,6 +41,7 @@ package kat
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 
 	"github.com/cockroachdb/errors"
@@ -59,6 +60,7 @@ type Logger loggr.Logger
 // are respected when applying or rolling back migrations.
 type Migration struct {
 	db                 database.DB
+	sqlDB              *sql.DB
 	definitions        *graph.Graph
 	migrationTableName string
 	logger             Logger
@@ -102,7 +104,11 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 			dbConfig = database.DefaultDBConfig()
 		}
 
-		m.db, err = database.NewWithConfig(connStr, m.logger, dbConfig)
+		if m.sqlDB != nil {
+			m.db, err = database.NewWithDB(m.sqlDB, m.logger)
+		} else {
+			m.db, err = database.NewWithConfig(connStr, m.logger, dbConfig)
+		}
 		if err != nil {
 			return nil, err
 		}

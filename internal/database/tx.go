@@ -12,8 +12,6 @@ import (
 // Ensure databaseTx implements the Tx interface
 var _ Tx = &databaseTx{}
 
-
-
 type databaseTx struct {
 	tx      *sql.Tx
 	bindVar sqlf.BindVar
@@ -51,9 +49,8 @@ func (d *databaseTx) Exec(ctx context.Context, query *sqlf.Query) error {
 }
 
 func (d *databaseTx) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
-	ctx, cancel := d.withDefaultTimeout(ctx, d.config.DefaultTimeout)
-	defer cancel()
-	
+	// Don't apply default timeout here — the context must remain valid
+	// until the caller calls Row.Scan()
 	return d.tx.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
 }
 
