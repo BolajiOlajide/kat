@@ -152,8 +152,14 @@ func ping(c *cli.Context) error {
 
 	logger := loggr.NewDefault()
 
+	// Build database config from config file
+	dbConfig, err := migration.DBConfigFromCfg(cfg)
+	if err != nil {
+		return err
+	}
+
 	// Create DB connection
-	db, err := database.New(dbConn, logger)
+	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}

@@ -55,3 +55,15 @@ database:
 #   # Complete PostgreSQL connection string
 #   url: postgres://user:password@localhost/dbname?sslmode=disable
 {{- end }}
+
+# Database connection tuning (optional)
+# These settings control timeouts and connection pool behavior.
+# Values use Go duration format: "10s", "5m", "1h", etc.
+# Uncomment and adjust as needed for your environment.
+#
+#   connect_timeout: "10s"        # Timeout for establishing connections
+#   statement_timeout: "5m"       # Timeout for individual SQL statements
+#   max_open_conns: 10            # Maximum number of open connections
+#   max_idle_conns: 5             # Maximum number of idle connections
+#   conn_max_lifetime: "30m"      # Maximum connection lifetime
+#   default_timeout: "60s"        # Default timeout for operations
