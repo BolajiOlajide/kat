@@ -32,7 +32,7 @@ type DBConfig struct {
 	ConnectTimeout   time.Duration // Timeout for establishing connections
 	StatementTimeout time.Duration // Timeout for individual SQL statements
 
-	// Connection pool settings  
+	// Connection pool settings
 	MaxOpenConns    int           // Maximum number of open connections
 	MaxIdleConns    int           // Maximum number of idle connections
 	ConnMaxLifetime time.Duration // Maximum connection lifetime
@@ -111,7 +111,7 @@ func (d *database) Ping(ctx context.Context) error {
 func (d *database) Exec(ctx context.Context, query *sqlf.Query) error {
 	ctx, cancel := d.withDefaultTimeout(ctx, d.config.DefaultTimeout)
 	defer cancel()
-	
+
 	_, err := d.db.ExecContext(ctx, query.Query(d.bindVar), query.Args()...)
 	return err
 }
@@ -153,7 +153,6 @@ func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
 			panic(p)
 		}
 	}()
-
 
 	if err = f(&databaseTx{tx: tx, bindVar: d.bindVar, config: d.config}); err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -236,11 +235,11 @@ func withRetry(ctx context.Context, l loggr.Logger, retryCount int, initialDelay
 		// Don't sleep on the last attempt
 		if attempt < retryCount {
 			l.Error(fmt.Sprintf("Transient error detected: %s. Retrying in %v (attempt %d/%d)...", err.Error(), delay, attempt+1, retryCount))
-			
+
 			// Add jitter to prevent thundering herd
 			jitter := time.Duration(rand.Int64N(int64(delay / 4)))
 			actualDelay := delay + jitter
-			
+
 			// Sleep with context cancellation awareness
 			select {
 			case <-time.After(actualDelay):
@@ -266,17 +265,16 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 	}
 
 	query := u.Query()
-	
+
 	// Only add connect_timeout if not already present and timeout > 0
 	if connectTimeout > 0 && query.Get("connect_timeout") == "" {
-		timeoutSeconds := int(connectTimeout.Seconds())
-		if timeoutSeconds < 1 {
-			timeoutSeconds = 1 // Minimum 1 second
-		}
+		timeoutSeconds := max(int(connectTimeout.Seconds()),
+			// Minimum 1 second
+			1)
 		query.Set("connect_timeout", strconv.Itoa(timeoutSeconds))
 	}
 
-	// Only add statement_timeout if not already present and timeout > 0  
+	// Only add statement_timeout if not already present and timeout > 0
 	if statementTimeout > 0 && query.Get("statement_timeout") == "" {
 		timeoutMs := int(statementTimeout.Milliseconds())
 		query.Set("statement_timeout", strconv.Itoa(timeoutMs))
@@ -313,7 +311,7 @@ func NewWithConfig(url string, logger loggr.Logger, config DBConfig) (DB, error)
 		ctx = context.Background()
 	}
 	defer cancel()
-	
+
 	if err := db.PingContext(ctx); err != nil {
 		db.Close()
 		timeoutMsg := "no timeout"
@@ -323,12 +321,12 @@ func NewWithConfig(url string, logger loggr.Logger, config DBConfig) (DB, error)
 		return nil, errors.Wrapf(err, "failed to establish database connection %s", timeoutMsg)
 	}
 
-	logger.Info(fmt.Sprintf("Database connection established - Pool: max_open=%d, max_idle=%d, max_lifetime=%v", 
+	logger.Info(fmt.Sprintf("Database connection established - Pool: max_open=%d, max_idle=%d, max_lifetime=%v",
 		config.MaxOpenConns, config.MaxIdleConns, config.ConnMaxLifetime))
 
 	d := &database{
-		db:      db, 
-		bindVar: sqlf.PostgresBindVar, 
+		db:      db,
+		bindVar: sqlf.PostgresBindVar,
 		logger:  logger,
 		config:  config,
 	}
