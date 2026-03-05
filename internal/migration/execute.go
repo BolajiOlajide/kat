@@ -13,6 +13,41 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
+// DBConfigFromCfg builds a database.DBConfig from the config file's timeout settings.
+// Falls back to database.DefaultDBConfig() for any unset fields.
+func DBConfigFromCfg(cfg types.Config) (database.DBConfig, error) {
+	dbConfig := database.DefaultDBConfig()
+
+	timeouts, err := cfg.Database.ParseDBTimeouts()
+	if err != nil {
+		return dbConfig, err
+	}
+	if timeouts == nil {
+		return dbConfig, nil
+	}
+
+	if timeouts.ConnectTimeout > 0 {
+		dbConfig.ConnectTimeout = timeouts.ConnectTimeout
+	}
+	if timeouts.StatementTimeout > 0 {
+		dbConfig.StatementTimeout = timeouts.StatementTimeout
+	}
+	if timeouts.MaxOpenConns > 0 {
+		dbConfig.MaxOpenConns = timeouts.MaxOpenConns
+	}
+	if timeouts.MaxIdleConns > 0 {
+		dbConfig.MaxIdleConns = timeouts.MaxIdleConns
+	}
+	if timeouts.ConnMaxLifetime > 0 {
+		dbConfig.ConnMaxLifetime = timeouts.ConnMaxLifetime
+	}
+	if timeouts.DefaultTimeout > 0 {
+		dbConfig.DefaultTimeout = timeouts.DefaultTimeout
+	}
+
+	return dbConfig, nil
+}
+
 // Up is the command that runs the up migration operation.
 func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 	count := c.Int("count")
@@ -35,9 +70,14 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
+	dbConfig, err := DBConfigFromCfg(cfg)
+	if err != nil {
+		return err
+	}
+
 	logger := loggr.NewDefault()
 
-	db, err := database.New(dbConn, logger)
+	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}
@@ -67,9 +107,14 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 		return err
 	}
 
+	dbConfig, err := DBConfigFromCfg(cfg)
+	if err != nil {
+		return err
+	}
+
 	logger := loggr.NewDefault()
 
-	db, err := database.New(dbConn, logger)
+	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}

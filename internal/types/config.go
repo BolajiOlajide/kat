@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 )
@@ -44,6 +45,64 @@ type DatabaseInfo struct {
 	Host     string `yaml:"host,omitempty"`
 
 	URL string `yaml:"url,omitempty"`
+
+	ConnectTimeout   string `yaml:"connect_timeout,omitempty"`
+	StatementTimeout string `yaml:"statement_timeout,omitempty"`
+	MaxOpenConns     int    `yaml:"max_open_conns,omitempty"`
+	MaxIdleConns     int    `yaml:"max_idle_conns,omitempty"`
+	ConnMaxLifetime  string `yaml:"conn_max_lifetime,omitempty"`
+	DefaultTimeout   string `yaml:"default_timeout,omitempty"`
+}
+
+// DBTimeouts holds parsed database timeout and pool configuration.
+type DBTimeouts struct {
+	ConnectTimeout   time.Duration
+	StatementTimeout time.Duration
+	MaxOpenConns     int
+	MaxIdleConns     int
+	ConnMaxLifetime  time.Duration
+	DefaultTimeout   time.Duration
+}
+
+// ParseDBTimeouts parses the timeout string fields into a DBTimeouts struct.
+// Returns nil if no timeout fields are configured.
+func (d *DatabaseInfo) ParseDBTimeouts() (*DBTimeouts, error) {
+	if d.ConnectTimeout == "" && d.StatementTimeout == "" && d.ConnMaxLifetime == "" && d.DefaultTimeout == "" && d.MaxOpenConns == 0 && d.MaxIdleConns == 0 {
+		return nil, nil
+	}
+
+	t := &DBTimeouts{
+		MaxOpenConns: d.MaxOpenConns,
+		MaxIdleConns: d.MaxIdleConns,
+	}
+
+	var err error
+	if d.ConnectTimeout != "" {
+		t.ConnectTimeout, err = time.ParseDuration(d.ConnectTimeout)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid connect_timeout %q", d.ConnectTimeout)
+		}
+	}
+	if d.StatementTimeout != "" {
+		t.StatementTimeout, err = time.ParseDuration(d.StatementTimeout)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid statement_timeout %q", d.StatementTimeout)
+		}
+	}
+	if d.ConnMaxLifetime != "" {
+		t.ConnMaxLifetime, err = time.ParseDuration(d.ConnMaxLifetime)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid conn_max_lifetime %q", d.ConnMaxLifetime)
+		}
+	}
+	if d.DefaultTimeout != "" {
+		t.DefaultTimeout, err = time.ParseDuration(d.DefaultTimeout)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid default_timeout %q", d.DefaultTimeout)
+		}
+	}
+
+	return t, nil
 }
 
 func (d *DatabaseInfo) ConnString() (string, error) {

@@ -62,6 +62,7 @@ type Migration struct {
 	definitions        *graph.Graph
 	migrationTableName string
 	logger             Logger
+	dbConfig           *DBConfig
 }
 
 // New creates a new Migration instance with a database connection string.
@@ -93,7 +94,14 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 	}
 
 	if m.db == nil {
-		m.db, err = database.New(connStr, m.logger)
+		var dbConfig database.DBConfig
+		if m.dbConfig != nil {
+			dbConfig = *m.dbConfig
+		} else {
+			dbConfig = database.DefaultDBConfig()
+		}
+
+		m.db, err = database.NewWithConfig(connStr, m.logger, dbConfig)
 		if err != nil {
 			return nil, err
 		}

@@ -11,7 +11,7 @@ package graph
 
 import (
 	"io"
-	"sort"
+	"slices"
 
 	"github.com/cockroachdb/errors"
 	graphlib "github.com/dominikbraun/graph"
@@ -77,7 +77,7 @@ func (g *Graph) Leaves() ([]int64, error) {
 			leaves = append(leaves, v)
 		}
 	}
-	sort.Slice(leaves, func(i, j int) bool { return leaves[i] < leaves[j] })
+	slices.Sort(leaves)
 	return leaves, nil
 }
 

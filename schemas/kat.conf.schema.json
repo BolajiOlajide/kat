@@ -61,6 +61,38 @@
           "description": "SSL connection mode",
           "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"],
           "default": "disable"
+        },
+        "connect_timeout": {
+          "type": "string",
+          "description": "Timeout for establishing database connections (e.g., '10s', '1m')",
+          "examples": ["10s", "30s", "1m"]
+        },
+        "statement_timeout": {
+          "type": "string",
+          "description": "Timeout for individual SQL statements (e.g., '5m', '1h')",
+          "examples": ["5m", "10m", "1h"]
+        },
+        "max_open_conns": {
+          "type": "integer",
+          "description": "Maximum number of open database connections",
+          "minimum": 1,
+          "default": 10
+        },
+        "max_idle_conns": {
+          "type": "integer",
+          "description": "Maximum number of idle database connections",
+          "minimum": 0,
+          "default": 5
+        },
+        "conn_max_lifetime": {
+          "type": "string",
+          "description": "Maximum lifetime of a database connection (e.g., '30m', '1h')",
+          "examples": ["30m", "1h"]
+        },
+        "default_timeout": {
+          "type": "string",
+          "description": "Default timeout for database operations without an explicit context deadline (e.g., '60s', '5m')",
+          "examples": ["60s", "5m"]
         }
       },
       "oneOf": [
