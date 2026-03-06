@@ -322,27 +322,28 @@ func getDriverAndBindVar(driver string) (string, sqlf.BindVar, error) {
 
 // NewWithConfig returns a new database instance with custom configuration
 func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
-	sqlDriverName, bindVar, err := getDriverAndBindVar(driver)
+	dd, err := newDriver(driver)
+	// sqlDriverName, bindVar, err := getDriverAndBindVar(driver)
 	if err != nil {
 		return nil, err
 	}
 
 	finalURL := url
 	// Only apply DSN timeout enrichment for PostgreSQL
-	if driver == "postgres" {
+	if dd.IsPostgres() {
 		finalURL, err = ensureTimeoutsInDSN(url, config.ConnectTimeout, config.StatementTimeout)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	db, err := sql.Open(sqlDriverName, finalURL)
+	db, err := sql.Open(dd.DriverName(), finalURL)
 	if err != nil {
 		return nil, err
 	}
 
 	// SQLite allows only one writer at a time
-	if driver == "sqlite3" || driver == "sqlite" {
+	if dd.IsSQLite() {
 		db.SetMaxOpenConns(1)
 	} else {
 		// Configure connection pool for non-SQLite drivers
@@ -375,7 +376,7 @@ func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB
 
 	d := &database{
 		db:      db,
-		bindVar: bindVar,
+		bindVar: dd.BindVar(),
 		logger:  logger,
 		config:  config,
 	}
