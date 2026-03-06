@@ -44,7 +44,7 @@ func TestSQLiteDriver(t *testing.T) {
 	// Test querying
 	selectQuery := sqlf.Sprintf("SELECT COUNT(*) FROM test_table")
 	row := db.QueryRow(context.Background(), selectQuery)
-	
+
 	var count int
 	err = row.Scan(&count)
 	require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestSQLiteTransaction(t *testing.T) {
 	// Verify the data was inserted
 	selectQuery := sqlf.Sprintf("SELECT name FROM test_table")
 	row := db.QueryRow(context.Background(), selectQuery)
-	
+
 	var name string
 	err = row.Scan(&name)
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestSQLiteTransaction(t *testing.T) {
 
 func TestSQLiteErrorHandling(t *testing.T) {
 	logger := loggr.NewDefault()
-	
+
 	// Test with invalid database path - connection establishment pings and should fail
 	_, err := New("sqlite3", "/dev/null/test.db", logger) // /dev/null is not a directory
 	require.Error(t, err)
@@ -108,7 +108,7 @@ func TestSQLiteConcurrency(t *testing.T) {
 
 	// Test concurrent writes don't fail with "database is locked"
 	done := make(chan bool, 2)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		go func(id int) {
 			defer func() { done <- true }()
 			insertQuery := sqlf.Sprintf("INSERT INTO test_concurrent (data) VALUES (%s)", fmt.Sprintf("data_%d", id))
@@ -124,7 +124,7 @@ func TestSQLiteConcurrency(t *testing.T) {
 	// Verify data was inserted
 	selectQuery := sqlf.Sprintf("SELECT COUNT(*) FROM test_concurrent")
 	row := db.QueryRow(context.Background(), selectQuery)
-	
+
 	var count int
 	err = row.Scan(&count)
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestBothSQLiteDriverNames(t *testing.T) {
 
 func TestUnsupportedDriver(t *testing.T) {
 	logger := loggr.NewDefault()
-	
+
 	// Test with unsupported driver
 	_, err := New("mysql", "test.db", logger)
 	require.Error(t, err)
