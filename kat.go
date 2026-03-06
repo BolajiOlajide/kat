@@ -61,19 +61,19 @@ func detectDriverFromURL(connStr string) string {
 	if connStr == "" {
 		return "postgres" // default
 	}
-	
+
 	// Try to parse as URL
 	parsedURL, err := url.Parse(connStr)
 	if err != nil {
 		// If URL parsing fails, check for SQLite file patterns
-		if strings.HasSuffix(connStr, ".sqlite") || 
-		   strings.HasSuffix(connStr, ".db") || 
-		   connStr == ":memory:" {
+		if strings.HasSuffix(connStr, ".sqlite") ||
+			strings.HasSuffix(connStr, ".db") ||
+			connStr == ":memory:" {
 			return "sqlite3"
 		}
 		return "postgres" // default on parse error
 	}
-	
+
 	scheme := strings.ToLower(parsedURL.Scheme)
 	switch scheme {
 	case "sqlite", "file":
@@ -82,9 +82,9 @@ func detectDriverFromURL(connStr string) string {
 		return "postgres"
 	default:
 		// Check for SQLite file patterns when no recognizable scheme
-		if strings.HasSuffix(connStr, ".sqlite") || 
-		   strings.HasSuffix(connStr, ".db") || 
-		   connStr == ":memory:" {
+		if strings.HasSuffix(connStr, ".sqlite") ||
+			strings.HasSuffix(connStr, ".db") ||
+			connStr == ":memory:" {
 			return "sqlite3"
 		}
 		return "postgres" // default for unknown schemes
@@ -139,7 +139,7 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 		}
 
 		driver := detectDriverFromURL(connStr)
-		m.db, err = database.NewWithConfig(driver, connStr, m.logger, dbConfig)
+		m.db, err = database.NewWithConfig(cfg.Database.Driver, connStr, m.logger, dbConfig)
 		if err != nil {
 			return nil, err
 		}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/cockroachdb/errors"
 )
 
@@ -29,8 +30,8 @@ func (c *Config) SetDefault() {
 		c.Migration.TableName = "migrations"
 	}
 
-	if c.Database.Driver == "" {
-		c.Database.Driver = "postgres"
+	if !c.Database.Driver.Valid() {
+		c.Database.Driver = dbdriver.PostgresDriver
 	}
 
 	// We assume when the URL isn't provided, the user has specified database credentials manually
@@ -41,7 +42,6 @@ func (c *Config) SetDefault() {
 }
 
 type DatabaseInfo struct {
-	Driver   string `yaml:"driver,omitempty"`
 	User     string `yaml:"user,omitempty"`
 	Password string `yaml:"password,omitempty"`
 	Name     string `yaml:"name,omitempty"`
@@ -49,7 +49,10 @@ type DatabaseInfo struct {
 	SSLMode  string `yaml:"sslmode,omitempty"`
 	Host     string `yaml:"host,omitempty"`
 
-	URL string `yaml:"url,omitempty"`
+	Driver dbdriver.DatabaseDriver `yaml:"driver,omitempty"`
+
+	Path string `yaml:"path,omitempty"`
+	URL  string `yaml:"url,omitempty"`
 
 	ConnectTimeout   string `yaml:"connect_timeout,omitempty"`
 	StatementTimeout string `yaml:"statement_timeout,omitempty"`
@@ -111,6 +114,15 @@ func (d *DatabaseInfo) ParseDBTimeouts() (*DBTimeouts, error) {
 }
 
 func (d *DatabaseInfo) ConnString() (string, error) {
+	// For SQLite, return the database file path directly
+	if d.Driver.IsSQLite() {
+		if d.Path == "" {
+			return "", errors.New("database path is required for SQLite")
+		}
+		return d.Path, nil
+	}
+
+	// at this point, we can assume the driver is postgres
 	if d.URL != "" {
 		err := d.parseURL()
 		if err != nil {
@@ -118,15 +130,7 @@ func (d *DatabaseInfo) ConnString() (string, error) {
 		}
 	}
 
-	// For SQLite, return the database file path directly
-	if d.Driver == "sqlite3" {
-		if d.Name == "" {
-			return "", errors.New("database name/path is required for SQLite")
-		}
-		return d.Name, nil
-	}
-
-	// For PostgreSQL, use the traditional connection string format
+	// if a url isn't provided, use the traditional connection string format
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", d.Host, d.Port, d.User, d.Password, d.Name, d.SSLMode), nil
 }
 

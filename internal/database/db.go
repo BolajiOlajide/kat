@@ -23,6 +23,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	_ "modernc.org/sqlite"
 
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
 
@@ -308,8 +309,8 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 }
 
 // NewWithConfig returns a new database instance with custom configuration
-func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
-	dd, err := newDriver(driver)
+func NewWithConfig(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
+	dd, err := dbdriver.ParseDBDriver(drv)
 	if err != nil {
 		return nil, err
 	}
