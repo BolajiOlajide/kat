@@ -240,7 +240,7 @@ var kat = &cli.App{
 
 		errMsg := err.Error()
 		if errMsg != "" {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("%s%s%s", output.StyleFailure, errMsg, output.StyleReset))
+			fmt.Fprintf(os.Stderr, "%s%s%s\n", output.StyleFailure, errMsg, output.StyleReset)
 		}
 
 		// Determine exit code

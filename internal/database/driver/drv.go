@@ -10,10 +10,9 @@ type DatabaseDriver string
 const (
 	PostgresDriver DatabaseDriver = "postgres"
 	SqliteDriver   DatabaseDriver = "sqlite"
-	UnknownDriver  DatabaseDriver = ""
 )
 
-func (d string) (DatabaseDriver, error) {
+func ParseDBDriver(d string) (DatabaseDriver, error) {
 	switch d {
 	// we want to always default to postgres when the driver is not specified
 	// this is to enforce backward compatibility

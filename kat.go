@@ -42,54 +42,16 @@ package kat
 import (
 	"context"
 	"io/fs"
-	"net/url"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
-
-type Logger loggr.Logger
-
-// detectDriverFromURL attempts to detect the database driver from a connection string URL
-func detectDriverFromURL(connStr string) string {
-	if connStr == "" {
-		return "postgres" // default
-	}
-
-	// Try to parse as URL
-	parsedURL, err := url.Parse(connStr)
-	if err != nil {
-		// If URL parsing fails, check for SQLite file patterns
-		if strings.HasSuffix(connStr, ".sqlite") ||
-			strings.HasSuffix(connStr, ".db") ||
-			connStr == ":memory:" {
-			return "sqlite3"
-		}
-		return "postgres" // default on parse error
-	}
-
-	scheme := strings.ToLower(parsedURL.Scheme)
-	switch scheme {
-	case "sqlite", "file":
-		return "sqlite3"
-	case "postgresql", "postgres", "postgresql+ssl":
-		return "postgres"
-	default:
-		// Check for SQLite file patterns when no recognizable scheme
-		if strings.HasSuffix(connStr, ".sqlite") ||
-			strings.HasSuffix(connStr, ".db") ||
-			connStr == ":memory:" {
-			return "sqlite3"
-		}
-		return "postgres" // default for unknown schemes
-	}
-}
 
 // Migration manages database schema migrations using a graph-based approach.
 // It tracks applied migrations in a database table and ensures dependencies
@@ -98,8 +60,8 @@ type Migration struct {
 	db                 database.DB
 	definitions        *graph.Graph
 	migrationTableName string
-	logger             Logger
-	dbConfig           *DBConfig
+	logger             loggr.Logger
+	dbConfig           *database.DBConfig
 }
 
 // New creates a new Migration instance with a database connection string.
@@ -118,10 +80,10 @@ type Migration struct {
 // Available options:
 //   - WithLogger(logger): Provide a custom logger implementation
 //   - WithSqlDB(db): Use an existing *sql.DB connection (connStr will be ignored)
-func New(connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
+func New(drv dbdriver.DatabaseDriver, connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	// We pass a nil database DB instance because of a chicken and egg problem. We need the logger instance to create the database wrapper.
 	// We want to use whatever logger the user provides as this might not always be the default logger.
-	m, err := newMigration(nil, f, migrationTableName, options...)
+	m, err := newMigration(f, migrationTableName, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +100,11 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 			dbConfig = database.DefaultDBConfig()
 		}
 
-		driver := detectDriverFromURL(connStr)
-		m.db, err = database.NewWithConfig(cfg.Database.Driver, connStr, m.logger, dbConfig)
+		if !drv.Valid() {
+			return nil, errors.New("driver must be one of `sqlite` or `postgres`")
+		}
+
+		m.db, err = database.NewWithConfig(drv, connStr, m.logger, dbConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -148,14 +113,13 @@ func New(connStr string, f fs.FS, migrationTableName string, options ...Migratio
 	return m, nil
 }
 
-func newMigration(db database.DB, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
+func newMigration(f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
 	}
 
 	m := &Migration{
-		db:                 db,
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             loggr.NewDefault(),

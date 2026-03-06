@@ -309,12 +309,8 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 }
 
 // NewWithConfig returns a new database instance with custom configuration
-func NewWithConfig(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
-	dd, err := dbdriver.ParseDBDriver(drv)
-	if err != nil {
-		return nil, err
-	}
-
+func NewWithConfig(dd dbdriver.DatabaseDriver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
+	var err error
 	finalURL := url
 	// Only apply DSN timeout enrichment for PostgreSQL
 	if dd.IsPostgres() {
@@ -376,8 +372,8 @@ func NewWithConfig(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger,
 }
 
 // New returns a new instance of the database with default configuration
-func New(driver, url string, logger loggr.Logger) (DB, error) {
-	return NewWithConfig(driver, url, logger, DefaultDBConfig())
+func New(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger) (DB, error) {
+	return NewWithConfig(drv, url, logger, DefaultDBConfig())
 }
 
 func NewWithDB(db *sql.DB, bindVar sqlf.BindVar, logger loggr.Logger) (DB, error) {

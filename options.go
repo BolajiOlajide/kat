@@ -75,7 +75,7 @@ func WithSqlDBAndDriver(db *sql.DB, driver string) MigrationOption {
 		default:
 			bindVar = sqlf.PostgresBindVar // default to postgres for backward compatibility
 		}
-		
+
 		d, err := database.NewWithDB(db, bindVar, m.logger)
 		if err != nil {
 			return err
@@ -83,14 +83,6 @@ func WithSqlDBAndDriver(db *sql.DB, driver string) MigrationOption {
 		m.db = d
 		return nil
 	}
-}
-
-// DBConfig holds database connection configuration options  
-type DBConfig = database.DBConfig
-
-// DefaultDBConfig returns sensible default configuration for Kat migrations
-func DefaultDBConfig() DBConfig {
-	return database.DefaultDBConfig()
 }
 
 // WithDBConfig configures the migration to use custom database settings.
@@ -110,7 +102,7 @@ func DefaultDBConfig() DBConfig {
 //	m, err := kat.New(connStr, fsys, "migrations",
 //		kat.WithDBConfig(config),
 //	)
-func WithDBConfig(config DBConfig) MigrationOption {
+func WithDBConfig(config database.DBConfig) MigrationOption {
 	return func(m *Migration) error {
 		m.dbConfig = &config
 		return nil
@@ -128,7 +120,7 @@ func WithDBConfig(config DBConfig) MigrationOption {
 func WithConnectTimeout(timeout time.Duration) MigrationOption {
 	return func(m *Migration) error {
 		if m.dbConfig == nil {
-			config := DefaultDBConfig()
+			config := database.DefaultDBConfig()
 			m.dbConfig = &config
 		}
 		m.dbConfig.ConnectTimeout = timeout
@@ -147,7 +139,7 @@ func WithConnectTimeout(timeout time.Duration) MigrationOption {
 func WithPoolLimits(maxOpen, maxIdle int, connMaxLifetime time.Duration) MigrationOption {
 	return func(m *Migration) error {
 		if m.dbConfig == nil {
-			config := DefaultDBConfig()
+			config := database.DefaultDBConfig()
 			m.dbConfig = &config
 		}
 		m.dbConfig.MaxOpenConns = maxOpen
