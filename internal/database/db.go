@@ -307,23 +307,9 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 	return u.String(), nil
 }
 
-func getDriverAndBindVar(driver string) (string, sqlf.BindVar, error) {
-	switch driver {
-	// we want to always default to postgres when the driver is not specified
-	// this is to enforce backward compatibility
-	case "postgres", "":
-		return "pgx", sqlf.PostgresBindVar, nil
-	case "sqlite3", "sqlite":
-		return "sqlite", sqlf.SimpleBindVar, nil
-	default:
-		return "", nil, errors.Newf("unsupported database driver: %s", driver)
-	}
-}
-
 // NewWithConfig returns a new database instance with custom configuration
 func NewWithConfig(driver, url string, logger loggr.Logger, config DBConfig) (DB, error) {
 	dd, err := newDriver(driver)
-	// sqlDriverName, bindVar, err := getDriverAndBindVar(driver)
 	if err != nil {
 		return nil, err
 	}
