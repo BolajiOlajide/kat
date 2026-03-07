@@ -30,3 +30,5 @@ private.key
 
 PLAN.md
 examples/demo/kat
+/kat.db
+/kat.conf.yaml

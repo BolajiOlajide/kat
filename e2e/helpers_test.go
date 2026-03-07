@@ -21,18 +21,19 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	_ "modernc.org/sqlite"
 	"gopkg.in/yaml.v3"
+	_ "modernc.org/sqlite"
 
 	"github.com/BolajiOlajide/kat"
 )
 
 var (
-	katBinary      string
+	katBinary       string
 	sharedPGConnStr string
 )
 
 func TestMain(m *testing.M) {
+	ctx := context.Background()
 	tmp, err := os.MkdirTemp("", "kat-e2e-*")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create temp dir: %v\n", err)
@@ -46,7 +47,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("go", "build", "-o", katBinary, "./cmd/kat")
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", katBinary, "./cmd/kat")
 	cmd.Dir = projectRoot
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -55,9 +56,8 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
 	pgContainer, err := postgres.Run(ctx,
-		"postgres:15.3-alpine",
+		"postgres:17-alpine",
 		postgres.WithDatabase("kat_e2e"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("postgres"),

@@ -6,15 +6,17 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/BolajiOlajide/kat/internal/constants"
-	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
+
+	"github.com/BolajiOlajide/kat/internal/constants"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
+	"github.com/BolajiOlajide/kat/internal/output"
 )
 
 // GenerateConfigFile creates a configuration file from the init.tmpl template
 // using the provided parameters
-func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, dbName, dbPort, dbHost, dbSSLMode string) ([]byte, error) {
+func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, dbName, dbPort, dbHost, dbSSLMode, path string, driver dbdriver.DatabaseDriver) ([]byte, error) {
 	// Load the embedded template
 	tmpl, err := template.ParseFS(templatesFS, "templates/init.tmpl")
 	if err != nil {
@@ -33,6 +35,8 @@ func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, d
 		DBHost        string
 		DBSSLMode     string
 		UseConnString bool
+		Path          string
+		Driver        dbdriver.DatabaseDriver
 	}{
 		TableName:     tableName,
 		Directory:     directory,
@@ -44,6 +48,8 @@ func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, d
 		DBHost:        dbHost,
 		DBSSLMode:     dbSSLMode,
 		UseConnString: databaseURL != "",
+		Path:          path,
+		Driver:        driver,
 	}
 
 	// Execute the template
@@ -69,6 +75,11 @@ func Init(c *cli.Context) (err error) {
 		return errors.New("kat is already initialized")
 	}
 
+	driver, err := dbdriver.ParseDBDriver(c.String("driver"))
+	if err != nil {
+		return errors.Wrap(err, "parsing driver flag")
+	}
+
 	// Get parameters from CLI context
 	tableName := c.String("tableName")
 	if tableName == "" {
@@ -76,6 +87,10 @@ func Init(c *cli.Context) (err error) {
 	}
 
 	databaseURL := c.String("databaseURL")
+	path := c.String("path")
+	if path == "" {
+		path = fmt.Sprintf("file:///%s/kat.db", wd)
+	}
 
 	directory := c.String("directory")
 	if directory == "" {
@@ -117,6 +132,7 @@ func Init(c *cli.Context) (err error) {
 	configContent, err := GenerateConfigFile(
 		tableName, directory, databaseURL,
 		dbUser, dbPassword, dbName, dbPort, dbHost, dbSSLMode,
+		path, driver,
 	)
 	if err != nil {
 		return errors.Wrap(err, "generating config file")
