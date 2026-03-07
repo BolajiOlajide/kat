@@ -124,6 +124,14 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 		return nil, err
 	}
 
+	if f == nil {
+		return nil, errors.New("migrations must be provided")
+	}
+
+	if connStr == "" {
+		return nil, errors.New("connection string must be provided")
+	}
+
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
@@ -182,6 +190,10 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		return nil, err
 	}
 
+	if f == nil {
+		return nil, errors.New("migrations filesystem is required")
+	}
+
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
@@ -196,7 +208,7 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		return nil, errors.New("database configuration options (WithDBConfig, WithConnectTimeout, WithPoolLimits) are not supported with NewWithDB; configure the *sql.DB directly")
 	}
 
-	db, err := database.NewWithDB(sqlDB, drv.BindVar(), cfg.logger)
+	db, err := database.NewWithDB(sqlDB, drv, cfg.logger)
 	if err != nil {
 		return nil, err
 	}

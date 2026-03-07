@@ -58,10 +58,10 @@ func DefaultDBConfig() DBConfig {
 }
 
 type database struct {
-	db      *sql.DB
-	bindVar sqlf.BindVar
-	logger  loggr.Logger
-	config  DBConfig
+	db     *sql.DB
+	logger loggr.Logger
+	config DBConfig
+	driver dbdriver.DatabaseDriver
 }
 
 // withDefaultTimeout wraps a context with a default timeout if none is set and timeout is > 0
@@ -105,6 +105,10 @@ func (d *database) PingWithRetry(ctx context.Context, retryCount int, retryDelay
 	})
 }
 
+func (d *database) Driver() dbdriver.DatabaseDriver {
+	return d.driver
+}
+
 // Ping checks if the database connection is alive
 func (d *database) Ping(ctx context.Context) error {
 	// Regular ping with no retries
@@ -115,21 +119,21 @@ func (d *database) Exec(ctx context.Context, query *sqlf.Query) error {
 	ctx, cancel := d.withDefaultTimeout(ctx, d.config.DefaultTimeout)
 	defer cancel()
 
-	_, err := d.db.ExecContext(ctx, query.Query(d.bindVar), query.Args()...)
+	_, err := d.db.ExecContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 	return err
 }
 
 func (d *database) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	// Don't apply default timeout here — the context must remain valid
 	// until the caller calls Row.Scan()
-	return d.db.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
+	return d.db.QueryRowContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 }
 
 func (d *database) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	// For Query operations, we don't apply default timeout as the context
 	// needs to remain valid for the lifetime of the Rows
 	// Users should set their own timeout if needed
-	return d.db.QueryContext(ctx, query.Query(d.bindVar), query.Args()...)
+	return d.db.QueryContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 }
 
 func (d *database) Close() error {
@@ -157,7 +161,7 @@ func (d *database) WithTransact(ctx context.Context, f func(Tx) error) error {
 		}
 	}()
 
-	if err = f(&databaseTx{tx: tx, bindVar: d.bindVar, config: d.config}); err != nil {
+	if err = f(&databaseTx{tx: tx, driver: d.driver, config: d.config}); err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return errors.Wrapf(err, "transaction failed; rollback also failed: %v", rbErr)
 		}
@@ -379,10 +383,10 @@ func NewWithConfig(dd dbdriver.DatabaseDriver, url string, logger loggr.Logger, 
 		config.MaxOpenConns, config.MaxIdleConns, config.ConnMaxLifetime))
 
 	d := &database{
-		db:      db,
-		bindVar: dd.BindVar(),
-		logger:  logger,
-		config:  config,
+		db:     db,
+		logger: logger,
+		config: config,
+		driver: dd,
 	}
 
 	if config.StatementTimeout > 0 {
@@ -397,11 +401,11 @@ func New(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger) (DB, erro
 	return NewWithConfig(drv, url, logger, DefaultDBConfig())
 }
 
-func NewWithDB(db *sql.DB, bindVar sqlf.BindVar, logger loggr.Logger) (DB, error) {
+func NewWithDB(db *sql.DB, driver dbdriver.DatabaseDriver, logger loggr.Logger) (DB, error) {
 	return &database{
-		db:      db,
-		bindVar: bindVar,
-		logger:  logger,
-		config:  DefaultDBConfig(),
+		db:     db,
+		driver: driver,
+		logger: logger,
+		config: DefaultDBConfig(),
 	}, nil
 }

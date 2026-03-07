@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/keegancsmith/sqlf"
 )
 
@@ -14,6 +15,7 @@ type DB interface {
 	Exec(context.Context, *sqlf.Query) error
 	QueryRow(context.Context, *sqlf.Query) *sql.Row
 	Query(context.Context, *sqlf.Query) (*sql.Rows, error)
+	Driver() dbdriver.DatabaseDriver
 
 	WithTransact(ctx context.Context, f func(Tx) error) error
 }

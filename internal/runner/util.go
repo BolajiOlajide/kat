@@ -29,12 +29,11 @@ func computeMigrationLogColumns(tableName string) []*sqlf.Query {
 	return cols
 }
 
-func computeCreateMigrationLogQuery(tableName string) (string, error) {
+func computeCreateMigrationLogQuery(tableName string, isSQLite bool) (string, error) {
+	if isSQLite {
+		return computeSQLQueryFromTemplate(tableName, createMigrationTableSQLiteTmpl)
+	}
 	return computeSQLQueryFromTemplate(tableName, createMigrationTableTmpl)
-}
-
-func computeCreateMigrationLogQuerySQLite(tableName string) (string, error) {
-	return computeSQLQueryFromTemplate(tableName, createMigrationTableSQLiteTmpl)
 }
 
 func computeSelectMigrationLogQuery(tableName string) (string, error) {

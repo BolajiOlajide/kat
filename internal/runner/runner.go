@@ -47,11 +47,9 @@ func (r *runner) executeMigrationLogQuery(ctx context.Context, options Options) 
 	tblName := options.MigrationInfo.TableName
 	var createMigrationLogQuery string
 	var err error
-	if options.Driver.IsSQLite() {
-		createMigrationLogQuery, err = computeCreateMigrationLogQuerySQLite(tblName)
-	} else {
-		createMigrationLogQuery, err = computeCreateMigrationLogQuery(tblName)
-	}
+	var driver = r.db.Driver()
+
+	createMigrationLogQuery, err = computeCreateMigrationLogQuery(tblName, driver.IsSQLite())
 	if err != nil {
 		return errors.Wrap(err, "compute migration log query")
 	}
@@ -95,7 +93,8 @@ func (r *runner) getAppliedMigrations(ctx context.Context, tblName string) (map[
 	return logsMap, rows.Err()
 }
 
-func (r *runner) computePostExecutionQuery(fileName, tblName string, duration time.Duration, migrationStart time.Time, operation types.MigrationOperationType, isSQLite bool) (*sqlf.Query, error) {
+func (r *runner) computePostExecutionQuery(fileName, tblName string, duration time.Duration, migrationStart time.Time, operation types.MigrationOperationType) (*sqlf.Query, error) {
+	drv := r.db.Driver()
 	// For UP operations, insert a log entry
 	// For DOWN operations, remove the log entry
 	if operation.IsUpMigration() {
@@ -107,7 +106,7 @@ func (r *runner) computePostExecutionQuery(fileName, tblName string, duration ti
 		migrationTime := migrationStart.Format("2006-01-02 15:04:05.999-07")
 
 		var durationQuery *sqlf.Query
-		if isSQLite {
+		if drv.IsSQLite() {
 			durationQuery = sqlf.Sprintf("%s", duration.String())
 		} else {
 			durationQuery = sqlf.Sprintf("%d * interval '1 millisecond'", duration.Milliseconds())
@@ -208,7 +207,7 @@ func (r *runner) Run(ctx context.Context, options Options) error {
 			}
 			duration := time.Since(start)
 
-			query, err := r.computePostExecutionQuery(definition.FileName(), options.MigrationInfo.TableName, duration, start, options.Operation, options.Driver.IsSQLite())
+			query, err := r.computePostExecutionQuery(definition.FileName(), options.MigrationInfo.TableName, duration, start, options.Operation)
 			if err := tx.Exec(ctx, query); err != nil {
 				return err
 			}
@@ -290,7 +289,7 @@ func (r *runner) runNoTransaction(ctx context.Context, definition types.Definiti
 
 	// Record the migration log in a transaction for bookkeeping integrity
 	if err := r.db.WithTransact(ctx, func(tx database.Tx) error {
-		query, err := r.computePostExecutionQuery(definition.FileName(), options.MigrationInfo.TableName, duration, start, options.Operation, options.Driver.IsSQLite())
+		query, err := r.computePostExecutionQuery(definition.FileName(), options.MigrationInfo.TableName, duration, start, options.Operation)
 		if err != nil {
 			return err
 		}
