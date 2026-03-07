@@ -30,10 +30,11 @@ func computeMigrationLogColumns(tableName string) []*sqlf.Query {
 }
 
 func computeCreateMigrationLogQuery(tableName string, isSQLite bool) (string, error) {
+	tmpl := createMigrationTableTmpl
 	if isSQLite {
-		return computeSQLQueryFromTemplate(tableName, createMigrationTableSQLiteTmpl)
+		tmpl = createMigrationTableSQLiteTmpl
 	}
-	return computeSQLQueryFromTemplate(tableName, createMigrationTableTmpl)
+	return computeSQLQueryFromTemplate(tableName, tmpl)
 }
 
 func computeSelectMigrationLogQuery(tableName string) (string, error) {

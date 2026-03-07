@@ -43,8 +43,7 @@ func NewRunner(ctx context.Context, db database.DB, logger loggr.Logger) (Runner
 	return &runner{db: db, logger: logger}, nil
 }
 
-func (r *runner) executeMigrationLogQuery(ctx context.Context, options Options) error {
-	tblName := options.MigrationInfo.TableName
+func (r *runner) executeMigrationLogQuery(ctx context.Context, tblName string) error {
 	var createMigrationLogQuery string
 	var err error
 	var driver = r.db.Driver()
@@ -136,7 +135,7 @@ func (r *runner) computePostExecutionQuery(fileName, tblName string, duration ti
 }
 
 func (r *runner) Run(ctx context.Context, options Options) error {
-	if err := r.executeMigrationLogQuery(ctx, options); err != nil {
+	if err := r.executeMigrationLogQuery(ctx, options.MigrationInfo.TableName); err != nil {
 		return err
 	}
 
