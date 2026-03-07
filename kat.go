@@ -1,4 +1,4 @@
-// Package kat provides a lightweight, powerful CLI tool for PostgreSQL database migrations.
+// Package kat provides a lightweight, powerful CLI tool for PostgreSQL and SQLite database migrations.
 //
 // Kat allows you to manage your database schema using SQL files with a simple,
 // intuitive workflow. It features:
@@ -12,16 +12,14 @@
 //
 // Basic usage:
 //
-//	// Create a new migration manager
-//	m, err := kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations")
+//	// Create a new migration manager with a connection string
+//	m, err := kat.New(kat.PostgresDriver, "postgres://user:pass@localhost:5432/db", fsys, "migrations")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //
-//	// Create with custom logger
-//	m, err = kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations",
-//		kat.WithLogger(customLogger),
-//	)
+//	// Or use an existing *sql.DB connection
+//	m, err = kat.NewWithDB(kat.PostgresDriver, db, fsys, "migrations")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
@@ -41,17 +39,38 @@ package kat
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/BolajiOlajide/kat/internal/database"
-	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
+
+// migrationConfig holds configuration gathered from options before construction.
+type migrationConfig struct {
+	logger   Logger
+	dbConfig *DBConfig
+}
+
+func defaultConfig() migrationConfig {
+	return migrationConfig{
+		logger: loggr.NewDefault(),
+	}
+}
+
+func applyOptions(opts []MigrationOption, cfg *migrationConfig) error {
+	for _, opt := range opts {
+		if err := opt(cfg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // Migration manages database schema migrations using a graph-based approach.
 // It tracks applied migrations in a database table and ensures dependencies
@@ -60,78 +79,90 @@ type Migration struct {
 	db                 database.DB
 	definitions        *graph.Graph
 	migrationTableName string
-	logger             loggr.Logger
-	dbConfig           *database.DBConfig
+	logger             Logger
 }
 
-// New creates a new Migration instance with a database connection string.
-// It establishes a connection to the PostgreSQL database and loads migration
-// definitions from the provided filesystem.
+// New creates a new Migration instance that opens a database connection from a connection string.
 //
 // Parameters:
-//   - connStr: PostgreSQL connection string (e.g., "postgres://user:pass@host:port/db")
+//   - drv: Database driver (kat.PostgresDriver or kat.SQLiteDriver)
+//   - connStr: Database connection string (e.g., "postgres://user:pass@host:port/db")
 //   - f: Filesystem containing migration directories
 //   - migrationTableName: Name of the table to track applied migrations
-//   - options: Optional configuration options (WithLogger, WithSqlDB)
-//
-// Returns a Migration instance or an error if connection fails or migration
-// definitions cannot be loaded.
-//
-// Available options:
-//   - WithLogger(logger): Provide a custom logger implementation
-//   - WithSqlDB(db): Use an existing *sql.DB connection (connStr will be ignored)
-func New(drv dbdriver.DatabaseDriver, connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
-	// We pass a nil database DB instance because of a chicken and egg problem. We need the logger instance to create the database wrapper.
-	// We want to use whatever logger the user provides as this might not always be the default logger.
-	m, err := newMigration(f, migrationTableName, options...)
-	if err != nil {
-		return nil, err
+//   - options: Optional configuration (WithLogger, WithDBConfig, WithConnectTimeout, WithPoolLimits)
+func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
+	if !drv.Valid() {
+		return nil, errors.New("driver must be one of `sqlite` or `postgres`")
 	}
 
-	if m.logger == nil {
-		m.logger = loggr.NewDefault()
-	}
-
-	if m.db == nil {
-		var dbConfig database.DBConfig
-		if m.dbConfig != nil {
-			dbConfig = *m.dbConfig
-		} else {
-			dbConfig = database.DefaultDBConfig()
-		}
-
-		if !drv.Valid() {
-			return nil, errors.New("driver must be one of `sqlite` or `postgres`")
-		}
-
-		m.db, err = database.NewWithConfig(drv, connStr, m.logger, dbConfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return m, nil
-}
-
-func newMigration(f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
 		return nil, err
 	}
 
-	m := &Migration{
+	cfg := defaultConfig()
+	if err := applyOptions(options, &cfg); err != nil {
+		return nil, err
+	}
+
+	dbConfig := DefaultDBConfig()
+	if cfg.dbConfig != nil {
+		dbConfig = *cfg.dbConfig
+	}
+
+	db, err := database.NewWithConfig(drv, connStr, cfg.logger, dbConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Migration{
+		db:                 db,
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
-		logger:             loggr.NewDefault(),
+		logger:             cfg.logger,
+	}, nil
+}
+
+// NewWithDB creates a new Migration instance using an existing *sql.DB connection.
+// The caller is responsible for managing the connection's lifecycle and pool settings.
+// For SQLite connections, kat will set MaxOpenConns to 1 to avoid "database is locked" errors.
+//
+// Parameters:
+//   - drv: Database driver (kat.PostgresDriver or kat.SQLiteDriver)
+//   - sqlDB: An existing *sql.DB connection
+//   - f: Filesystem containing migration directories
+//   - migrationTableName: Name of the table to track applied migrations
+//   - options: Optional configuration (WithLogger)
+func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
+	if !drv.Valid() {
+		return nil, errors.New("driver must be one of `sqlite` or `postgres`")
 	}
 
-	for _, opt := range options {
-		if err := opt(m); err != nil {
-			return nil, err
-		}
+	definitions, err := migration.ComputeDefinitions(f)
+	if err != nil {
+		return nil, err
 	}
 
-	return m, nil
+	cfg := defaultConfig()
+	if err := applyOptions(options, &cfg); err != nil {
+		return nil, err
+	}
+
+	if drv.IsSQLite() {
+		sqlDB.SetMaxOpenConns(1)
+	}
+
+	db, err := database.NewWithDB(sqlDB, drv.BindVar(), cfg.logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Migration{
+		db:                 db,
+		definitions:        definitions,
+		migrationTableName: migrationTableName,
+		logger:             cfg.logger,
+	}, nil
 }
 
 // Up applies pending migrations to the database.
@@ -141,9 +172,6 @@ func newMigration(f fs.FS, migrationTableName string, options ...MigrationOption
 // Parameters:
 //   - ctx: Context for the operation (supports cancellation)
 //   - count: Number of migrations to apply (0 means apply all pending)
-//
-// Returns an error if count is negative, if any migration fails, or if
-// database operations fail. Applied migrations are tracked in the migration table.
 func (m *Migration) Up(ctx context.Context, count int) error {
 	if count < 0 {
 		return errors.New("count cannot be a negative number")
@@ -160,10 +188,6 @@ func (m *Migration) Up(ctx context.Context, count int) error {
 // Parameters:
 //   - ctx: Context for the operation (supports cancellation)
 //   - count: Number of migrations to roll back (must be positive)
-//
-// Returns an error if count is not a positive number, if any rollback fails,
-// or if database operations fail. Successfully rolled back migrations are
-// removed from the migration table.
 func (m *Migration) Down(ctx context.Context, count int) error {
 	if count < 1 {
 		return errors.New("count must be a non-zero positive number")

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 )
 
@@ -21,7 +22,7 @@ func TestSQLiteDriver(t *testing.T) {
 	logger := loggr.NewDefault()
 
 	// Test creating a new SQLite database connection
-	db, err := New("sqlite3", dbPath, logger)
+	db, err := New(dbdriver.SqliteDriver, dbPath, logger)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -57,7 +58,7 @@ func TestSQLiteTransaction(t *testing.T) {
 	dbPath := filepath.Join(tempDir, "test_tx.db")
 
 	logger := loggr.NewDefault()
-	db, err := New("sqlite3", dbPath, logger)
+	db, err := New(dbdriver.SqliteDriver, dbPath, logger)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -87,7 +88,7 @@ func TestSQLiteErrorHandling(t *testing.T) {
 	logger := loggr.NewDefault()
 
 	// Test with invalid database path - connection establishment pings and should fail
-	_, err := New("sqlite3", "/dev/null/test.db", logger) // /dev/null is not a directory
+	_, err := New(dbdriver.SqliteDriver, "/dev/null/test.db", logger) // /dev/null is not a directory
 	require.Error(t, err)
 }
 
@@ -97,7 +98,7 @@ func TestSQLiteConcurrency(t *testing.T) {
 	dbPath := filepath.Join(tempDir, "concurrent_test.db")
 
 	logger := loggr.NewDefault()
-	db, err := New("sqlite3", dbPath, logger)
+	db, err := New(dbdriver.SqliteDriver, dbPath, logger)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -135,20 +136,20 @@ func TestBothSQLiteDriverNames(t *testing.T) {
 	tempDir := t.TempDir()
 	logger := loggr.NewDefault()
 
-	// Test that both "sqlite3" and "sqlite" work
-	for _, driver := range []string{"sqlite3", "sqlite"} {
-		dbPath := filepath.Join(tempDir, fmt.Sprintf("test_%s.db", driver))
-		db, err := New(driver, dbPath, logger)
-		require.NoError(t, err, "Should accept driver: %s", driver)
+	// Test that both "sqlite3" and "sqlite" work via ParseDBDriver
+	for _, driverName := range []string{"sqlite3", "sqlite"} {
+		dbPath := filepath.Join(tempDir, fmt.Sprintf("test_%s.db", driverName))
+		drv, err := dbdriver.ParseDBDriver(driverName)
+		require.NoError(t, err, "Should parse driver: %s", driverName)
+		db, err := New(drv, dbPath, logger)
+		require.NoError(t, err, "Should accept driver: %s", driverName)
 		db.Close()
 	}
 }
 
 func TestUnsupportedDriver(t *testing.T) {
-	logger := loggr.NewDefault()
-
-	// Test with unsupported driver
-	_, err := New("mysql", "test.db", logger)
+	// Test with unsupported driver via ParseDBDriver
+	_, err := dbdriver.ParseDBDriver("mysql")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported database driver: mysql")
 }

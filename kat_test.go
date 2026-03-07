@@ -45,7 +45,7 @@ func TestScanMigrationLog(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
 
-	kmo, err := New(connStr, migrations, "migration_logs", WithSqlDB(db))
+	kmo, err := NewWithDB(PostgresDriver, db, migrations, "migration_logs")
 	require.NoError(t, err)
 
 	require.NoError(t, kmo.Up(ctx, 0))
@@ -66,7 +66,7 @@ func TestScanMigrationLog(t *testing.T) {
 		"1651234569/metadata.yaml": {Data: []byte("name: create_comments\ntimestamp: 1651234569\nparents: [1651234568]\n")},
 	}
 
-	kmo, err = New("", expandedMigrations, "migration_logs", WithSqlDB(db))
+	kmo, err = NewWithDB(PostgresDriver, db, expandedMigrations, "migration_logs")
 	require.NoError(t, err)
 	require.NoError(t, kmo.Up(ctx, 0)) // only applies the new pending one
 }

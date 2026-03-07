@@ -64,7 +64,7 @@ func (d DatabaseDriver) DriverName() string {
 	case PostgresDriver:
 		return "pgx"
 	case SqliteDriver:
-		return "sqlite3"
+		return "sqlite"
 	default:
 		return ""
 	}
