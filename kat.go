@@ -1,4 +1,4 @@
-// Package kat provides a lightweight, powerful CLI tool for PostgreSQL and SQLite database migrations.
+// Package kat provides a lightweight, embeddable library for PostgreSQL and SQLite database migrations.
 //
 // Kat allows you to manage your database schema using SQL files with a simple,
 // intuitive workflow. It features:
@@ -80,6 +80,18 @@ type Migration struct {
 	definitions        *graph.Graph
 	migrationTableName string
 	logger             Logger
+	ownsDB             bool
+}
+
+// Close releases resources held by the Migration instance.
+// If the Migration was created with New (kat owns the connection), the database
+// connection is closed. If created with NewWithDB (caller owns the connection),
+// this is a no-op — the caller is responsible for closing the *sql.DB.
+func (m *Migration) Close() error {
+	if m == nil || !m.ownsDB {
+		return nil
+	}
+	return m.db.Close()
 }
 
 // New creates a new Migration instance that opens a database connection from a connection string.
@@ -93,6 +105,9 @@ type Migration struct {
 func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	if !drv.Valid() {
 		return nil, errors.New("driver must be one of `sqlite` or `postgres`")
+	}
+	if migrationTableName == "" {
+		return nil, errors.New("migrationTableName cannot be empty")
 	}
 
 	definitions, err := migration.ComputeDefinitions(f)
@@ -120,22 +135,33 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             cfg.logger,
+		ownsDB:             true,
 	}, nil
 }
 
 // NewWithDB creates a new Migration instance using an existing *sql.DB connection.
-// The caller is responsible for managing the connection's lifecycle and pool settings.
-// For SQLite connections, kat will set MaxOpenConns to 1 to avoid "database is locked" errors.
+// The caller is responsible for managing the connection's lifecycle, pool settings,
+// and closing the *sql.DB. For SQLite, the caller should set db.SetMaxOpenConns(1)
+// to avoid "database is locked" errors.
+//
+// Database configuration options (WithDBConfig, WithConnectTimeout, WithPoolLimits)
+// are not supported with NewWithDB — configure the *sql.DB directly instead.
 //
 // Parameters:
 //   - drv: Database driver (kat.PostgresDriver or kat.SQLiteDriver)
-//   - sqlDB: An existing *sql.DB connection
+//   - sqlDB: An existing *sql.DB connection (must not be nil)
 //   - f: Filesystem containing migration directories
 //   - migrationTableName: Name of the table to track applied migrations
 //   - options: Optional configuration (WithLogger)
 func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, options ...MigrationOption) (*Migration, error) {
 	if !drv.Valid() {
-		return nil, errors.New("driver must be one of `sqlite` or `postgres`")
+		return nil, errors.Newf("driver must be one of `%s` or `%s`", PostgresDriver, SQLiteDriver)
+	}
+	if sqlDB == nil {
+		return nil, errors.New("a non-nil database connection is required")
+	}
+	if migrationTableName == "" {
+		return nil, errors.New("migrationTableName cannot be empty")
 	}
 
 	definitions, err := migration.ComputeDefinitions(f)
@@ -148,8 +174,8 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		return nil, err
 	}
 
-	if drv.IsSQLite() {
-		sqlDB.SetMaxOpenConns(1)
+	if cfg.dbConfig != nil {
+		return nil, errors.New("database configuration options (WithDBConfig, WithConnectTimeout, WithPoolLimits) are not supported with NewWithDB; configure the *sql.DB directly")
 	}
 
 	db, err := database.NewWithDB(sqlDB, drv.BindVar(), cfg.logger)

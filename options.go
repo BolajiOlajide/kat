@@ -2,6 +2,8 @@ package kat
 
 import (
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 // MigrationOption is a function that configures migration settings.
@@ -19,6 +21,9 @@ type MigrationOption func(*migrationConfig) error
 //	)
 func WithLogger(logger Logger) MigrationOption {
 	return func(cfg *migrationConfig) error {
+		if logger == nil {
+			return errors.New("logger cannot be nil")
+		}
 		cfg.logger = logger
 		return nil
 	}
