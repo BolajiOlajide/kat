@@ -23,6 +23,39 @@ var migrations = fstest.MapFS{
 	"1651234568/metadata.yaml": {Data: []byte("name: create_posts\ntimestamp: 1651234568\nparents: [1651234567]\n")},
 }
 
+func TestValidateTableName(t *testing.T) {
+	tests := []struct {
+		name      string
+		tableName string
+		wantErr   bool
+	}{
+		{name: "simple lowercase", tableName: "migrations", wantErr: false},
+		{name: "with underscore", tableName: "migration_logs", wantErr: false},
+		{name: "leading underscore", tableName: "_private", wantErr: false},
+		{name: "mixed case", tableName: "MyTable", wantErr: false},
+		{name: "letter and digit", tableName: "t1", wantErr: false},
+		{name: "starts with number", tableName: "1starts_with_number", wantErr: true},
+		{name: "has dashes", tableName: "has-dashes", wantErr: true},
+		{name: "has spaces", tableName: "has spaces", wantErr: true},
+		{name: "has dots", tableName: "has.dots", wantErr: true},
+		{name: "quoted", tableName: `"quoted"`, wantErr: true},
+		{name: "semicolon", tableName: "semi;colon", wantErr: true},
+		{name: "sql injection attempt", tableName: "drop;--", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateTableName(tt.tableName)
+			if tt.wantErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "invalid migration table name")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestScanMigrationLog(t *testing.T) {
 	ctx := context.Background()
 

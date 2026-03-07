@@ -120,6 +120,19 @@ func TestEnsureTimeoutsInDSN(t *testing.T) {
 				require.Equal(t, "10", u.Query().Get("connect_timeout"))
 			},
 		},
+		{
+			name:             "delegates to key=value path for key=value DSN",
+			connURL:          "host=localhost port=5432 dbname=testdb",
+			connectTimeout:   10 * time.Second,
+			statementTimeout: 30 * time.Second,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "connect_timeout=10")
+				require.Contains(t, result, "statement_timeout=30000")
+				require.Contains(t, result, "host=localhost")
+				require.Contains(t, result, "port=5432")
+				require.Contains(t, result, "dbname=testdb")
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -132,6 +145,100 @@ func TestEnsureTimeoutsInDSN(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			tc.check(t, result)
+		})
+	}
+}
+
+func TestEnsureTimeoutsInKeyValueDSN(t *testing.T) {
+	tests := []struct {
+		name             string
+		dsn              string
+		connectTimeout   time.Duration
+		statementTimeout time.Duration
+		check            func(t *testing.T, result string)
+	}{
+		{
+			name:             "adds connect_timeout",
+			dsn:              "host=localhost port=5432",
+			connectTimeout:   10 * time.Second,
+			statementTimeout: 0,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "connect_timeout=10")
+			},
+		},
+		{
+			name:             "adds statement_timeout",
+			dsn:              "host=localhost port=5432",
+			connectTimeout:   0,
+			statementTimeout: 30 * time.Second,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "statement_timeout=30000")
+			},
+		},
+		{
+			name:             "adds both timeouts",
+			dsn:              "host=localhost port=5432",
+			connectTimeout:   10 * time.Second,
+			statementTimeout: 30 * time.Second,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "connect_timeout=10")
+				require.Contains(t, result, "statement_timeout=30000")
+			},
+		},
+		{
+			name:             "preserves existing params",
+			dsn:              "host=localhost port=5432 sslmode=disable",
+			connectTimeout:   10 * time.Second,
+			statementTimeout: 0,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "sslmode=disable")
+				require.Contains(t, result, "connect_timeout=10")
+			},
+		},
+		{
+			name:             "does not override existing connect_timeout",
+			dsn:              "host=localhost port=5432 connect_timeout=30",
+			connectTimeout:   5 * time.Second,
+			statementTimeout: 0,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "connect_timeout=30")
+				require.NotContains(t, result, "connect_timeout=5")
+			},
+		},
+		{
+			name:             "does not override existing statement_timeout",
+			dsn:              "host=localhost port=5432 statement_timeout=5000",
+			connectTimeout:   0,
+			statementTimeout: 30 * time.Second,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "statement_timeout=5000")
+				require.NotContains(t, result, "statement_timeout=30000")
+			},
+		},
+		{
+			name:             "zero timeouts leave DSN unchanged",
+			dsn:              "host=localhost port=5432",
+			connectTimeout:   0,
+			statementTimeout: 0,
+			check: func(t *testing.T, result string) {
+				require.Equal(t, "host=localhost port=5432", result)
+			},
+		},
+		{
+			name:             "sub-second connect_timeout rounds up to 1",
+			dsn:              "host=localhost port=5432",
+			connectTimeout:   500 * time.Millisecond,
+			statementTimeout: 0,
+			check: func(t *testing.T, result string) {
+				require.Contains(t, result, "connect_timeout=1")
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ensureTimeoutsInKeyValueDSN(tc.dsn, tc.connectTimeout, tc.statementTimeout)
 			tc.check(t, result)
 		})
 	}

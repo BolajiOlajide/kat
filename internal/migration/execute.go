@@ -133,6 +133,7 @@ func Execute(ctx context.Context, db database.DB, logger loggr.Logger, definitio
 		Operation:     op,
 		Definitions:   definitions,
 		MigrationInfo: cfg.Migration,
+		Driver:        cfg.Database.Driver,
 		DryRun:        dryRun,
 		Verbose:       cfg.Verbose,
 		Count:         count,

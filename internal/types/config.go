@@ -117,7 +117,7 @@ func (d *DatabaseInfo) ConnString() (string, error) {
 	// For SQLite, return the database file path directly
 	if d.Driver.IsSQLite() {
 		if d.Path == "" {
-			return "", errors.New("database path is required for SQLite")
+			return "", errors.New("database path is required for SQLite driver; set the 'path' field in your database config")
 		}
 		return d.Path, nil
 	}
@@ -146,29 +146,6 @@ func (d *DatabaseInfo) parseURL() error {
 		return err
 	}
 
-	// Handle SQLite URLs differently
-	if parsedURL.Scheme == "sqlite" || parsedURL.Scheme == "file" {
-		// For SQLite, the URL is just the database file path
-		// Auto-detect driver from URL scheme if not explicitly set
-		if d.Driver == "" || d.Driver == "postgres" {
-			d.Driver = "sqlite3"
-		}
-		// SQLite doesn't need host/port/user/password/sslmode
-		d.Name = parsedURL.Path
-		if d.Name == "" && parsedURL.Opaque != "" {
-			d.Name = parsedURL.Opaque // Handle file:database.db format
-		}
-		// Handle sqlite://database.db format where database name becomes the host
-		if d.Name == "" && parsedURL.Host != "" {
-			d.Name = parsedURL.Host
-		}
-		// Preserve query parameters for SQLite (e.g., pragmas, cache settings)
-		if parsedURL.RawQuery != "" {
-			d.Name += "?" + parsedURL.RawQuery
-		}
-		return nil
-	}
-
 	// PostgreSQL URL parsing
 	port := parsedURL.Port()
 	if port == "" {
@@ -195,7 +172,7 @@ func (d *DatabaseInfo) parseURL() error {
 
 func validateScheme(scheme string) error {
 	switch scheme {
-	case "postgresql+ssl", "postgresql", "postgres", "sqlite", "file":
+	case "postgresql+ssl", "postgresql", "postgres":
 		return nil
 	default:
 		return errors.Newf("invalid scheme: %s", scheme)

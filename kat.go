@@ -41,6 +41,7 @@ import (
 	"context"
 	"database/sql"
 	"io/fs"
+	"regexp"
 
 	"github.com/cockroachdb/errors"
 
@@ -50,6 +51,15 @@ import (
 	"github.com/BolajiOlajide/kat/internal/migration"
 	"github.com/BolajiOlajide/kat/internal/types"
 )
+
+var validTableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+func validateTableName(name string) error {
+	if !validTableName.MatchString(name) {
+		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", name)
+	}
+	return nil
+}
 
 // migrationConfig holds configuration gathered from options before construction.
 type migrationConfig struct {
@@ -80,6 +90,7 @@ type Migration struct {
 	definitions        *graph.Graph
 	migrationTableName string
 	logger             Logger
+	driver             Driver
 	ownsDB             bool
 }
 
@@ -109,6 +120,9 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 	if migrationTableName == "" {
 		return nil, errors.New("migrationTableName cannot be empty")
 	}
+	if err := validateTableName(migrationTableName); err != nil {
+		return nil, err
+	}
 
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
@@ -135,6 +149,7 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             cfg.logger,
+		driver:             drv,
 		ownsDB:             true,
 	}, nil
 }
@@ -163,6 +178,9 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 	if migrationTableName == "" {
 		return nil, errors.New("migrationTableName cannot be empty")
 	}
+	if err := validateTableName(migrationTableName); err != nil {
+		return nil, err
+	}
 
 	definitions, err := migration.ComputeDefinitions(f)
 	if err != nil {
@@ -188,6 +206,7 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             cfg.logger,
+		driver:             drv,
 	}, nil
 }
 
@@ -203,7 +222,10 @@ func (m *Migration) Up(ctx context.Context, count int) error {
 		return errors.New("count cannot be a negative number")
 	}
 
-	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
+	cfg := types.Config{
+		Migration: types.MigrationInfo{TableName: m.migrationTableName},
+		Database:  types.DatabaseInfo{Driver: m.driver},
+	}
 	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.UpMigrationOperation, false)
 }
 
@@ -219,6 +241,9 @@ func (m *Migration) Down(ctx context.Context, count int) error {
 		return errors.New("count must be a non-zero positive number")
 	}
 
-	cfg := types.Config{Migration: types.MigrationInfo{TableName: m.migrationTableName}}
+	cfg := types.Config{
+		Migration: types.MigrationInfo{TableName: m.migrationTableName},
+		Database:  types.DatabaseInfo{Driver: m.driver},
+	}
 	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.DownMigrationOperation, false)
 }

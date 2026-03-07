@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=../../../../schemas/metadata.schema.json
+name: init
+timestamp: 1747578808

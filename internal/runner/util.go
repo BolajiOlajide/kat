@@ -33,6 +33,10 @@ func computeCreateMigrationLogQuery(tableName string) (string, error) {
 	return computeSQLQueryFromTemplate(tableName, createMigrationTableTmpl)
 }
 
+func computeCreateMigrationLogQuerySQLite(tableName string) (string, error) {
+	return computeSQLQueryFromTemplate(tableName, createMigrationTableSQLiteTmpl)
+}
+
 func computeSelectMigrationLogQuery(tableName string) (string, error) {
 	return computeSQLQueryFromTemplate(tableName, selectMigrationsTmpl)
 }

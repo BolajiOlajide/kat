@@ -280,10 +280,20 @@ func withRetry(ctx context.Context, l loggr.Logger, retryCount int, initialDelay
 	return errors.Wrapf(err, "failed after %d retries", retryCount)
 }
 
-// ensureTimeoutsInDSN adds timeout parameters to the connection URL if not present.
-// Only applies to PostgreSQL connection strings.
-func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.Duration) (string, error) {
-	u, err := url.Parse(connURL)
+// isKeyValueDSN detects whether a connection string is in key=value format
+// (e.g. "host=localhost port=5432") as opposed to URL format.
+func isKeyValueDSN(dsn string) bool {
+	return !strings.Contains(dsn, "://")
+}
+
+// ensureTimeoutsInDSN adds timeout parameters to the connection string if not present.
+// Only applies to PostgreSQL connection strings. Supports both URL and key=value formats.
+func ensureTimeoutsInDSN(connStr string, connectTimeout, statementTimeout time.Duration) (string, error) {
+	if isKeyValueDSN(connStr) {
+		return ensureTimeoutsInKeyValueDSN(connStr, connectTimeout, statementTimeout), nil
+	}
+
+	u, err := url.Parse(connStr)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse connection URL")
 	}
@@ -292,9 +302,7 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 
 	// Only add connect_timeout if not already present and timeout > 0
 	if connectTimeout > 0 && query.Get("connect_timeout") == "" {
-		timeoutSeconds := max(int(connectTimeout.Seconds()),
-			// Minimum 1 second
-			1)
+		timeoutSeconds := max(int(connectTimeout.Seconds()), 1)
 		query.Set("connect_timeout", strconv.Itoa(timeoutSeconds))
 	}
 
@@ -306,6 +314,19 @@ func ensureTimeoutsInDSN(connURL string, connectTimeout, statementTimeout time.D
 
 	u.RawQuery = query.Encode()
 	return u.String(), nil
+}
+
+// ensureTimeoutsInKeyValueDSN adds timeout parameters to a key=value DSN string.
+func ensureTimeoutsInKeyValueDSN(dsn string, connectTimeout, statementTimeout time.Duration) string {
+	if connectTimeout > 0 && !strings.Contains(dsn, "connect_timeout=") {
+		timeoutSeconds := max(int(connectTimeout.Seconds()), 1)
+		dsn += fmt.Sprintf(" connect_timeout=%d", timeoutSeconds)
+	}
+	if statementTimeout > 0 && !strings.Contains(dsn, "statement_timeout=") {
+		timeoutMs := int(statementTimeout.Milliseconds())
+		dsn += fmt.Sprintf(" statement_timeout=%d", timeoutMs)
+	}
+	return dsn
 }
 
 // NewWithConfig returns a new database instance with custom configuration
