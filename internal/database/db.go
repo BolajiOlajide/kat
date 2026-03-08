@@ -402,6 +402,12 @@ func New(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger) (DB, erro
 }
 
 func NewWithDB(db *sql.DB, driver dbdriver.DatabaseDriver, logger loggr.Logger) (DB, error) {
+	// SQLite allows only one writer at a time. Enforce this on externally
+	// supplied connections to prevent "database is locked" errors.
+	if driver.IsSQLite() {
+		db.SetMaxOpenConns(1)
+	}
+
 	return &database{
 		db:     db,
 		driver: driver,
