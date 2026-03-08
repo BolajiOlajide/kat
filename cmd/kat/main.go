@@ -125,8 +125,8 @@ var kat = &cli.App{
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "driver",
-					Usage:   `the driver (can be one of "postgres" and "sqlite"`,
-					EnvVars: []string{"KAT_DRIVER"},
+					Usage:   `the database driver to be used (can be one of "postgres" and "sqlite"`,
+					EnvVars: []string{"KAT_DRIVER_NAME"},
 					Value:   "postgres",
 					Action: func(_ *cli.Context, s string) error {
 						if s != "" && !slices.Contains(supportedDrivers, s) {

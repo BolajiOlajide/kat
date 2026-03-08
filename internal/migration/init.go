@@ -89,7 +89,7 @@ func Init(c *cli.Context) (err error) {
 	databaseURL := c.String("databaseURL")
 	path := c.String("path")
 	if path == "" {
-		path = fmt.Sprintf("file:///%s/kat.db", wd)
+		path = fmt.Sprintf("%s/kat.db", wd)
 	}
 
 	directory := c.String("directory")
