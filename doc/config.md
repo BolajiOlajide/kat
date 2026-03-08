@@ -237,7 +237,7 @@ migration:
   directory: migrations
 database:
   driver: sqlite
-  path: file:///path/to/myapp.db
+  path: /path/to/myapp.db
 ```
 
 ## Troubleshooting Configuration Issues
