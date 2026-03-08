@@ -4,7 +4,7 @@ layout: default
 keywords: kat,postgres,database,cli,migrations,sql
 title: Installation
 description: |
-    Kat is a PostgreSQL database migration tool. It allows you run your migrations with raw SQL files.
+    Kat is a database migration tool for PostgreSQL and SQLite. It allows you run your migrations with raw SQL files.
 comments: false
 permalink: /installation/
 page_nav:
@@ -15,14 +15,14 @@ page_nav:
 
 # Installing Kat
 
-Kat is a CLI tool for performing PostgreSQL database migrations. This guide covers different methods to install Kat on your system.
+Kat is a CLI tool for performing database migrations for PostgreSQL and SQLite. This guide covers different methods to install Kat on your system.
 
 ## Prerequisites
 
 Before installing Kat, ensure your system meets the following requirements:
 
-- **PostgreSQL**: Kat is designed to work with PostgreSQL databases
-- **Go**: Version 1.20 or higher (only required for building from source)
+- **PostgreSQL or SQLite**: Kat supports PostgreSQL and SQLite databases
+- **Go**: Version 1.25 or higher (only required for building from source)
 
 ## Installation Methods
 
@@ -137,7 +137,7 @@ kat --help
 Expected output:
 ```
 NAME:
-   kat - Database migration tool for PostgreSQL
+   kat - Database migration tool for PostgreSQL and SQLite
 
 USAGE:
    kat [global options] command [command options] [arguments...]

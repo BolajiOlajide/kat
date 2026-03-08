@@ -4,7 +4,7 @@ layout: default
 keywords: kat,postgres,database,cli,migrations,sql,quick-start,tutorial
 title: Quick Start Guide
 description: |
-    Get up and running with Kat in 5 minutes. Learn the basics of graph-based PostgreSQL migrations.
+    Get up and running with Kat in 5 minutes. Learn the basics of graph-based database migrations.
 comments: false
 permalink: /quickstart/
 page_nav:
@@ -22,10 +22,12 @@ Get up and running with Kat in 5 minutes. This guide walks you through your firs
 
 ## Prerequisites
 
-- PostgreSQL database running locally or accessible remotely
+- PostgreSQL or SQLite database available
 - Kat installed ([Installation Guide](/installation/))
 
 ## Step 1: Set Up Database
+
+> 💡 This quickstart uses PostgreSQL. For SQLite, skip this step and use `kat init --driver sqlite --path ./myapp.db` in Step 2.
 
 Create a PostgreSQL database for this tutorial:
 
@@ -261,7 +263,7 @@ services:
         curl -sSL https://kat.bolaji.de/install | KAT_INSTALL_DIR=/usr/local/bin sh
         
         # Wait for DB and run migrations
-        kat ping --retry-count 10 --retry-delay 2000
+        kat ping --retry-count 5 --retry-delay 2000
         kat up
       "
 ```
