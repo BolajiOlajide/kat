@@ -142,7 +142,7 @@ func TestComputeMigrationLogColumns(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeMigrationLogColumns(tt.tableName)
+			got := computeMigrationLogColumns()
 			if len(got) != len(tt.want) {
 				t.Errorf("computeMigrationLogColumns() length = %v, want %v", len(got), len(tt.want))
 				return
