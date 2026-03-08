@@ -14,7 +14,7 @@ import (
 )
 
 // DBConfigFromCfg builds a database.DBConfig from the config file's timeout settings.
-// Falls back to database.DefaultDBConfig() for any unset fields.
+// Falls back to database.DefaultDBConfig(driver) for any unset fields.
 func DBConfigFromCfg(cfg types.Config) (database.DBConfig, error) {
 	dbConfig := database.DefaultDBConfig(cfg.Database.Driver)
 

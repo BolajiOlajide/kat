@@ -41,6 +41,7 @@ import (
 	"context"
 	"database/sql"
 	"io/fs"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -58,8 +59,12 @@ func validateTableName(name string) error {
 
 // migrationConfig holds configuration gathered from options before construction.
 type migrationConfig struct {
-	logger   Logger
-	dbConfig *DBConfig
+	logger             Logger
+	dbConfig           *DBConfig
+	connectTimeout     *time.Duration
+	poolMaxOpen        *int
+	poolMaxIdle        *int
+	poolConnMaxLifetime *time.Duration
 }
 
 func defaultConfig() migrationConfig {
@@ -136,9 +141,21 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 		return nil, err
 	}
 
-	dbConfig := DefaultDBConfig()
+	dbConfig := DefaultDBConfig(drv)
 	if cfg.dbConfig != nil {
 		dbConfig = *cfg.dbConfig
+	}
+	if cfg.connectTimeout != nil {
+		dbConfig.ConnectTimeout = *cfg.connectTimeout
+	}
+	if cfg.poolMaxOpen != nil {
+		dbConfig.MaxOpenConns = *cfg.poolMaxOpen
+	}
+	if cfg.poolMaxIdle != nil {
+		dbConfig.MaxIdleConns = *cfg.poolMaxIdle
+	}
+	if cfg.poolConnMaxLifetime != nil {
+		dbConfig.ConnMaxLifetime = *cfg.poolConnMaxLifetime
 	}
 
 	db, err := database.NewWithConfig(drv, connStr, cfg.logger, dbConfig)
@@ -197,7 +214,7 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		return nil, err
 	}
 
-	if cfg.dbConfig != nil {
+	if cfg.dbConfig != nil || cfg.connectTimeout != nil || cfg.poolMaxOpen != nil || cfg.poolMaxIdle != nil || cfg.poolConnMaxLifetime != nil {
 		return nil, errors.New("database configuration options (WithDBConfig, WithConnectTimeout, WithPoolLimits) are not supported with NewWithDB; configure the *sql.DB directly")
 	}
 

@@ -64,11 +64,7 @@ func WithDBConfig(config DBConfig) MigrationOption {
 //	)
 func WithConnectTimeout(timeout time.Duration) MigrationOption {
 	return func(cfg *migrationConfig) error {
-		if cfg.dbConfig == nil {
-			config := DefaultDBConfig()
-			cfg.dbConfig = &config
-		}
-		cfg.dbConfig.ConnectTimeout = timeout
+		cfg.connectTimeout = &timeout
 		return nil
 	}
 }
@@ -84,13 +80,9 @@ func WithConnectTimeout(timeout time.Duration) MigrationOption {
 //	)
 func WithPoolLimits(maxOpen, maxIdle int, connMaxLifetime time.Duration) MigrationOption {
 	return func(cfg *migrationConfig) error {
-		if cfg.dbConfig == nil {
-			config := DefaultDBConfig()
-			cfg.dbConfig = &config
-		}
-		cfg.dbConfig.MaxOpenConns = maxOpen
-		cfg.dbConfig.MaxIdleConns = maxIdle
-		cfg.dbConfig.ConnMaxLifetime = connMaxLifetime
+		cfg.poolMaxOpen = &maxOpen
+		cfg.poolMaxIdle = &maxIdle
+		cfg.poolConnMaxLifetime = &connMaxLifetime
 		return nil
 	}
 }

@@ -380,7 +380,7 @@ func TestLib_WithDBConfig(t *testing.T) {
 			connStr, cleanup := p.setup(t)
 			defer cleanup()
 
-			config := kat.DefaultDBConfig()
+			config := kat.DefaultDBConfig(p.driver)
 			config.ConnectTimeout = 5 * time.Second
 			config.MaxOpenConns = 20
 
@@ -444,7 +444,7 @@ func TestLib_DBConfigWithNewWithDB(t *testing.T) {
 			}
 
 			_, err := kat.NewWithDB(p.driver, db, basicMigrations, "migration_logs",
-				kat.WithDBConfig(kat.DefaultDBConfig()),
+				kat.WithDBConfig(kat.DefaultDBConfig(p.driver)),
 			)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), "not supported with NewWithDB")

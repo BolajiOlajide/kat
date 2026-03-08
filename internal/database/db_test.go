@@ -6,17 +6,32 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 )
 
 func TestDefaultDBConfig(t *testing.T) {
-	cfg := DefaultDBConfig()
+	t.Run("postgres", func(t *testing.T) {
+		cfg := DefaultDBConfig(dbdriver.PostgresDriver)
 
-	require.Equal(t, 10*time.Second, cfg.ConnectTimeout)
-	require.Equal(t, time.Duration(0), cfg.StatementTimeout)
-	require.Equal(t, 10, cfg.MaxOpenConns)
-	require.Equal(t, 5, cfg.MaxIdleConns)
-	require.Equal(t, 30*time.Minute, cfg.ConnMaxLifetime)
-	require.Equal(t, time.Duration(0), cfg.DefaultTimeout)
+		require.Equal(t, 10*time.Second, cfg.ConnectTimeout)
+		require.Equal(t, time.Duration(0), cfg.StatementTimeout)
+		require.Equal(t, 2, cfg.MaxOpenConns)
+		require.Equal(t, 2, cfg.MaxIdleConns)
+		require.Equal(t, 5*time.Minute, cfg.ConnMaxLifetime)
+		require.Equal(t, time.Duration(0), cfg.DefaultTimeout)
+	})
+
+	t.Run("sqlite", func(t *testing.T) {
+		cfg := DefaultDBConfig(dbdriver.SqliteDriver)
+
+		require.Equal(t, 10*time.Second, cfg.ConnectTimeout)
+		require.Equal(t, time.Duration(0), cfg.StatementTimeout)
+		require.Equal(t, 1, cfg.MaxOpenConns)
+		require.Equal(t, 1, cfg.MaxIdleConns)
+		require.Equal(t, 2*time.Minute, cfg.ConnMaxLifetime)
+		require.Equal(t, time.Duration(0), cfg.DefaultTimeout)
+	})
 }
 
 func TestEnsureTimeoutsInDSN(t *testing.T) {

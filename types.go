@@ -31,6 +31,6 @@ type Logger = loggr.Logger
 type DBConfig = database.DBConfig
 
 // DefaultDBConfig returns sensible default configuration for Kat migrations.
-func DefaultDBConfig() DBConfig {
-	return database.DefaultDBConfig()
+func DefaultDBConfig(drv Driver) DBConfig {
+	return database.DefaultDBConfig(drv)
 }

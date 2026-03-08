@@ -360,11 +360,16 @@ func NewWithConfig(dd dbdriver.DatabaseDriver, url string, logger loggr.Logger, 
 		return nil, err
 	}
 
-	// SQLite allows only one writer at a time
 	if dd.IsSQLite() {
+		// SQLite allows only one writer at a time
 		db.SetMaxOpenConns(1)
+		maxIdle := config.MaxIdleConns
+		if maxIdle > 1 {
+			maxIdle = 1
+		}
+		db.SetMaxIdleConns(maxIdle)
+		db.SetConnMaxLifetime(config.ConnMaxLifetime)
 	} else {
-		// Configure connection pool for non-SQLite drivers
 		db.SetMaxOpenConns(config.MaxOpenConns)
 		db.SetMaxIdleConns(config.MaxIdleConns)
 		db.SetConnMaxLifetime(config.ConnMaxLifetime)
@@ -408,7 +413,7 @@ func NewWithConfig(dd dbdriver.DatabaseDriver, url string, logger loggr.Logger, 
 
 // New returns a new instance of the database with default configuration
 func New(drv dbdriver.DatabaseDriver, url string, logger loggr.Logger) (DB, error) {
-	return NewWithConfig(drv, url, logger, DefaultDBConfig())
+	return NewWithConfig(drv, url, logger, DefaultDBConfig(drv))
 }
 
 func NewWithDB(db *sql.DB, driver dbdriver.DatabaseDriver, logger loggr.Logger) (DB, error) {
@@ -422,6 +427,6 @@ func NewWithDB(db *sql.DB, driver dbdriver.DatabaseDriver, logger loggr.Logger) 
 		db:     db,
 		driver: driver,
 		logger: logger,
-		config: DefaultDBConfig(),
+		config: DefaultDBConfig(driver),
 	}, nil
 }
