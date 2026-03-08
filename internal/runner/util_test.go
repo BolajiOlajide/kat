@@ -112,37 +112,37 @@ func TestComputeMigrationLogColumns(t *testing.T) {
 			name:      "valid table name",
 			tableName: "migrations",
 			want: []*sqlf.Query{
-				sqlf.Sprintf("migrations.id"),
-				sqlf.Sprintf("migrations.name"),
-				sqlf.Sprintf("migrations.migration_time"),
-				sqlf.Sprintf("migrations.duration"),
+				sqlf.Sprintf("id"),
+				sqlf.Sprintf("name"),
+				sqlf.Sprintf("migration_time"),
+				sqlf.Sprintf("duration"),
 			},
 		},
 		{
 			name:      "empty table name",
 			tableName: "",
 			want: []*sqlf.Query{
-				sqlf.Sprintf(".id"),
-				sqlf.Sprintf(".name"),
-				sqlf.Sprintf(".migration_time"),
-				sqlf.Sprintf(".duration"),
+				sqlf.Sprintf("id"),
+				sqlf.Sprintf("name"),
+				sqlf.Sprintf("migration_time"),
+				sqlf.Sprintf("duration"),
 			},
 		},
 		{
 			name:      "table name with schema",
 			tableName: "public.migrations",
 			want: []*sqlf.Query{
-				sqlf.Sprintf("public.migrations.id"),
-				sqlf.Sprintf("public.migrations.name"),
-				sqlf.Sprintf("public.migrations.migration_time"),
-				sqlf.Sprintf("public.migrations.duration"),
+				sqlf.Sprintf("id"),
+				sqlf.Sprintf("name"),
+				sqlf.Sprintf("migration_time"),
+				sqlf.Sprintf("duration"),
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := computeMigrationLogColumns(tt.tableName)
+			got := computeMigrationLogColumns()
 			if len(got) != len(tt.want) {
 				t.Errorf("computeMigrationLogColumns() length = %v, want %v", len(got), len(tt.want))
 				return

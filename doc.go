@@ -1,4 +1,4 @@
-// Kat is a lightweight, powerful CLI tool for PostgreSQL database migrations.
+// Kat is a lightweight, embeddable library for PostgreSQL and SQLite database migrations.
 //
 // For more information about the project, visit:
 // https://kat.bolaji.de

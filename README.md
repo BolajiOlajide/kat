@@ -25,7 +25,7 @@
 
 </details>
 
-Kat is (probably?) the first open-source PostgreSQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering.
+Kat is (probably?) the first open-source SQL migration tool that treats your schema as a Directed Acyclic Graph, not a linear log. It enables topological sort migrations with explicit dependencies, parallel development workflows, and deterministic ordering. Currently Kat only supports `PostgreSQL` and `SQLite` flavors of SQL.
 
 ![Kat Banner](doc/assets/images/layout/logo.png)
 
@@ -170,6 +170,7 @@ migration:
   tablename: migrations
   directory: migrations
 database:
+  driver: postgres
   url: postgres://username:password@localhost:5432/mydatabase
   # Alternatively, use environment variables for secure credential management:
   # url: ${DATABASE_URL}
@@ -246,7 +247,7 @@ var migrationsFS embed.FS
 
 func main() {
     // Basic usage with embedded migrations
-    m, err := kat.New("postgres://user:pass@localhost:5432/db", migrationsFS, "migrations")
+    m, err := kat.New(kat.PostgresDriver, "postgres://user:pass@localhost:5432/db", migrationsFS, "migrations")
     if err != nil {
         log.Fatal(err)
     }

@@ -64,7 +64,9 @@ func ParseConfig(c *cli.Context) error {
 		return errors.Wrap(err, "marshalling config")
 	}
 
-	cfg.SetDefault()
+	if err := cfg.SetDefault(); err != nil {
+		return err
+	}
 	c.Context = context.WithValue(c.Context, constants.KatConfigKey, *cfg)
 	return nil
 }

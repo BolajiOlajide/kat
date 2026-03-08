@@ -19,5 +19,8 @@ jobs:
     - name: Set up Docker
       uses: docker/setup-docker-action@v5
 
-    - name: test
+    - name: Run integration tests
       run: go test -v ./...
+
+    - name: Run End-to-end tests
+      run: go test -tags e2e -timeout 600s ./e2e/

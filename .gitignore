@@ -1,5 +1,5 @@
 .DS_Store
-migrations/
+/migrations/
 db
 # ------
 # Common
@@ -29,4 +29,7 @@ private.key
 .bin
 
 PLAN.md
-examples/demo/kat
+/examples/**/kat
+/kat.db
+/kat.conf.yaml
+/examples/lib-demo/*.db

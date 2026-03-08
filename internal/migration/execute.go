@@ -14,9 +14,9 @@ import (
 )
 
 // DBConfigFromCfg builds a database.DBConfig from the config file's timeout settings.
-// Falls back to database.DefaultDBConfig() for any unset fields.
+// Falls back to database.DefaultDBConfig(driver) for any unset fields.
 func DBConfigFromCfg(cfg types.Config) (database.DBConfig, error) {
-	dbConfig := database.DefaultDBConfig()
+	dbConfig := database.DefaultDBConfig(cfg.Database.Driver)
 
 	timeouts, err := cfg.Database.ParseDBTimeouts()
 	if err != nil {
@@ -77,7 +77,7 @@ func Up(c *cli.Context, cfg types.Config, dryRun bool) error {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
+	db, err := database.NewWithConfig(cfg.Database.Driver, dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func Down(c *cli.Context, cfg types.Config, dryRun bool) error {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.NewWithConfig(dbConn, logger, dbConfig)
+	db, err := database.NewWithConfig(cfg.Database.Driver, dbConn, logger, dbConfig)
 	if err != nil {
 		return err
 	}

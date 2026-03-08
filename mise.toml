@@ -4,6 +4,10 @@ VERSION = "dev"
 [tools]
 go = "1.25.7"
 
+[tasks.modernize]
+description = "Modernize the codebase"
+run = "go mod tidy && go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./..."
+
 [tasks.install]
 description = "Install Kat CLI tool"
 run = "go install ./..."

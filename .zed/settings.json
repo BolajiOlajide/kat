@@ -1,14 +1,25 @@
 {
-  "lsp": {
-    "yaml-language-server": {
-      "settings": {
-        "yaml": {
-          "schemas": {
-            "schemas/kat.conf.schema.json": ["kat.conf.yaml"],
-            "schemas/metadata.schema.json": ["**/migrations/**/metadata.yaml"]
-          }
+    "lsp": {
+        "yaml-language-server": {
+            "settings": {
+                "yaml": {
+                    "schemas": {
+                        "schemas/kat.conf.schema.json": [
+                            "kat.conf.yaml"
+                        ],
+                        "schemas/metadata.schema.json": [
+                            "**/migrations/**/metadata.yaml"
+                        ]
+                    }
+                }
+            }
+        },
+        "gopls": {
+            "initialization_options": {
+                "build.buildFlags": [
+                    "-tags=e2e"
+                ]
+            }
         }
-      }
     }
-  }
 }

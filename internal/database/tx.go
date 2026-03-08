@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 )
@@ -13,13 +14,17 @@ import (
 var _ Tx = &databaseTx{}
 
 type databaseTx struct {
-	tx      *sql.Tx
-	bindVar sqlf.BindVar
-	config  DBConfig
+	tx     *sql.Tx
+	driver dbdriver.DatabaseDriver
+	config DBConfig
 }
 
 // For transaction objects, we don't implement retry methods.
 // Retry functionality is limited to the ping command only.
+
+func (d *databaseTx) Driver() dbdriver.DatabaseDriver {
+	return d.driver
+}
 
 func (d *databaseTx) Ping(ctx context.Context) error {
 	return errors.New("ping not supported in transaction")
@@ -43,22 +48,22 @@ func (d *databaseTx) withDefaultTimeout(ctx context.Context, timeout time.Durati
 func (d *databaseTx) Exec(ctx context.Context, query *sqlf.Query) error {
 	ctx, cancel := d.withDefaultTimeout(ctx, d.config.DefaultTimeout)
 	defer cancel()
-	
-	_, err := d.tx.ExecContext(ctx, query.Query(d.bindVar), query.Args()...)
+
+	_, err := d.tx.ExecContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 	return err
 }
 
 func (d *databaseTx) QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	// Don't apply default timeout here — the context must remain valid
 	// until the caller calls Row.Scan()
-	return d.tx.QueryRowContext(ctx, query.Query(d.bindVar), query.Args()...)
+	return d.tx.QueryRowContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 }
 
 func (d *databaseTx) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	// For Query operations, we don't apply default timeout as the context
 	// needs to remain valid for the lifetime of the Rows
 	// Users should set their own timeout if needed
-	return d.tx.QueryContext(ctx, query.Query(d.bindVar), query.Args()...)
+	return d.tx.QueryContext(ctx, query.Query(d.driver.BindVar()), query.Args()...)
 }
 
 func (d *databaseTx) Close() error {

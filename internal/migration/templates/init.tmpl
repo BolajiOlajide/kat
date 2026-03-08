@@ -1,69 +1,50 @@
-# Kat Configuration File
 # This file configures your database connection and migration settings
 
-# Migration configuration
 migration:
-  # The table name where migration records will be stored in your database
   tablename: {{ .TableName }}
-  # The directory where migration files will be stored relative to the location of the `kat.conf.yaml`
   directory: {{ .Directory }}
 
-# Show detailed migration summary and file information (true/false). Default: false (detailed output is disabled by default).
-verbose: false
+verbose: true
 
-# Database connection configuration
+{{- if eq .Driver "postgres" }}
 # You can use either individual connection parameters OR a connection URL
-
 {{- if .UseConnString }}
-# Option 1: Connection URL
 database:
-  # Complete PostgreSQL connection string
+  driver: postgres
   url: {{ .DatabaseURL }}
 
-# Option 2: Individual connection parameters (commented out)
 # database:
-#   # Database username
-#   user: {{ .DBUser }}
-#   # Database password
-#   password: {{ .DBPassword }}
-#   # Database name
-#   name: {{ .DBName }}
-#   # Database port
-#   port: {{ .DBPort }}
-#   # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-#   sslmode: {{ .DBSSLMode }}
-#   # Database host
-#   host: {{ .DBHost }}
+#   driver: postgres
+#   user: {{ .DBUser }} # Database username
+#   password: {{ .DBPassword }} # Database password
+#   name: {{ .DBName }} # Database name
+#   port: {{ .DBPort }} # Database port
+#   sslmode: {{ .DBSSLMode }} # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+#   host: {{ .DBHost }} # Database host
 {{- else }}
-# Option 1: Individual connection parameters
 database:
-  # Database username
-  user: {{ .DBUser }}
-  # Database password
-  password: {{ .DBPassword }}
-  # Database name
-  name: {{ .DBName }}
-  # Database port
-  port: {{ .DBPort }}
-  # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
-  sslmode: {{ .DBSSLMode }}
-  # Database host
-  host: {{ .DBHost }}
+  driver: postgres
+  user: {{ .DBUser }} # Database username
+  password: {{ .DBPassword }} # Database password
+  name: {{ .DBName }} # Database name
+  port: {{ .DBPort }} # Database port
+  sslmode: {{ .DBSSLMode }} # SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+  host: {{ .DBHost }} # Database host
 
-# Option 2: Connection URL (uncomment to use)
 # database:
-#   # Complete PostgreSQL connection string
+#   driver: postgres
 #   url: postgres://user:password@localhost/dbname?sslmode=disable
 {{- end }}
 
-# Database connection tuning (optional)
-# These settings control timeouts and connection pool behavior.
-# Values use Go duration format: "10s", "5m", "1h", etc.
-# Uncomment and adjust as needed for your environment.
-#
-#   connect_timeout: "10s"        # Timeout for establishing connections
-#   statement_timeout: "5m"       # Timeout for individual SQL statements
-#   max_open_conns: 10            # Maximum number of open connections
-#   max_idle_conns: 5             # Maximum number of idle connections
-#   conn_max_lifetime: "30m"      # Maximum connection lifetime
-#   default_timeout: "60s"        # Default timeout for operations
+  # These settings control timeouts and connection pool behavior.
+  connect_timeout: "10s"        # Timeout for establishing connections
+  statement_timeout: "1m"       # Timeout for individual SQL statements
+  max_open_conns: 2             # Maximum number of open connections
+  max_idle_conns: 1             # Maximum number of idle connections
+  conn_max_lifetime: "10m"      # Maximum connection lifetime
+  default_timeout: "60s"        # Default timeout for operations
+{{- else }}
+database:
+  driver: sqlite
+  path: {{ .Path }}
+{{- end }}

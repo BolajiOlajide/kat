@@ -6,47 +6,37 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/BolajiOlajide/kat/internal/constants"
-	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
+
+	"github.com/BolajiOlajide/kat/internal/constants"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
+	"github.com/BolajiOlajide/kat/internal/output"
 )
 
-// GenerateConfigFile creates a configuration file from the init.tmpl template
-// using the provided parameters
-func GenerateConfigFile(tableName, directory, databaseURL, dbUser, dbPassword, dbName, dbPort, dbHost, dbSSLMode string) ([]byte, error) {
-	// Load the embedded template
+// configData holds the template data for generating a kat configuration file.
+type configData struct {
+	TableName     string
+	Directory     string
+	DatabaseURL   string
+	DBUser        string
+	DBPassword    string
+	DBName        string
+	DBPort        string
+	DBHost        string
+	DBSSLMode     string
+	UseConnString bool
+	Path          string
+	Driver        dbdriver.DatabaseDriver
+}
+
+// generateConfigFile creates a configuration file from the init.tmpl template.
+func generateConfigFile(data configData) ([]byte, error) {
 	tmpl, err := template.ParseFS(templatesFS, "templates/init.tmpl")
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing template")
 	}
 
-	// Prepare template data
-	data := struct {
-		TableName     string
-		Directory     string
-		DatabaseURL   string
-		DBUser        string
-		DBPassword    string
-		DBName        string
-		DBPort        string
-		DBHost        string
-		DBSSLMode     string
-		UseConnString bool
-	}{
-		TableName:     tableName,
-		Directory:     directory,
-		DatabaseURL:   databaseURL,
-		DBUser:        dbUser,
-		DBPassword:    dbPassword,
-		DBName:        dbName,
-		DBPort:        dbPort,
-		DBHost:        dbHost,
-		DBSSLMode:     dbSSLMode,
-		UseConnString: databaseURL != "",
-	}
-
-	// Execute the template
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return nil, errors.Wrap(err, "executing template")
@@ -69,6 +59,11 @@ func Init(c *cli.Context) (err error) {
 		return errors.New("kat is already initialized")
 	}
 
+	driver, err := dbdriver.ParseDBDriver(c.String("driver"))
+	if err != nil {
+		return errors.Wrap(err, "parsing driver flag")
+	}
+
 	// Get parameters from CLI context
 	tableName := c.String("tableName")
 	if tableName == "" {
@@ -76,6 +71,10 @@ func Init(c *cli.Context) (err error) {
 	}
 
 	databaseURL := c.String("databaseURL")
+	path := c.String("path")
+	if path == "" {
+		path = fmt.Sprintf("%s/kat.db", wd)
+	}
 
 	directory := c.String("directory")
 	if directory == "" {
@@ -114,10 +113,20 @@ func Init(c *cli.Context) (err error) {
 	}
 
 	// Generate config file from template
-	configContent, err := GenerateConfigFile(
-		tableName, directory, databaseURL,
-		dbUser, dbPassword, dbName, dbPort, dbHost, dbSSLMode,
-	)
+	configContent, err := generateConfigFile(configData{
+		TableName:     tableName,
+		Directory:     directory,
+		DatabaseURL:   databaseURL,
+		DBUser:        dbUser,
+		DBPassword:    dbPassword,
+		DBName:        dbName,
+		DBPort:        dbPort,
+		DBHost:        dbHost,
+		DBSSLMode:     dbSSLMode,
+		UseConnString: databaseURL != "",
+		Path:          path,
+		Driver:        driver,
+	})
 	if err != nil {
 		return errors.Wrap(err, "generating config file")
 	}

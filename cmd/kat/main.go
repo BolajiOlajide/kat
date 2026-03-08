@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/BolajiOlajide/kat/internal/config"
 	"github.com/BolajiOlajide/kat/internal/constants"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/output"
 	"github.com/BolajiOlajide/kat/internal/version"
 )
@@ -21,6 +24,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+var supportedDrivers = []string{
+	dbdriver.PostgresDriver.String(),
+	dbdriver.SqliteDriver.String(),
 }
 
 var verbose bool
@@ -115,6 +123,29 @@ var kat = &cli.App{
 			Description: "Creates a new configuration file for Kat and a migration directory.",
 			Action:      initialize,
 			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "driver",
+					Usage:   `the database driver to be used (can be one of "postgres" and "sqlite"`,
+					EnvVars: []string{"KAT_DRIVER_NAME"},
+					Value:   "postgres",
+					Action: func(_ *cli.Context, s string) error {
+						if s != "" && !slices.Contains(supportedDrivers, s) {
+							return errors.Newf(`--driver must be one of %v`, strings.Join(supportedDrivers, ", "))
+						}
+
+						return nil
+					},
+				},
+				&cli.StringFlag{
+					Name:  "path",
+					Usage: "the path to the database (required when driver is `sqlite`",
+					Action: func(c *cli.Context, s string) error {
+						if c.String("driver") != dbdriver.SqliteDriver.String() {
+							return errors.New("path is only required when driver is `sqlite`")
+						}
+						return nil
+					},
+				},
 				&cli.StringFlag{
 					Name:    "tableName",
 					Usage:   "the name of the database table for tracking migrations",
@@ -240,7 +271,7 @@ var kat = &cli.App{
 
 		errMsg := err.Error()
 		if errMsg != "" {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("%s%s%s", output.StyleFailure, errMsg, output.StyleReset))
+			fmt.Fprintf(os.Stderr, "%s%s%s\n", output.StyleFailure, errMsg, output.StyleReset)
 		}
 
 		// Determine exit code

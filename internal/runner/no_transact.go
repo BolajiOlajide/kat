@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 )
 
 // noTransactTx implements database.Tx by delegating directly to the underlying
@@ -20,13 +21,30 @@ type noTransactTx struct {
 
 var _ database.Tx = &noTransactTx{}
 
-func (n *noTransactTx) Exec(ctx context.Context, q *sqlf.Query) error         { return n.db.Exec(ctx, q) }
-func (n *noTransactTx) QueryRow(ctx context.Context, q *sqlf.Query) *sql.Row   { return n.db.QueryRow(ctx, q) }
-func (n *noTransactTx) Query(ctx context.Context, q *sqlf.Query) (*sql.Rows, error) { return n.db.Query(ctx, q) }
-func (n *noTransactTx) Ping(ctx context.Context) error                         { return n.db.Ping(ctx) }
-func (n *noTransactTx) PingWithRetry(ctx context.Context, c, d int) error      { return n.db.PingWithRetry(ctx, c, d) }
-func (n *noTransactTx) WithTransact(_ context.Context, _ func(database.Tx) error) error { return errors.New("transactions not supported for no-transaction execution") }
+func (n *noTransactTx) Exec(ctx context.Context, q *sqlf.Query) error { return n.db.Exec(ctx, q) }
+func (n *noTransactTx) QueryRow(ctx context.Context, q *sqlf.Query) *sql.Row {
+	return n.db.QueryRow(ctx, q)
+}
+func (n *noTransactTx) Query(ctx context.Context, q *sqlf.Query) (*sql.Rows, error) {
+	return n.db.Query(ctx, q)
+}
+func (n *noTransactTx) Ping(ctx context.Context) error { return n.db.Ping(ctx) }
+func (n *noTransactTx) PingWithRetry(ctx context.Context, c, d int) error {
+	return n.db.PingWithRetry(ctx, c, d)
+}
+func (n *noTransactTx) WithTransact(_ context.Context, _ func(database.Tx) error) error {
+	return errors.New("transactions not supported for no-transaction execution")
+}
+func (n *noTransactTx) Driver() dbdriver.DatabaseDriver {
+	return n.db.Driver()
+}
 
-func (n *noTransactTx) Close() error    { return errors.New("close not supported for no-transaction execution") }
-func (n *noTransactTx) Commit() error   { return errors.New("commit not supported for no-transaction execution") }
-func (n *noTransactTx) Rollback() error { return errors.New("rollback not supported for no-transaction execution") }
+func (n *noTransactTx) Close() error {
+	return errors.New("close not supported for no-transaction execution")
+}
+func (n *noTransactTx) Commit() error {
+	return errors.New("commit not supported for no-transaction execution")
+}
+func (n *noTransactTx) Rollback() error {
+	return errors.New("rollback not supported for no-transaction execution")
+}

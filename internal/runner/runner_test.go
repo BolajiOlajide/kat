@@ -12,6 +12,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/BolajiOlajide/kat/internal/database"
+	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/BolajiOlajide/kat/internal/graph"
 	"github.com/BolajiOlajide/kat/internal/loggr"
 	"github.com/BolajiOlajide/kat/internal/types"
@@ -97,7 +98,7 @@ func TestRun(t *testing.T) {
 	ctx := context.Background()
 
 	pgContainer, err := postgres.Run(ctx,
-		"postgres:15.3-alpine",
+		"postgres:17-alpine",
 		// postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
 		postgres.WithDatabase("test-db"),
 		postgres.WithUsername("postgres"),
@@ -119,13 +120,13 @@ func TestRun(t *testing.T) {
 
 	logger := loggr.NewDefault()
 
-	db, err := database.New(connStr, logger)
+	db, err := database.New(dbdriver.PostgresDriver, connStr, logger)
 	require.NoError(t, err, "creating database service")
 
 	r, err := NewRunner(ctx, db, logger)
 	require.NoError(t, err, "initializing runner")
 
-	createMigrationLogQuery, err := computeCreateMigrationLogQuery(migrationTableName)
+	createMigrationLogQuery, err := computeCreateMigrationLogQuery(migrationTableName, db.Driver().IsSQLite())
 	require.NoError(t, err, "create migration log query")
 
 	tests := []struct {
