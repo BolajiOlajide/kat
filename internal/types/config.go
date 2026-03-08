@@ -23,7 +23,7 @@ type MigrationInfo struct {
 	Directory string `yaml:"directory"`
 }
 
-func (c *Config) SetDefault() {
+func (c *Config) SetDefault() error {
 	if c.Migration.Directory == "" {
 		c.Migration.Directory = "migrations"
 	}
@@ -32,8 +32,12 @@ func (c *Config) SetDefault() {
 		c.Migration.TableName = "migrations"
 	}
 
-	if !c.Database.Driver.Valid() {
+	// Default to Postgres when the driver field is empty (backward compatibility).
+	// Error on non-empty invalid values to surface config typos.
+	if c.Database.Driver == "" {
 		c.Database.Driver = dbdriver.PostgresDriver
+	} else if !c.Database.Driver.Valid() {
+		return errors.Newf("unsupported database driver %q: must be one of %q, %q", c.Database.Driver, dbdriver.PostgresDriver, dbdriver.SqliteDriver)
 	}
 
 	// We assume when the URL isn't provided, the user has specified database credentials manually
@@ -41,6 +45,8 @@ func (c *Config) SetDefault() {
 	if c.Database.URL == "" && c.Database.SSLMode == "" {
 		c.Database.SSLMode = "disable"
 	}
+
+	return nil
 }
 
 func (c *Config) Validate() error {
