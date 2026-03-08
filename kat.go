@@ -41,7 +41,6 @@ import (
 	"context"
 	"database/sql"
 	"io/fs"
-	"regexp"
 
 	"github.com/cockroachdb/errors"
 
@@ -52,13 +51,9 @@ import (
 	"github.com/BolajiOlajide/kat/internal/types"
 )
 
-var validTableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
-
+// validateTableName delegates to the shared internal validation.
 func validateTableName(name string) error {
-	if !validTableName.MatchString(name) {
-		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", name)
-	}
-	return nil
+	return types.ValidateTableName(name)
 }
 
 // migrationConfig holds configuration gathered from options before construction.

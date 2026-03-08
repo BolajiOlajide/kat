@@ -28,3 +28,9 @@ var insertMigrationTmpl = template.Must(
 		Parse(`INSERT INTO "{{ .TableName }}" (%s)
 VALUES (%s)`),
 )
+
+var deleteMigrationTmpl = template.Must(
+	template.
+		New("deleteMigrationLogTemplate").
+		Parse(`DELETE FROM "{{ .TableName }}" WHERE name = %s`),
+)

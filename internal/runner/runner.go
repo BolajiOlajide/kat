@@ -126,12 +126,11 @@ func (r *runner) computePostExecutionQuery(fileName, tblName string, duration ti
 	}
 
 	// Delete the migration log entry for DOWN operations
-	deleteLogQuery := sqlf.Sprintf(
-		"DELETE FROM %s WHERE name = %s",
-		sqlf.Sprintf(tblName),
-		fileName,
-	)
-	return deleteLogQuery, nil
+	deleteQueryTmpl, err := computeDeleteMigrationLogQuery(tblName)
+	if err != nil {
+		return nil, errors.Wrap(err, "compute delete log query")
+	}
+	return sqlf.Sprintf(deleteQueryTmpl, fileName), nil
 }
 
 func (r *runner) Run(ctx context.Context, options Options) error {

@@ -65,6 +65,9 @@ func ParseConfig(c *cli.Context) error {
 	}
 
 	cfg.SetDefault()
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
 	c.Context = context.WithValue(c.Context, constants.KatConfigKey, *cfg)
 	return nil
 }
