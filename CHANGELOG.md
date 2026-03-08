@@ -8,22 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- New features to be added
+- SQLite database driver support with pure Go implementation via `modernc.org/sqlite` - no CGO required (#27)
+- New `driver` config field in `kat.conf.yaml` (defaults to `postgres` for backward compatibility)
+- Database connection hardening with configurable timeouts and pool management (#29)
+- Configurable connect/statement timeouts and pool limits via `kat.conf.yaml` or library options (`WithDBConfig`, `WithConnectTimeout`, `WithPoolLimits`)
+- Retry with exponential backoff for `Ping` on transient Postgres errors
 
 ### Changed
-- Upcoming changes to existing functionality
-
-### Deprecated
-- Features that will be removed in upcoming releases
-
-### Removed
-- Features to be removed
+- Use string for MigrationLog Duration instead of `pgtype.Interval` for better cross-driver compatibility (#34)
+- Bumped Go toolchain to 1.25.7 and CI action versions
 
 ### Fixed
-- Upcoming bug fixes
+- Preserve original Postgres URL in `ConnString()` instead of reconstructing it, preventing loss of query parameters and special characters (#35)
+- Consistent table name quoting and validation across all SQL templates (#36)
+- Enforce `MaxOpenConns=1` for SQLite in `NewWithDB` to prevent "database is locked" errors (#37)
+- Restore `MigrationTime` as `time.Time` with smart scanning for both Postgres and SQLite (#38)
+- Error on invalid driver in `SetDefault` instead of silently defaulting to Postgres (#39)
+- Transaction handling bug in `WithTransact()` discovered during SQLite integration testing
 
-### Security
-- Upcoming security improvements
+## [0.1.2] - 2026-02-23
+
+### Fixed
+- Fix warning style color to yellow instead of red (#33)
+
+## [0.1.1] - 2026-02-20
+
+### Added
+- YAML schemas and editor support for `kat.conf.yaml` and migration metadata files (#31)
+
+### Fixed
+- Fix permission denied error in `kat update` on macOS (#32)
+
+## [0.1.0] - 2026-02-19
+
+### Added
+- Non-transactional migration support via `no_transaction` field in migration metadata (#30)
+- Documentation for non-transactional migrations
+
+## [0.0.11] - 2025-09-06
+
+### Changed
+- Updated installation command (#24)
+- Updated documentation (#25)
+
+### Fixed
+- Fix critical transaction bug in `WithTransact` function (#28)
 
 ## [0.0.10] - 2025-07-19
 
@@ -100,7 +129,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for PostgreSQL databases
 - Simple CLI interface
 
-[Unreleased]: https://github.com/BolajiOlajide/kat/compare/v0.0.10...HEAD
+[Unreleased]: https://github.com/BolajiOlajide/kat/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/BolajiOlajide/kat/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/BolajiOlajide/kat/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/BolajiOlajide/kat/compare/v0.0.11...v0.1.0
+[0.0.11]: https://github.com/BolajiOlajide/kat/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/BolajiOlajide/kat/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/BolajiOlajide/kat/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/BolajiOlajide/kat/compare/v0.0.7...v0.0.8
