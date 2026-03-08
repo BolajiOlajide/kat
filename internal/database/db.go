@@ -46,13 +46,23 @@ type DBConfig struct {
 
 // DefaultDBConfig returns sensible default configuration for Kat migrations
 // These defaults prioritize backward compatibility while providing basic protection
-func DefaultDBConfig() DBConfig {
+func DefaultDBConfig(drv dbdriver.DatabaseDriver) DBConfig {
+	maxOpenConns := 2
+	maxIdleConns := 2
+	connMaxLifetime := 5 * time.Minute
+
+	if drv.IsSQLite() {
+		maxIdleConns = 1
+		maxOpenConns = 1
+		connMaxLifetime = 2 * time.Minute
+	}
+
 	return DBConfig{
 		ConnectTimeout:   10 * time.Second, // Reasonable connection timeout
 		StatementTimeout: 0,                // Disabled by default for compatibility
-		MaxOpenConns:     10,               // Reasonable limit for migration tool
-		MaxIdleConns:     5,                // Conservative idle connection count
-		ConnMaxLifetime:  30 * time.Minute, // Reasonable connection lifetime
+		MaxOpenConns:     maxOpenConns,     // Reasonable limit for migration tool
+		MaxIdleConns:     maxIdleConns,     // Conservative idle connection count
+		ConnMaxLifetime:  connMaxLifetime,  // Reasonable connection lifetime
 		DefaultTimeout:   0,                // Disabled by default for compatibility
 	}
 }

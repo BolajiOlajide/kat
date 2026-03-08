@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/urfave/cli/v2"
@@ -17,15 +16,7 @@ import (
 // DBConfigFromCfg builds a database.DBConfig from the config file's timeout settings.
 // Falls back to database.DefaultDBConfig() for any unset fields.
 func DBConfigFromCfg(cfg types.Config) (database.DBConfig, error) {
-	isSQLite := cfg.Database.Driver.IsSQLite()
-
-	dbConfig := database.DefaultDBConfig()
-
-	if isSQLite {
-		dbConfig.MaxOpenConns = 1
-		dbConfig.MaxIdleConns = 1
-		dbConfig.ConnMaxLifetime = 2 * time.Minute
-	}
+	dbConfig := database.DefaultDBConfig(cfg.Database.Driver)
 
 	timeouts, err := cfg.Database.ParseDBTimeouts()
 	if err != nil {
