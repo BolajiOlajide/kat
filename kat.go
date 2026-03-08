@@ -90,7 +90,6 @@ type Migration struct {
 	definitions        *graph.Graph
 	migrationTableName string
 	logger             Logger
-	driver             Driver
 	ownsDB             bool
 }
 
@@ -157,7 +156,6 @@ func New(drv Driver, connStr string, f fs.FS, migrationTableName string, options
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             cfg.logger,
-		driver:             drv,
 		ownsDB:             true,
 	}, nil
 }
@@ -218,7 +216,6 @@ func NewWithDB(drv Driver, sqlDB *sql.DB, f fs.FS, migrationTableName string, op
 		definitions:        definitions,
 		migrationTableName: migrationTableName,
 		logger:             cfg.logger,
-		driver:             drv,
 	}, nil
 }
 
@@ -236,7 +233,7 @@ func (m *Migration) Up(ctx context.Context, count int) error {
 
 	cfg := types.Config{
 		Migration: types.MigrationInfo{TableName: m.migrationTableName},
-		Database:  types.DatabaseInfo{Driver: m.driver},
+		Database:  types.DatabaseInfo{Driver: m.db.Driver()},
 	}
 	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.UpMigrationOperation, false)
 }
@@ -255,7 +252,7 @@ func (m *Migration) Down(ctx context.Context, count int) error {
 
 	cfg := types.Config{
 		Migration: types.MigrationInfo{TableName: m.migrationTableName},
-		Database:  types.DatabaseInfo{Driver: m.driver},
+		Database:  types.DatabaseInfo{Driver: m.db.Driver()},
 	}
 	return migration.Execute(ctx, m.db, m.logger, m.definitions, cfg, count, types.DownMigrationOperation, false)
 }

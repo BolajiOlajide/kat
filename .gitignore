@@ -29,7 +29,7 @@ private.key
 .bin
 
 PLAN.md
-/examples/demo/kat
+/examples/**/kat
 /kat.db
 /kat.conf.yaml
-/examples/bolaji
+/examples/lib-demo/*.db
