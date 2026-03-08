@@ -44,11 +44,8 @@ func NewRunner(ctx context.Context, db database.DB, logger loggr.Logger) (Runner
 }
 
 func (r *runner) executeMigrationLogQuery(ctx context.Context, tblName string) error {
-	var createMigrationLogQuery string
-	var err error
 	var driver = r.db.Driver()
-
-	createMigrationLogQuery, err = computeCreateMigrationLogQuery(tblName, driver.IsSQLite())
+	createMigrationLogQuery, err := computeCreateMigrationLogQuery(tblName, driver.IsSQLite())
 	if err != nil {
 		return errors.Wrap(err, "compute migration log query")
 	}
