@@ -8,4 +8,4 @@ verbose: true
 database:
   driver: postgres
   url: postgres://bolaji:andela@localhost:5432/kat-demo
-  # path: file:////Users/bolajiolajide/Developer/kat/examples/bolaji/kat.db
+  # path: ./kat.db

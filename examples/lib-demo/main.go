@@ -37,7 +37,7 @@ func main() {
 		},
 		{
 			driver:    kat.SQLiteDriver,
-			pathOrUrl: "./kat3.db",
+			pathOrUrl: "./kat4.db",
 		},
 	}
 
