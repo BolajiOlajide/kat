@@ -3,6 +3,7 @@ VERSION = "dev"
 
 [tools]
 go = "1.25.7"
+"cargo:git-cliff" = "2.8.0"
 
 [tasks.modernize]
 description = "Modernize the codebase"

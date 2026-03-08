@@ -3,6 +3,7 @@ before:
   hooks:
     - go mod download
     - go mod tidy
+    - git-cliff --latest --tag {{ .Tag }} --prepend CHANGELOG.md
 
 report_sizes: true
 
@@ -37,13 +38,7 @@ snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  use: github
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
-      - '^chore:'
+  disable: true
 
 signs:
   - artifacts: checksum
