@@ -20,7 +20,7 @@ var migrationLogInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("duration"),
 }
 
-func computeMigrationLogColumns(_ string) []*sqlf.Query {
+func computeMigrationLogColumns() []*sqlf.Query {
 	var cols = make([]*sqlf.Query, len(migrationLogColumns))
 	for index, column := range migrationLogColumns {
 		cols[index] = sqlf.Sprintf(column)

@@ -63,7 +63,7 @@ func (r *runner) executeMigrationLogQuery(ctx context.Context, tblName string) e
 }
 
 func (r *runner) getAppliedMigrations(ctx context.Context, tblName string) (map[string]*types.MigrationLog, error) {
-	migrationLogColumns := computeMigrationLogColumns(tblName)
+	migrationLogColumns := computeMigrationLogColumns()
 	selectLogQuery, err := computeSelectMigrationLogQuery(tblName)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute select log query")
