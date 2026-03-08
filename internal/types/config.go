@@ -3,12 +3,14 @@ package types
 import (
 	"fmt"
 	"net/url"
-	"strings"
+	"regexp"
 	"time"
 
 	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/cockroachdb/errors"
 )
+
+var validTableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 type Config struct {
 	Migration MigrationInfo `yaml:"migration"`
@@ -44,6 +46,21 @@ func (c *Config) SetDefault() error {
 		c.Database.SSLMode = "disable"
 	}
 
+	return nil
+}
+
+func (c *Config) Validate() error {
+	if !validTableName.MatchString(c.Migration.TableName) {
+		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", c.Migration.TableName)
+	}
+	return nil
+}
+
+// ValidateTableName checks whether a table name is safe for use in SQL templates.
+func ValidateTableName(name string) error {
+	if !validTableName.MatchString(name) {
+		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", name)
+	}
 	return nil
 }
 
@@ -130,50 +147,25 @@ func (d *DatabaseInfo) ConnString() (string, error) {
 
 	// at this point, we can assume the driver is postgres
 	if d.URL != "" {
-		err := d.parseURL()
-		if err != nil {
+		// Validate the scheme but return the original URL unchanged to preserve
+		// query params, special characters in passwords, and connection options.
+		if err := d.validateURL(); err != nil {
 			return "", err
 		}
+		return d.URL, nil
 	}
 
 	// if a url isn't provided, use the traditional connection string format
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", d.Host, d.Port, d.User, d.Password, d.Name, d.SSLMode), nil
 }
 
-func (d *DatabaseInfo) parseURL() error {
-	// Parse the URL
+func (d *DatabaseInfo) validateURL() error {
 	parsedURL, err := url.Parse(d.URL)
 	if err != nil {
 		return errors.Newf("failed to parse URL: %v", err)
 	}
 
-	// Make sure the scheme is valid
-	if err := validateScheme(parsedURL.Scheme); err != nil {
-		return err
-	}
-
-	// PostgreSQL URL parsing
-	port := parsedURL.Port()
-	if port == "" {
-		port = "5432" // default postgres port
-	}
-	d.Port = port
-
-	d.Host = parsedURL.Hostname()
-
-	if parsedURL.User != nil {
-		d.User = parsedURL.User.Username()
-		d.Password, _ = parsedURL.User.Password()
-	}
-
-	sslmode := parsedURL.Query().Get("sslmode")
-	if sslmode == "" {
-		sslmode = "disable"
-	}
-	d.SSLMode = sslmode
-
-	d.Name = strings.ReplaceAll(parsedURL.Path, "/", "")
-	return nil
+	return validateScheme(parsedURL.Scheme)
 }
 
 func validateScheme(scheme string) error {

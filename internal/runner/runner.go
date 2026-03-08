@@ -63,7 +63,7 @@ func (r *runner) executeMigrationLogQuery(ctx context.Context, tblName string) e
 }
 
 func (r *runner) getAppliedMigrations(ctx context.Context, tblName string) (map[string]*types.MigrationLog, error) {
-	migrationLogColumns := computeMigrationLogColumns(tblName)
+	migrationLogColumns := computeMigrationLogColumns()
 	selectLogQuery, err := computeSelectMigrationLogQuery(tblName)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute select log query")
@@ -126,12 +126,11 @@ func (r *runner) computePostExecutionQuery(fileName, tblName string, duration ti
 	}
 
 	// Delete the migration log entry for DOWN operations
-	deleteLogQuery := sqlf.Sprintf(
-		"DELETE FROM %s WHERE name = %s",
-		sqlf.Sprintf(tblName),
-		fileName,
-	)
-	return deleteLogQuery, nil
+	deleteQueryTmpl, err := computeDeleteMigrationLogQuery(tblName)
+	if err != nil {
+		return nil, errors.Wrap(err, "compute delete log query")
+	}
+	return sqlf.Sprintf(deleteQueryTmpl, fileName), nil
 }
 
 func (r *runner) Run(ctx context.Context, options Options) error {
@@ -358,12 +357,44 @@ func (r *runner) printMigrationSummary(details []executionDetails, operation typ
 	r.logger.Info(fmt.Sprintf("Total: %d migration(s) %s.", len(details), operationName))
 }
 
+// migrationTimeFormats are the time formats used when migration_time is stored as TEXT (SQLite).
+var migrationTimeFormats = []string{
+	"2006-01-02 15:04:05.999-07",
+	"2006-01-02 15:04:05",
+	time.RFC3339,
+}
+
 func scanMigrationLog(sc database.Scanner) (*types.MigrationLog, error) {
 	var migrationLog types.MigrationLog
-	return &migrationLog, sc.Scan(
+	var rawTime any
+	if err := sc.Scan(
 		&migrationLog.ID,
 		&migrationLog.Name,
-		&migrationLog.MigrationTime,
+		&rawTime,
 		&migrationLog.Duration,
-	)
+	); err != nil {
+		return nil, err
+	}
+
+	switch v := rawTime.(type) {
+	case time.Time:
+		migrationLog.MigrationTime = v
+	case string:
+		var parsed bool
+		for _, format := range migrationTimeFormats {
+			t, err := time.Parse(format, v)
+			if err == nil {
+				migrationLog.MigrationTime = t
+				parsed = true
+				break
+			}
+		}
+		if !parsed {
+			return nil, errors.Newf("unable to parse migration_time %q", v)
+		}
+	default:
+		return nil, errors.Newf("unexpected type %T for migration_time", rawTime)
+	}
+
+	return &migrationLog, nil
 }
