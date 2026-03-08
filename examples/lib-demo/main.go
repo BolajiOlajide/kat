@@ -37,7 +37,7 @@ func main() {
 		},
 		{
 			driver:    kat.SQLiteDriver,
-			pathOrUrl: "file:///Users/bolajiolajide/Developer/kat/examples/bolaji/kat3.db",
+			pathOrUrl: "./kat3.db",
 		},
 	}
 
@@ -46,6 +46,9 @@ func main() {
 		db, err := sql.Open(m.driver.DriverName(), m.pathOrUrl)
 		if err != nil {
 			panic(err)
+		}
+		if m.driver == kat.SQLiteDriver {
+			db.SetMaxOpenConns(1)
 		}
 		km, err := kat.NewWithDB(m.driver, db, migrationFS, "logs")
 		if err != nil {
