@@ -1,8 +1,10 @@
 package types
 
+import "time"
+
 type MigrationLog struct {
 	ID            int
 	Name          string
-	MigrationTime string
+	MigrationTime time.Time
 	Duration      string
 }
