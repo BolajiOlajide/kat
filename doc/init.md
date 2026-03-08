@@ -34,6 +34,8 @@ Kat init supports various flags to customize your configuration:
 
 | Flag | Short | Environment Variable | Default | Description |
 |------|-------|---------------------|---------|-------------|
+| `--driver` | | `KAT_DRIVER_NAME` | `postgres` | Database driver (`postgres` or `sqlite`) |
+| `--path` | | | | Path to the SQLite database file (required when driver is `sqlite`) |
 | `--tableName` | `-t` | `KAT_MIGRATION_TABLE_NAME` | `migrations` | The database table where migration records are stored |
 | `--directory` | `-d` | `KAT_MIGRATION_DIRECTORY` | `migrations` | Directory to store migration files |
 | `--databaseURL` | `-u` | `KAT_MIGRATION_DATABASE_URL` | `` | PostgreSQL connection string (if provided, individual connection params are ignored) |
@@ -53,20 +55,20 @@ Kat supports using environment variables in your configuration file. When the co
 ```yaml
 # Using environment variables directly
 database:
-  - user: $DB_USER
-  - password: $DB_PASSWORD
-  - name: $DATABASE_NAME
-  - port: 5432
-  - host: localhost
+  user: $DB_USER
+  password: $DB_PASSWORD
+  name: $DATABASE_NAME
+  port: 5432
+  host: localhost
 ```
 
 You can also use the braces syntax for clarity:
 
 ```yaml
 database:
-  - user: ${DB_USER}
-  - password: ${DB_PASSWORD}
-  - name: ${DATABASE_NAME}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  name: ${DATABASE_NAME}
 ```
 
 This feature allows you to:
@@ -109,6 +111,12 @@ export KAT_DB_PASSWORD="secure_password"
 
 # Run init using those environment variables
 kat init
+```
+
+### Initialize with SQLite
+
+```bash
+kat init --driver sqlite --path ./myapp.db
 ```
 
 ### Complete Custom Configuration

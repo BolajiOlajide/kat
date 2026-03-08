@@ -1,7 +1,7 @@
 ---
 # Page settings
 layout: default
-keywords: kat,postgres,database,cli,migrations,sql,dag,graph,concepts
+keywords: kat,postgres,sqlite,database,cli,migrations,sql,dag,graph,concepts
 title: Core Concepts
 description: |
     Understand the key concepts behind Kat's graph-based migration system.
@@ -138,7 +138,7 @@ Kat maintains a tracking table (default: `migrations`) with:
 | `id` | SERIAL | Auto-increment ID |
 | `name` | VARCHAR | Migration identifier |
 | `migration_time` | TIMESTAMP | When migration was applied |
-| `duration` | INTEGER | Execution time in milliseconds |
+| `duration` | INTERVAL (PostgreSQL) / TEXT (SQLite) | Execution duration |
 
 This table enables Kat to:
 - Skip already-applied migrations

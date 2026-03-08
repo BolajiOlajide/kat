@@ -3,7 +3,7 @@
 layout: homepage
 keywords: kat,postgres,database,cli,migrations,sql
 title: Kat
-description: Kat is **Git-style migrations** for PostgreSQL; think `git graph`, but for schema. Graph-based migration tool with explicit dependencies and parallel development workflows.
+description: Kat is **Git-style migrations** for PostgreSQL and SQLite; think `git graph`, but for schema. Graph-based migration tool with explicit dependencies and parallel development workflows.
 permalink: /
 buttons:
     - content: Quick Start

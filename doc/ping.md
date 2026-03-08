@@ -4,7 +4,7 @@ layout: default
 keywords: kat,postgres,database,cli,migrations,sql
 title: Database Connectivity
 description: |
-    Check your PostgreSQL database connection with Kat's ping command.
+    Check your database connection with Kat's ping command.
 comments: false
 permalink: /ping/
 page_nav:
@@ -20,7 +20,7 @@ page_nav:
 
 **TL;DR**: `kat ping` verifies credentials and waits for database readiness.
 
-Before running migrations, it's important to verify that Kat can connect to your PostgreSQL database. The `ping` command provides a simple way to test your database connection with optional retry capabilities for unstable connections.
+Before running migrations, it's important to verify that Kat can connect to your database. The `ping` command provides a simple way to test your database connection with optional retry capabilities for unstable connections.
 
 ## Basic Usage
 
@@ -153,10 +153,11 @@ fi
 If you're having trouble connecting to your database with the ping command:
 
 1. Verify your database connection details in `kat.conf.yaml`
-2. Check that your PostgreSQL server is running and accepting connections
-3. Ensure network connectivity between your environment and the database server
-4. Verify that your database user has appropriate connection privileges
-5. Check for any firewall or security group restrictions
+2. **PostgreSQL**: Check that your server is running and accepting connections
+3. **SQLite**: Verify the database file path exists and has proper permissions
+4. Ensure network connectivity between your environment and the database server (PostgreSQL)
+5. Verify that your database user has appropriate connection privileges (PostgreSQL)
+6. Check for any firewall or security group restrictions (PostgreSQL)
 
 For more advanced debugging, you can use the `--verbose` flag to see additional details:
 

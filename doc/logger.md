@@ -66,7 +66,7 @@ func main() {
     var logger kat.Logger
     logger = &MyLogger{}
 
-    m, err := kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations",
+    m, err := kat.New(kat.PostgresDriver, "postgres://user:pass@localhost:5432/db", fsys, "migrations",
         kat.WithLogger(logger),
     )
     if err != nil {
@@ -87,7 +87,7 @@ import (
 )
 
 func main() {
-    m, err := kat.New("postgres://user:pass@localhost:5432/db", fsys, "migrations")
+    m, err := kat.New(kat.PostgresDriver, "postgres://user:pass@localhost:5432/db", fsys, "migrations")
     if err != nil {
         // handle error
     }
@@ -125,7 +125,7 @@ func (l *LogrusAdapter) Error(msg string) {
 
 ### With Existing Database Connection
 
-If you already have a `*sql.DB` instance, you can use the `WithSqlDB` option:
+If you already have a `*sql.DB` instance, you can use `NewWithDB`:
 
 ```go
 package main
@@ -143,9 +143,7 @@ func main() {
     }
     defer db.Close()
 
-    m, err := kat.New("", fsys, "migrations",
-        kat.WithSqlDB(db),
-    )
+    m, err := kat.NewWithDB(kat.PostgresDriver, db, fsys, "migrations")
     if err != nil {
         // handle error
     }
@@ -163,22 +161,58 @@ Kat supports several configuration options through the `MigrationOption` type:
 Provides a custom logger implementation:
 
 ```go
-m, err := kat.New(connStr, fsys, "migrations",
+m, err := kat.New(kat.PostgresDriver, connStr, fsys, "migrations",
     kat.WithLogger(customLogger),
 )
 ```
 
-### WithSqlDB
+### NewWithDB
 
-Uses an existing `*sql.DB` connection instead of creating a new one:
+Use `NewWithDB` to provide an existing `*sql.DB` connection instead of letting Kat create one:
 
 ```go
-m, err := kat.New("", fsys, "migrations",
-    kat.WithSqlDB(existingDB),
+m, err := kat.NewWithDB(kat.PostgresDriver, existingDB, fsys, "migrations")
+```
+
+**Note:** When using `NewWithDB`, the caller is responsible for managing the connection lifecycle. Database configuration options (`WithDBConfig`, `WithConnectTimeout`, `WithPoolLimits`) are not supported — configure the `*sql.DB` directly. For SQLite, Kat automatically enforces `MaxOpenConns=1` to avoid "database is locked" errors.
+
+### WithDBConfig
+
+Configures custom database connection settings (only with `New`, not `NewWithDB`):
+
+```go
+config := kat.DBConfig{
+    ConnectTimeout:   5 * time.Second,
+    StatementTimeout: 5 * time.Minute,
+    MaxOpenConns:     20,
+    MaxIdleConns:     10,
+    ConnMaxLifetime:  1 * time.Hour,
+    DefaultTimeout:   60 * time.Second,
+}
+m, err := kat.New(kat.PostgresDriver, connStr, fsys, "migrations",
+    kat.WithDBConfig(config),
 )
 ```
 
-**Note:** When using `WithSqlDB`, the connection string parameter is ignored.
+### WithConnectTimeout
+
+Convenience function to configure just the connection timeout:
+
+```go
+m, err := kat.New(kat.PostgresDriver, connStr, fsys, "migrations",
+    kat.WithConnectTimeout(5 * time.Second),
+)
+```
+
+### WithPoolLimits
+
+Configures connection pool limits:
+
+```go
+m, err := kat.New(kat.PostgresDriver, connStr, fsys, "migrations",
+    kat.WithPoolLimits(20, 10, 1*time.Hour),
+)
+```
 
 ## Log Messages
 

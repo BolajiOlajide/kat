@@ -1,7 +1,7 @@
 ---
 # Page settings
 layout: default
-keywords: kat,postgres,database,cli,migrations,sql
+keywords: kat,postgres,sqlite,database,cli,migrations,sql
 title: Migrations
 description: |
     Learn how to create, apply, and roll back database migrations with Kat.
@@ -67,7 +67,7 @@ migrations/
 - **down.sql**: Contains SQL statements to reverse the migration (drop tables, remove columns, etc.)
 - **metadata.yaml**: Contains metadata about the migration:
   ```yaml
-  id: 1679012345
+  timestamp: 1679012345
   name: create_users
   description: Create the main users table with authentication fields
   parents:
@@ -108,10 +108,10 @@ kat add add_email_column
 You can edit the generated `metadata.yaml` to specify custom parent relationships:
 
 ```yaml
-id: 1679012398
+timestamp: 1679012398
 name: add_email_column
 parents:
-  - 1679012345  # Manually specify parent migration ID
+  - 1679012345  # Manually specify parent migration timestamp
 ```
 
 ### Writing Migration SQL
@@ -377,10 +377,10 @@ When running migrations, Kat performs a topological sort of the graph to determi
 
 ### Visualizing the Migration Graph
 
-To visualize your migration dependency graph, you can use the `graph` command:
+To visualize your migration dependency graph, you can use the `export` command:
 
 ```bash
-kat graph --format dot > migrations.dot
+kat export --file migrations.dot
 ```
 
 This generates a DOT file that can be visualized with tools like Graphviz or online services like [GraphvizOnline](https://dreampuf.github.io/GraphvizOnline).
