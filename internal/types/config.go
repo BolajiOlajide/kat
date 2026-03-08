@@ -3,11 +3,14 @@ package types
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"time"
 
 	dbdriver "github.com/BolajiOlajide/kat/internal/database/driver"
 	"github.com/cockroachdb/errors"
 )
+
+var validTableName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 type Config struct {
 	Migration MigrationInfo `yaml:"migration"`
@@ -38,6 +41,21 @@ func (c *Config) SetDefault() {
 	if c.Database.URL == "" && c.Database.SSLMode == "" {
 		c.Database.SSLMode = "disable"
 	}
+}
+
+func (c *Config) Validate() error {
+	if !validTableName.MatchString(c.Migration.TableName) {
+		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", c.Migration.TableName)
+	}
+	return nil
+}
+
+// ValidateTableName checks whether a table name is safe for use in SQL templates.
+func ValidateTableName(name string) error {
+	if !validTableName.MatchString(name) {
+		return errors.Newf("invalid migration table name %q: must match [A-Za-z_][A-Za-z0-9_]*", name)
+	}
+	return nil
 }
 
 type DatabaseInfo struct {
