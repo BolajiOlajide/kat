@@ -1,3 +1,5 @@
+version: 2
+
 # GoReleaser configuration for kat
 before:
   hooks:
@@ -13,6 +15,9 @@ builds:
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
+    flags:
+      - -trimpath
+      - -buildvcs=false
     goos:
       - linux
       - darwin
@@ -35,6 +40,27 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
+
+dockers_v2:
+  - id: kat
+    ids:
+      - kat
+    dockerfile: Dockerfile
+    images:
+      - "docker.io/cooproton12/kat"
+    tags:
+      - "v{{ .Version }}"
+      - latest
+    labels:
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.title": "{{ .ProjectName }}"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.source": "https://github.com/BolajiOlajide/kat"
+      "org.opencontainers.image.licenses": "MIT"
+    platforms:
+      - linux/amd64
+      - linux/arm64
 
 changelog:
   use: github
