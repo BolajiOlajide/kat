@@ -87,7 +87,9 @@ jobs:
           git push origin v${{ needs.calculate-version.outputs.version }}
 
   goreleaser:
-    needs: build-and-release
+    needs:
+      - calculate-version
+      - build-and-release
     uses: ./.github/workflows/goreleaser.yml
     with:
       version: ${{ needs.calculate-version.outputs.version }}
