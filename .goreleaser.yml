@@ -5,6 +5,7 @@ before:
   hooks:
     - go mod download
     - go mod tidy
+    - git-cliff --latest --tag {{ .Tag }} --prepend CHANGELOG.md
 
 report_sizes: true
 
@@ -63,13 +64,7 @@ dockers_v2:
       - linux/arm64
 
 changelog:
-  use: github
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
-      - '^chore:'
+  disable: true
 
 signs:
   - artifacts: checksum
